@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pointeur conteneurs - DP World</title>
-    <!-- Tailwind CSS & SheetJS -->
+    <!-- Tailwind CSS, SheetJS & OCR Tesseract -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
@@ -44,14 +45,10 @@
         <!-- BRAND HEADER SECTION -->
         <div class="flex items-center justify-between mt-2 mb-5 pb-3 border-b border-[#252b75]">
             <div class="flex items-center gap-3">
-                <!-- HD Clear Sharp & Smooth Continuous Logo Vector -->
                 <div class="w-11 h-11 flex items-center justify-center shrink-0">
                     <svg class="w-full h-full filter drop-shadow-[0_2px_8px_rgba(0,255,170,0.3)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Upper Red/Pink Arc -->
                         <path d="M22 52C22 30 42 26 62 27C45 30 34 38 32 52C31 65 22 52 22 52Z" fill="url(#logo_grad_clear)"/>
-                        <!-- Green Flow Ribbon -->
                         <path d="M2 62C22 43 49 57 72 38C72 38 70 51 51 58C32 65 15 53 2 62Z" fill="#00FFAA"/>
-                        <!-- Smooth Continuous White Bottom Arc -->
                         <path d="M 28 62 C 40 76 65 74 74 48 C 66 69 44 72 28 62 Z" fill="#FFFFFF"/>
                         <defs>
                             <linearGradient id="logo_grad_clear" x1="22" y1="26" x2="62" y2="52" gradientUnits="userSpaceOnUse">
@@ -111,7 +108,6 @@
                 </div>
             </div>
 
-            <!-- Active Models & Custom Fields -->
             <div class="dpw-card p-4 rounded-2xl space-y-4">
                 <h4 class="font-semibold text-xs text-gray-300">Modèles configurés & Colonnes</h4>
                 <div id="modelsList" class="space-y-3"></div>
@@ -120,7 +116,7 @@
 
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR WITH CUSTOM FOOTER WATERMARK -->
+    <!-- BOTTOM NAVIGATION BAR -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-lg mx-auto">
         <div class="flex items-center justify-around py-2 px-4 text-center">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
@@ -136,6 +132,9 @@
             <span>© 2026 DP World Djendjen Terminal. By djalil</span>
         </div>
     </div>
+
+    <!-- Hidden Camera File Input for OCR -->
+    <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="hidden" onchange="processOCRImage(event)">
 
     <!-- POPUP MODAL (Pointer un conteneur) -->
     <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
@@ -156,7 +155,14 @@
 
                 <div>
                     <label class="block text-gray-300 font-medium mb-1">N° conteneur</label>
-                    <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dpw p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dpw p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
+                        <!-- CAMERA SCANNER BUTTON -->
+                        <button type="button" onclick="triggerCameraOCR()" class="btn-dpw-gradient px-3 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 shadow" title="Scanner avec la caméra">
+                            <i class="fa-solid fa-camera text-base"></i>
+                        </button>
+                    </div>
+                    <p id="ocrStatus" class="text-[10px] text-gray-400 mt-1 hidden"></p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -216,6 +222,45 @@
 
         function saveContainers() { localStorage.setItem('dpw_containers', JSON.stringify(containers)); }
         function saveModelConfigs() { localStorage.setItem('dpw_model_configs', JSON.stringify(modelConfigs)); }
+
+        // Camera OCR Scanner Logic
+        function triggerCameraOCR() {
+            document.getElementById('ocrCameraInput').click();
+        }
+
+        function processOCRImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const statusEl = document.getElementById('ocrStatus');
+            statusEl.classList.remove('hidden');
+            statusEl.className = "text-[10px] text-yellow-400 mt-1 font-bold animate-pulse";
+            statusEl.innerText = "Analyse de la photo en cours...";
+
+            Tesseract.recognize(file, 'eng')
+                .then(({ data: { text } }) => {
+                    // Extract Container ID Pattern (4 Letters + 7 Digits e.g. MSCU1234567)
+                    const cleanText = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                    const containerMatch = cleanText.match(/[A-Z]{4}\d{7}/);
+
+                    if (containerMatch) {
+                        document.getElementById('inpId').value = containerMatch[0];
+                        statusEl.className = "text-[10px] text-[#00ffaa] mt-1 font-bold";
+                        statusEl.innerText = "✓ N° conteneur détecté avec succès!";
+                    } else if (cleanText.length >= 7) {
+                        document.getElementById('inpId').value = cleanText.substring(0, 11);
+                        statusEl.className = "text-[10px] text-blue-400 mt-1 font-bold";
+                        statusEl.innerText = "✓ Texte extrait. Vérifiez le numéro.";
+                    } else {
+                        statusEl.className = "text-[10px] text-red-400 mt-1 font-bold";
+                        statusEl.innerText = "⚠ Impossible de lire le numéro. Réessayez avec une photo plus nette.";
+                    }
+                })
+                .catch(err => {
+                    statusEl.className = "text-[10px] text-red-400 mt-1 font-bold";
+                    statusEl.innerText = "Erreur lors de la lecture الكاميرا.";
+                });
+        }
 
         function switchTab(tabName) {
             const accueilTab = document.getElementById('tabAccueil');
@@ -437,6 +482,7 @@
             document.getElementById('inpLoc').value = '';
             document.getElementById('inpSeal').value = '';
             document.getElementById('inpNotes').value = '';
+            document.getElementById('ocrStatus').classList.add('hidden');
         }
 
         function exportToExcel() {
