@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pointeur conteneurs - DP World</title>
-    <!-- Tailwind CSS, SheetJS & OCR Tesseract -->
+    <!-- Tailwind CSS, SheetJS & Tesseract OCR -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
@@ -91,14 +91,14 @@
             <div id="containersList" class="space-y-3"></div>
         </div>
 
-        <!-- TAB 2: CONFIGURATION DES MODÈLES DE TABLEAU -->
+        <!-- TAB 2: CONFIGURATION DES MODÈLES & TEMPLATES EXCEL DE L'ENTREPRISE -->
         <div id="tabSettings" class="hidden space-y-4">
             <div class="dpw-card p-4 rounded-2xl space-y-3">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i class="fa-solid fa-table-columns text-[#00ffaa]"></i>
-                    <span>Créer un Modèle de Tableau</span>
+                    <i class="fa-solid fa-file-invoice text-[#00ffaa]"></i>
+                    <span>Modèles & القوالب الرسمية للشركة</span>
                 </h3>
-                <p class="text-xs text-gray-400">Ajoutez un modèle d'opération et définissez les colonnes/champs spécifiques.</p>
+                <p class="text-xs text-gray-400">Ajoutez des modèles et chargez le fichier Excel officiel de l'entreprise pour chaque modèle.</p>
                 
                 <div class="flex items-center gap-2 pt-1">
                     <input type="text" id="inpNewModel" placeholder="Nom du modèle (ex: Visite Douane)" class="input-dpw p-2.5 rounded-xl text-xs flex-1">
@@ -109,14 +109,14 @@
             </div>
 
             <div class="dpw-card p-4 rounded-2xl space-y-4">
-                <h4 class="font-semibold text-xs text-gray-300">Modèles configurés & Colonnes</h4>
+                <h4 class="font-semibold text-xs text-gray-300">Modèles & Qabalib Excel Officiels</h4>
                 <div id="modelsList" class="space-y-3"></div>
             </div>
         </div>
 
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR -->
+    <!-- BOTTOM NAVIGATION BAR WITH CUSTOM FOOTER WATERMARK -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-lg mx-auto">
         <div class="flex items-center justify-around py-2 px-4 text-center">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
@@ -133,8 +133,9 @@
         </div>
     </div>
 
-    <!-- Hidden Camera File Input for OCR -->
+    <!-- Hidden File Inputs -->
     <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="hidden" onchange="processOCRImage(event)">
+    <input type="file" id="templateFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleTemplateUpload(event)">
 
     <!-- POPUP MODAL (Pointer un conteneur) -->
     <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
@@ -157,7 +158,6 @@
                     <label class="block text-gray-300 font-medium mb-1">N° conteneur</label>
                     <div class="flex items-center gap-2">
                         <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dpw p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
-                        <!-- CAMERA SCANNER BUTTON -->
                         <button type="button" onclick="triggerCameraOCR()" class="btn-dpw-gradient px-3 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 shadow" title="Scanner avec la caméra">
                             <i class="fa-solid fa-camera text-base"></i>
                         </button>
@@ -195,7 +195,7 @@
                     </div>
                 </div>
 
-                <!-- DYNAMIC CUSTOM FIELDS FOR THE SELECTED MODEL -->
+                <!-- DYNAMIC CUSTOM FIELDS -->
                 <div id="dynamicFieldsContainer" class="space-y-3 pt-2 border-t border-[#252b75]"></div>
 
                 <div>
@@ -219,14 +219,16 @@
             'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
             'Embarquement': ['Destination', 'Poids (Tonnes)']
         };
+        // Stores uploaded binary templates per model
+        let modelTemplates = JSON.parse(localStorage.getItem('dpw_model_templates')) || {};
+        let currentUploadTemplateTarget = '';
 
         function saveContainers() { localStorage.setItem('dpw_containers', JSON.stringify(containers)); }
         function saveModelConfigs() { localStorage.setItem('dpw_model_configs', JSON.stringify(modelConfigs)); }
+        function saveModelTemplates() { localStorage.setItem('dpw_model_templates', JSON.stringify(modelTemplates)); }
 
         // Camera OCR Scanner Logic
-        function triggerCameraOCR() {
-            document.getElementById('ocrCameraInput').click();
-        }
+        function triggerCameraOCR() { document.getElementById('ocrCameraInput').click(); }
 
         function processOCRImage(event) {
             const file = event.target.files[0];
@@ -239,7 +241,6 @@
 
             Tesseract.recognize(file, 'eng')
                 .then(({ data: { text } }) => {
-                    // Extract Container ID Pattern (4 Letters + 7 Digits e.g. MSCU1234567)
                     const cleanText = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
                     const containerMatch = cleanText.match(/[A-Z]{4}\d{7}/);
 
@@ -324,24 +325,52 @@
             
             Object.keys(modelConfigs).forEach(mName => {
                 const fields = modelConfigs[mName];
+                const hasTemplate = !!modelTemplates[mName];
+
                 const card = document.createElement('div');
-                card.className = "bg-[#1d2263] p-3 rounded-xl text-xs space-y-2 border border-[#303796]";
+                card.className = "bg-[#1d2263] p-3 rounded-xl text-xs space-y-2.5 border border-[#303796]";
                 
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-white text-sm">${mName}</span>
-                        <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="triggerUploadTemplate('${mName}')" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 ${hasTemplate ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}" title="Upload Company Template">
+                                <i class="fa-solid fa-file-excel"></i>
+                                <span>${hasTemplate ? 'Template OK (Changer)' : '+ Template Excel'}</span>
+                            </button>
+                            <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
                     </div>
                     <div class="flex flex-wrap gap-1.5 pt-1">
                         ${fields.map(f => `<span class="bg-[#15194a] text-gray-300 px-2 py-0.5 rounded-md border border-[#252b75] text-[10px]">${f}</span>`).join('')}
                     </div>
-                    <div class="flex items-center gap-2 pt-2">
+                    <div class="flex items-center gap-2 pt-1">
                         <input type="text" id="addField_${mName.replace(/\s+/g, '')}" placeholder="Ajouter une colonne (ex: Navire)" class="input-dpw p-2 rounded-lg text-xs flex-1">
                         <button onclick="addFieldToModel('${mName}')" class="btn-dpw-blue px-3 py-2 rounded-lg text-xs font-bold">+ Champ</button>
                     </div>
                 `;
                 listEl.appendChild(card);
             });
+        }
+
+        function triggerUploadTemplate(modelName) {
+            currentUploadTemplateTarget = modelName;
+            document.getElementById('templateFileInput').click();
+        }
+
+        function handleTemplateUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result.split(',')[1];
+                modelTemplates[currentUploadTemplateTarget] = base64Data;
+                saveModelTemplates();
+                alert(`✓ Template Excel officiel pour "${currentUploadTemplateTarget}" enregistré avec succès!`);
+                renderModelsList();
+            };
+            reader.readAsDataURL(file);
         }
 
         function addNewModel() {
@@ -368,7 +397,9 @@
         function deleteModel(modelName) {
             if (confirm(`Voulez-vous vraiment supprimer le modèle "${modelName}" ?`)) {
                 delete modelConfigs[modelName];
+                delete modelTemplates[modelName];
                 saveModelConfigs();
+                saveModelTemplates();
                 renderModelsList();
                 populateModelSelect();
             }
@@ -453,6 +484,15 @@
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const selectedModel = document.getElementById('inpModel').value;
 
+            // Anti-duplicate warning
+            const inputIdVal = document.getElementById('inpId').value.toUpperCase().trim();
+            const exists = containers.find(c => c.id === inputIdVal);
+            if (exists) {
+                if (!confirm(`⚠ Le conteneur ${inputIdVal} a déjà été pointé aujourd'hui à ${exists.time}. Voulez-vous l'ajouter à nouveau ?`)) {
+                    return;
+                }
+            }
+
             const customData = {};
             const customInputs = document.querySelectorAll('[data-custom-field]');
             customInputs.forEach(input => {
@@ -461,7 +501,7 @@
             });
 
             const newItem = {
-                id: document.getElementById('inpId').value.toUpperCase(),
+                id: inputIdVal,
                 model: selectedModel,
                 type: document.getElementById('inpType').value,
                 loc: document.getElementById('inpLoc').value.toUpperCase(),
@@ -485,6 +525,7 @@
             document.getElementById('ocrStatus').classList.add('hidden');
         }
 
+        // Export directly into Company Excel Template if available!
         function exportToExcel() {
             if (containers.length === 0) {
                 alert("Aucun conteneur à exporter.");
@@ -496,29 +537,54 @@
             Object.keys(modelConfigs).forEach(mName => {
                 const filtered = containers.filter(c => c.model === mName);
                 if (filtered.length > 0) {
-                    const modelData = filtered.map(c => {
-                        let rowObj = {
-                            "Date": c.date,
-                            "Heure": c.time,
-                            "N° Conteneur": c.id,
-                            "Type & Taille": c.type,
-                            "Emplacement": c.loc,
-                            "État": c.status,
-                            "N° Plomb": c.seal
-                        };
+                    
+                    // If Company Excel Template exists for this model
+                    if (modelTemplates[mName]) {
+                        const base64 = modelTemplates[mName];
+                        const tWorkbook = XLSX.read(base64, { type: 'base64' });
+                        const firstSheetName = tWorkbook.SheetNames[0];
+                        const worksheet = tWorkbook.Sheets[firstSheetName];
 
-                        if (c.customData) {
-                            for (const [k, v] of Object.entries(c.customData)) {
-                                rowObj[k] = v;
+                        const rowsToAppend = filtered.map(c => {
+                            let rowObj = {
+                                "Date": c.date,
+                                "Heure": c.time,
+                                "N° Conteneur": c.id,
+                                "Type & Taille": c.type,
+                                "Emplacement": c.loc,
+                                "État": c.status,
+                                "N° Plomb": c.seal
+                            };
+                            if (c.customData) {
+                                for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
                             }
-                        }
+                            rowObj["Remarques"] = c.notes;
+                            return rowObj;
+                        });
 
-                        rowObj["Remarques"] = c.notes;
-                        return rowObj;
-                    });
-
-                    const wsModel = XLSX.utils.json_to_sheet(modelData);
-                    XLSX.utils.book_append_sheet(workbook, wsModel, mName.substring(0, 30));
+                        XLSX.utils.sheet_add_json(worksheet, rowsToAppend, { skipHeader: true, origin: -1 });
+                        XLSX.utils.book_append_sheet(workbook, worksheet, mName.substring(0, 30));
+                    } else {
+                        // Standard export
+                        const modelData = filtered.map(c => {
+                            let rowObj = {
+                                "Date": c.date,
+                                "Heure": c.time,
+                                "N° Conteneur": c.id,
+                                "Type & Taille": c.type,
+                                "Emplacement": c.loc,
+                                "État": c.status,
+                                "N° Plomb": c.seal
+                            };
+                            if (c.customData) {
+                                for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
+                            }
+                            rowObj["Remarques"] = c.notes;
+                            return rowObj;
+                        });
+                        const wsModel = XLSX.utils.json_to_sheet(modelData);
+                        XLSX.utils.book_append_sheet(workbook, wsModel, mName.substring(0, 30));
+                    }
                 }
             });
 
