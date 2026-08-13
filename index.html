@@ -42,18 +42,33 @@
         .nav-item-active { color: #00ffaa; }
         .nav-item-inactive { color: #64748b; }
 
-        /* SINGLE ACTIVE NODE GLOWING STYLES */
-        .glow-single-node {
+        /* GLOWING PIPELINE TIMELINE STYLES */
+        /* Active Glowing Node for Current Stage */
+        .glow-node-current {
             background-color: #00ffaa !important;
             color: #0d1033 !important;
             box-shadow: 0 0 15px #00ffaa, 0 0 25px rgba(0,255,170,0.6);
             border: 2px solid #ffffff !important;
             transform: scale(1.15);
         }
-        .glow-node-disabled {
+        /* Visible Illuminated Nodes for Other Steps */
+        .glow-node-passed {
             background-color: #1d2263;
+            color: #00ffaa;
+            border: 2px solid #00ffaa;
+        }
+        .glow-node-future {
+            background-color: #141747;
             color: #64748b;
             border: 2px solid #303796;
+        }
+        
+        .glow-line-active {
+            background: linear-gradient(90deg, #00ffaa, #ff2a6d);
+            box-shadow: 0 0 6px #00ffaa;
+        }
+        .glow-line-inactive {
+            background-color: #252b75;
         }
     </style>
 </head>
@@ -85,9 +100,10 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <button onclick="exportToExcel()" class="btn-dpw-green px-3 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Exporter Stock Excel">
+                <!-- EXCEL BUTTON (CLEAN NAME - THEORY LOGIC ONLY) -->
+                <button onclick="exportToExcel()" class="btn-dpw-green px-3 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Exporter Excel">
                     <i class="fa-solid fa-file-excel text-sm"></i>
-                    <span>Excel Stock</span>
+                    <span>Excel</span>
                 </button>
                 <button onclick="openModal()" class="btn-dpw-gradient px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md active:scale-95 transition">
                     <i class="fa-solid fa-plus text-xs"></i>
@@ -481,7 +497,7 @@
             }
         }
 
-        // SINGLE ACTIVE NODE GLOWING PIPELINE TIMELINE
+        // VISIBLE PATH NODES WITH GLOW ONLY ON CURRENT ACTIVE NODE
         function renderTrackingList() {
             const listEl = document.getElementById('trackingList');
             listEl.innerHTML = '';
@@ -491,11 +507,21 @@
                 return;
             }
 
+            const stagesOrder = ['Navire', 'Stock', 'Douane', 'Embarqué'];
+
             containers.forEach((item, index) => {
                 const currentStage = item.stage || 'Navire';
-                
+                const stageIndex = stagesOrder.indexOf(currentStage);
+
                 const card = document.createElement('div');
                 card.className = "dpw-card p-4 rounded-2xl space-y-3.5 text-xs border border-[#252b75]";
+
+                // Function to get CSS class per node
+                const getNodeClass = (nodeStage, nodeIdx) => {
+                    if (nodeStage === currentStage) return 'glow-node-current animate-pulse';
+                    if (nodeIdx < stageIndex) return 'glow-node-passed';
+                    return 'glow-node-future';
+                };
 
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
@@ -508,40 +534,40 @@
                         </span>
                     </div>
 
-                    <!-- TIMELINE BAR WITH ONLY CURRENT NODE GLOWING -->
+                    <!-- TIMELINE PATH -->
                     <div class="relative flex items-center justify-between pt-2 px-1">
-                        <div class="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-1 bg-[#252b75] z-0"></div>
+                        <div class="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-1 glow-line-active z-0"></div>
 
                         <!-- Step 1: Navire -->
                         <button onclick="updateContainerStage(${index}, 'Navire')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${currentStage === 'Navire' ? 'glow-single-node animate-pulse' : 'glow-node-disabled'}">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Navire', 0)}">
                                 <i class="fa-solid fa-ship"></i>
                             </div>
-                            <span class="text-[9px] font-bold ${currentStage === 'Navire' ? 'text-[#00ffaa]' : 'text-gray-400'}">Navire</span>
+                            <span class="text-[9px] font-bold ${currentStage === 'Navire' ? 'text-[#00ffaa]' : 'text-gray-300'}">Navire</span>
                         </button>
 
                         <!-- Step 2: Stock -->
                         <button onclick="updateContainerStage(${index}, 'Stock')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${currentStage === 'Stock' ? 'glow-single-node animate-pulse' : 'glow-node-disabled'}">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Stock', 1)}">
                                 <i class="fa-solid fa-boxes-stacked"></i>
                             </div>
-                            <span class="text-[9px] font-bold ${currentStage === 'Stock' ? 'text-[#00ffaa]' : 'text-gray-400'}">Stock</span>
+                            <span class="text-[9px] font-bold ${currentStage === 'Stock' ? 'text-[#00ffaa]' : 'text-gray-300'}">Stock</span>
                         </button>
 
                         <!-- Step 3: Douane -->
                         <button onclick="updateContainerStage(${index}, 'Douane')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${currentStage === 'Douane' ? 'glow-single-node animate-pulse' : 'glow-node-disabled'}">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Douane', 2)}">
                                 <i class="fa-solid fa-building-columns"></i>
                             </div>
-                            <span class="text-[9px] font-bold ${currentStage === 'Douane' ? 'text-[#00ffaa]' : 'text-gray-400'}">Douane</span>
+                            <span class="text-[9px] font-bold ${currentStage === 'Douane' ? 'text-[#00ffaa]' : 'text-gray-300'}">Douane</span>
                         </button>
 
                         <!-- Step 4: Embarqué -->
                         <button onclick="updateContainerStage(${index}, 'Embarqué')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${currentStage === 'Embarqué' ? 'glow-single-node animate-pulse' : 'glow-node-disabled'}">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Embarqué', 3)}">
                                 <i class="fa-solid fa-circle-check"></i>
                             </div>
-                            <span class="text-[9px] font-bold ${currentStage === 'Embarqué' ? 'text-[#00ffaa]' : 'text-gray-400'}">Sortie</span>
+                            <span class="text-[9px] font-bold ${currentStage === 'Embarqué' ? 'text-[#00ffaa]' : 'text-gray-300'}">Sortie</span>
                         </button>
                     </div>
                 `;
@@ -681,10 +707,10 @@
             data.forEach((item, index) => {
                 const isGood = item.status === 'Bon état';
                 const badgeClass = isGood ? 'badge-green' : 'badge-red';
-                const currentStage = item.stage || 'Navire';
+                const currentStage = item.stage || 'Stock';
                 
-                let stageBadgeClass = 'stage-navire';
-                if (currentStage === 'Stock') stageBadgeClass = 'stage-stock';
+                let stageBadgeClass = 'stage-stock';
+                if (currentStage === 'Navire') stageBadgeClass = 'stage-navire';
                 if (currentStage === 'Douane') stageBadgeClass = 'stage-douane';
                 if (currentStage === 'Embarqué') stageBadgeClass = 'stage-embarque';
 
@@ -728,7 +754,7 @@
 
             let filtered = containers;
             if (statusVal !== 'All') filtered = filtered.filter(c => c.status === statusVal);
-            if (stageVal !== 'All') filtered = filtered.filter(c => (c.stage || 'Navire') === stageVal);
+            if (stageVal !== 'All') filtered = filtered.filter(c => (c.stage || 'Stock') === stageVal);
 
             renderList(filtered);
         }
@@ -764,7 +790,7 @@
             const newItem = {
                 id: inputIdVal,
                 model: selectedModel,
-                stage: 'Stock', // Default to Stock stage
+                stage: 'Stock', // Default position: Stock
                 type: document.getElementById('inpType').value,
                 loc: document.getElementById('inpLoc').value.toUpperCase(),
                 status: document.getElementById('inpStatus').value,
@@ -787,9 +813,8 @@
             document.getElementById('ocrStatus').classList.add('hidden');
         }
 
-        // EXPORT ONLY CONTAINERS CURRENTLY IN 'STOCK' (المخزون فقط)
+        // EXPORT THEORETICALLY STOCK-ONLY CONTAINERS WITH CLEAN EXCEL BUTTON
         function exportToExcel() {
-            // Filter containers in Stock
             const stockContainers = containers.filter(c => (c.stage || 'Stock') === 'Stock');
 
             if (stockContainers.length === 0) {
@@ -824,7 +849,7 @@
                 }
             });
 
-            const fileName = `Stock_DPW_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            const fileName = `Pointeur_DPW_${new Date().toISOString().slice(0, 10)}.xlsx`;
             XLSX.writeFile(workbook, fileName);
         }
 
