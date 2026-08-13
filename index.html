@@ -32,13 +32,34 @@
         .btn-dpw-blue { background-color: #3b82f6; color: white; }
         .badge-green { background-color: #064e3b; color: #34d399; border: 1px solid #047857; }
         .badge-red { background-color: #4c0519; color: #fb7185; border: 1px solid #9f1239; }
-        .badge-dpw { background-color: #252b75; color: #93c5fd; border: 1px solid #3b82f6; }
+        
+        /* Stage Badges */
+        .stage-navire { background-color: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
+        .stage-stock { background-color: #36200d; color: #f97316; border: 1px solid #ea580c; }
+        .stage-douane { background-color: #2e1065; color: #c084fc; border: 1px solid #9333ea; }
+
         .nav-item-active { color: #00ffaa; }
         .nav-item-inactive { color: #64748b; }
-        
-        /* Pipeline Status Badges */
-        .step-active { background-color: #00ffaa; color: #0d1033; font-weight: 800; }
-        .step-inactive { background-color: #1c205e; color: #94a3b8; border: 1px solid #303796; }
+
+        /* GLOWING PIPELINE TIMELINE STYLES */
+        .glow-node-active {
+            background-color: #00ffaa;
+            color: #0d1033;
+            box-shadow: 0 0 15px #00ffaa, 0 0 25px rgba(0,255,170,0.5);
+            border: 2px solid #ffffff;
+        }
+        .glow-node-inactive {
+            background-color: #1d2263;
+            color: #64748b;
+            border: 2px solid #303796;
+        }
+        .glow-line-active {
+            background: linear-gradient(90deg, #00ffaa, #ff2a6d);
+            box-shadow: 0 0 8px #00ffaa;
+        }
+        .glow-line-inactive {
+            background-color: #252b75;
+        }
     </style>
 </head>
 <body class="bg-[#0d1033] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500 pb-20">
@@ -80,33 +101,42 @@
             </div>
         </div>
 
-        <!-- TAB 1: ACCUEIL (التأشير العادي) -->
+        <!-- TAB 1: ACCUEIL (الواجهة الرئيسية بالتصنيف المباشر) -->
         <div id="tabAccueil" class="space-y-4">
             <div class="flex items-center justify-between my-2 text-xs gap-2">
+                <!-- Filter by Stage Workflow -->
+                <select id="filterStage" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
+                    <option value="All">Tous les emplacements</option>
+                    <option value="Navire">🚢 En Navire</option>
+                    <option value="Stock">📦 En Stockage</option>
+                    <option value="Douane">🏛️ En Douane</option>
+                </select>
                 <select id="filterStatus" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All">Tous les états</option>
                     <option value="Bon état">Bon état</option>
                     <option value="Endommagé">Endommagé</option>
                 </select>
-                <span id="containerCount" class="text-gray-400 font-semibold text-right w-1/2">0 conteneur</span>
+            </div>
+            <div class="flex items-center justify-between px-1">
+                <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
             </div>
 
             <!-- Containers Dynamic List -->
             <div id="containersList" class="space-y-3"></div>
         </div>
 
-        <!-- TAB 2: SUIVI & WORKFLOW (نافذة تتبع مسار الحاوية المنعزلة) -->
+        <!-- TAB 2: SUIVI FLUX (شريط زمني متوهج وتفاعلي) -->
         <div id="tabSuivi" class="hidden space-y-4">
             <div class="dpw-card p-4 rounded-2xl space-y-2">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i class="fa-solid fa-[#00ffaa] fa-route text-[#00ffaa]"></i>
-                    <span>Suivi du Flux (Navire ➔ Stock ➔ Douane)</span>
+                    <i class="fa-solid fa-route text-[#00ffaa]"></i>
+                    <span>Suivi Chronologique du Flux</span>
                 </h3>
-                <p class="text-xs text-gray-400">Changez l'étape de la conteneur en un seul clic pour suivre son parcours dans le terminal.</p>
+                <p class="text-xs text-gray-400">Suivez et modifiez la position exacte de chaque conteneur en temps réel sur la ligne de temps.</p>
             </div>
 
-            <!-- Tracking List -->
-            <div id="trackingList" class="space-y-3"></div>
+            <!-- Glowing Interactive Pipeline List -->
+            <div id="trackingList" class="space-y-4"></div>
         </div>
 
         <!-- TAB 3: CONFIGURATION DES MODÈLES & TEMPLATES EXCEL -->
@@ -279,7 +309,7 @@
                 })
                 .catch(err => {
                     statusEl.className = "text-[10px] text-red-400 mt-1 font-bold";
-                    statusEl.innerText = "Erreur lors de la الكاميرا.";
+                    statusEl.innerText = "Erreur الكاميرا.";
                 });
         }
 
@@ -303,6 +333,7 @@
             if (tabName === 'accueil') {
                 accueilTab.classList.remove('hidden');
                 btnAccueil.className = "flex flex-col items-center gap-1 nav-item-active transition";
+                renderList();
             } else if (tabName === 'suivi') {
                 suiviTab.classList.remove('hidden');
                 btnSuivi.className = "flex flex-col items-center gap-1 nav-item-active transition";
@@ -314,7 +345,7 @@
             }
         }
 
-        // Render Tracking / Suivi Pipeline Area
+        // Render GLOWING TIMELINE PIPELINE for Tracking
         function renderTrackingList() {
             const listEl = document.getElementById('trackingList');
             listEl.innerHTML = '';
@@ -325,26 +356,53 @@
             }
 
             containers.forEach((item, index) => {
-                const currentStep = item.stage || 'Navire';
+                const currentStage = item.stage || 'Navire';
                 
                 const card = document.createElement('div');
-                card.className = "dpw-card p-4 rounded-2xl space-y-3 text-xs";
+                card.className = "dpw-card p-4 rounded-2xl space-y-3.5 text-xs border border-[#252b75]";
+                
+                // Stages mapping: 0=Navire, 1=Stock, 2=Douane
+                const stages = ['Navire', 'Stock', 'Douane'];
+                const stageIndex = stages.indexOf(currentStage);
+
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
-                        <span class="font-extrabold text-base text-white tracking-wider">${item.id}</span>
-                        <span class="text-[10px] text-gray-400 font-medium">${item.loc}</span>
+                        <div>
+                            <span class="font-extrabold text-base text-white tracking-wider">${item.id}</span>
+                            <p class="text-[10px] text-gray-400">${item.type} • Emplacement: <b class="text-white">${item.loc}</b></p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${currentStage === 'Navire' ? 'stage-navire' : currentStage === 'Stock' ? 'stage-stock' : 'stage-douane'}">
+                            En ${currentStage}
+                        </span>
                     </div>
 
-                    <!-- STEPPER PIPELINE BUTTONS -->
-                    <div class="grid grid-cols-3 gap-1.5 pt-1">
-                        <button onclick="updateContainerStage(${index}, 'Navire')" class="py-2 rounded-xl text-[11px] font-bold transition ${currentStep === 'Navire' ? 'step-active shadow' : 'step-inactive'}">
-                            <i class="fa-solid fa-ship text-[10px] block mb-0.5"></i> Navire
+                    <!-- GLOWING TIMELINE BAR WITH CIRCLES -->
+                    <div class="relative flex items-center justify-between pt-2 px-2">
+                        <!-- Line Background -->
+                        <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 ${stageIndex > 0 ? 'glow-line-active' : 'glow-line-inactive'} z-0"></div>
+
+                        <!-- Step 1: Navire -->
+                        <button onclick="updateContainerStage(${index}, 'Navire')" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${stageIndex >= 0 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
+                                <i class="fa-solid fa-ship"></i>
+                            </div>
+                            <span class="text-[10px] font-bold ${stageIndex === 0 ? 'text-[#00ffaa]' : 'text-gray-400'}">Navire</span>
                         </button>
-                        <button onclick="updateContainerStage(${index}, 'Stock')" class="py-2 rounded-xl text-[11px] font-bold transition ${currentStep === 'Stock' ? 'step-active shadow' : 'step-inactive'}">
-                            <i class="fa-solid fa-boxes-stacked text-[10px] block mb-0.5"></i> Stock
+
+                        <!-- Step 2: Stock -->
+                        <button onclick="updateContainerStage(${index}, 'Stock')" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${stageIndex >= 1 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                            </div>
+                            <span class="text-[10px] font-bold ${stageIndex === 1 ? 'text-[#00ffaa]' : 'text-gray-400'}">Stockage</span>
                         </button>
-                        <button onclick="updateContainerStage(${index}, 'Douane')" class="py-2 rounded-xl text-[11px] font-bold transition ${currentStep === 'Douane' ? 'step-active shadow' : 'step-inactive'}">
-                            <i class="fa-solid fa-building-columns text-[10px] block mb-0.5"></i> Douane
+
+                        <!-- Step 3: Douane -->
+                        <button onclick="updateContainerStage(${index}, 'Douane')" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${stageIndex >= 2 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
+                                <i class="fa-solid fa-building-columns"></i>
+                            </div>
+                            <span class="text-[10px] font-bold ${stageIndex === 2 ? 'text-[#00ffaa]' : 'text-gray-400'}">Douane</span>
                         </button>
                     </div>
                 `;
@@ -466,6 +524,7 @@
             }
         }
 
+        // Render Accueil List with Stage Badges
         function renderList(data = containers) {
             const listEl = document.getElementById('containersList');
             document.getElementById('containerCount').innerText = `${data.length} conteneur${data.length > 1 ? 's' : ''}`;
@@ -484,6 +543,11 @@
             data.forEach((item, index) => {
                 const isGood = item.status === 'Bon état';
                 const badgeClass = isGood ? 'badge-green' : 'badge-red';
+                const currentStage = item.stage || 'Navire';
+                
+                let stageBadgeClass = 'stage-navire';
+                if (currentStage === 'Stock') stageBadgeClass = 'stage-stock';
+                if (currentStage === 'Douane') stageBadgeClass = 'stage-douane';
 
                 let customFieldsHTML = '';
                 if (item.customData && Object.keys(item.customData).length > 0) {
@@ -500,7 +564,7 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
-                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] badge-dpw">${item.stage || 'Navire'}</span>
+                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] ${stageBadgeClass}">En ${currentStage}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
@@ -520,9 +584,14 @@
         }
 
         function filterContainers() {
-            const val = document.getElementById('filterStatus').value;
-            if (val === 'All') renderList(containers);
-            else renderList(containers.filter(c => c.status === val));
+            const statusVal = document.getElementById('filterStatus').value;
+            const stageVal = document.getElementById('filterStage').value;
+
+            let filtered = containers;
+            if (statusVal !== 'All') filtered = filtered.filter(c => c.status === statusVal);
+            if (stageVal !== 'All') filtered = filtered.filter(c => (c.stage || 'Navire') === stageVal);
+
+            renderList(filtered);
         }
 
         function openModal() { 
@@ -556,7 +625,7 @@
             const newItem = {
                 id: inputIdVal,
                 model: selectedModel,
-                stage: 'Navire', // Default Initial Step
+                stage: 'Navire', // Starts at Navire
                 type: document.getElementById('inpType').value,
                 loc: document.getElementById('inpLoc').value.toUpperCase(),
                 status: document.getElementById('inpStatus').value,
