@@ -6,6 +6,7 @@
     <title>Pointeur conteneurs - DP World</title>
     <!-- Tailwind CSS & Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
@@ -27,6 +28,7 @@
         .btn-green:hover { background-color: #2fb04f; }
         .badge-green { background-color: #1a382b; color: #34c759; border: 1px solid #24523b; }
         .badge-red { background-color: #381a1a; color: #ff453a; border: 1px solid #522424; }
+        .badge-blue { background-color: #1a2b38; color: #3897ff; border: 1px solid #243e52; }
     </style>
 </head>
 <body class="bg-[#121212] min-h-screen flex flex-col justify-between antialiased selection:bg-red-500">
@@ -60,13 +62,13 @@
             </div>
 
             <!-- Filter Controls -->
-            <div class="flex items-center justify-between my-4 text-xs">
-                <select id="filterStatus" onchange="filterContainers()" class="input-dark px-3.5 py-2.5 rounded-xl font-medium outline-none">
+            <div class="flex items-center justify-between my-4 text-xs gap-2">
+                <select id="filterStatus" onchange="filterContainers()" class="input-dark px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All">Tous les états</option>
                     <option value="Bon état">Bon état</option>
                     <option value="Endommagé">Endommagé</option>
                 </select>
-                <span id="containerCount" class="text-gray-400 font-semibold">0 conteneur</span>
+                <span id="containerCount" class="text-gray-400 font-semibold text-right w-1/2">0 conteneur</span>
             </div>
 
             <!-- Containers Dynamic List -->
@@ -89,6 +91,17 @@
                     <div>
                         <label class="block text-gray-300 font-medium mb-1">N° conteneur</label>
                         <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dark p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1">Modèle / Opération</label>
+                        <select id="inpModel" required class="w-full input-dark p-3 rounded-xl">
+                            <option value="Débarquement">Débarquement (Import)</option>
+                            <option value="Embarquement">Embarquement (Export)</option>
+                            <option value="Transfert Yard">Transfert Yard</option>
+                            <option value="Visite Douane">Visite Douane</option>
+                            <option value="Livraison Client">Livraison Client</option>
+                        </select>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -177,9 +190,12 @@
                 card.className = "card-dark p-4 rounded-2xl space-y-2 text-xs mb-3 shadow-sm relative";
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
-                        <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
                         <div class="flex items-center gap-2">
-                            <span class="px-3 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
+                            <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
+                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] badge-blue">${item.model || 'Débarquement'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
                             <button onclick="deleteContainer(${index})" class="text-gray-500 hover:text-red-500 p-1.5 transition" title="Supprimer">
                                 <i class="fa-solid fa-trash-can text-sm"></i>
                             </button>
@@ -223,6 +239,7 @@
 
             const newItem = {
                 id: document.getElementById('inpId').value.toUpperCase(),
+                model: document.getElementById('inpModel').value,
                 type: document.getElementById('inpType').value,
                 loc: document.getElementById('inpLoc').value.toUpperCase(),
                 status: document.getElementById('inpStatus').value,
@@ -244,39 +261,31 @@
             document.getElementById('inpNotes').value = '';
         }
 
-        // Export Function to CSV (Excel Compatible)
         function exportToExcel() {
             if (containers.length === 0) {
                 alert("Aucun conteneur à exporter.");
                 return;
             }
 
-            let csvContent = "\uFEFF"; // BOM for Excel UTF-8 UTF
-            csvContent += "Date;Heure;N° Conteneur;Type & Taille;Emplacement;Etat;N° Plomb;Vacation;Remarques\n";
+            const dataToExport = containers.map(c => ({
+                "Date": c.date || new Date().toLocaleDateString('fr-FR'),
+                "Heure": c.time,
+                "N° Conteneur": c.id,
+                "Modèle / Opération": c.model || 'Débarquement',
+                "Type & Taille": c.type,
+                "Emplacement": c.loc,
+                "État": c.status,
+                "N° Plomb": c.seal,
+                "Vacation": c.shift,
+                "Remarques": c.notes || ''
+            }));
 
-            containers.forEach(c => {
-                let row = [
-                    c.date || new Date().toLocaleDateString('fr-FR'),
-                    c.time,
-                    c.id,
-                    c.type,
-                    c.loc,
-                    c.status,
-                    c.seal,
-                    c.shift,
-                    `"${(c.notes || '').replace(/"/g, '""')}"`
-                ].join(";");
-                csvContent += row + "\n";
-            });
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Conteneurs");
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Pointeur_DPW_${new Date().toISOString().slice(0,10)}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            const fileName = `Pointeur_DPW_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
         }
 
         renderList();
