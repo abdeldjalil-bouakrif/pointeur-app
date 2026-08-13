@@ -23,7 +23,7 @@
         .input-dpw { background-color: #1d2263; border: 1px solid #303796; color: #ffffff; }
         .input-dpw:focus { border-color: #00e699; outline: none; }
         .btn-dpw-gradient { background: linear-gradient(135deg, #ff2a6d 0%, #ff5e1e 100%); color: white; }
-        .btn-dpw-gradient:hover { opacity: 0.9; }
+        .btn-dpw-gradient:hover { opacity: 0.95; }
         .btn-dpw-green { background-color: #00e699; color: #0d1033; }
         .btn-dpw-green:hover { background-color: #00c784; }
         .btn-dpw-blue { background-color: #3b82f6; color: white; }
@@ -42,14 +42,11 @@
         <!-- BRAND HEADER SECTION WITH TRANSPARENT LOGO -->
         <div class="flex items-center justify-between mt-2 mb-5 pb-3 border-b border-[#252b75]">
             <div class="flex items-center gap-3">
-                <!-- DP World Emblem Logo without borders -->
+                <!-- DP World Emblem Logo -->
                 <div class="w-11 h-11 flex items-center justify-center">
                     <svg class="w-full h-full drop-shadow-md" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Pink/Red Upper Arc -->
                         <path d="M22 52C22 30 42 26 62 27C45 30 34 38 32 52C31 65 22 52 22 52Z" fill="url(#paint0_linear)"/>
-                        <!-- Green Flow Ribbon -->
                         <path d="M2 62C22 43 49 57 72 38C72 38 70 51 51 58C32 65 15 53 2 62Z" fill="#00E699"/>
-                        <!-- White Bottom Crescent -->
                         <path d="M28 63C38 76 60 77 74 50C71 70 49 79 28 63Z" fill="#E2E8F0"/>
                         <defs>
                             <linearGradient id="paint0_linear" x1="22" y1="26" x2="62" y2="52" gradientUnits="userSpaceOnUse">
@@ -70,9 +67,10 @@
                     <i class="fa-solid fa-file-excel text-sm"></i>
                     <span>Excel</span>
                 </button>
-                <button onclick="openModal()" class="btn-dpw-gradient px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>+ Pointer</span>
+                <!-- FIXED CLEAN BUTTON -->
+                <button onclick="openModal()" class="btn-dpw-gradient px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md active:scale-95 transition">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Pointer</span>
                 </button>
             </div>
         </div>
