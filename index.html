@@ -35,6 +35,10 @@
         .badge-dpw { background-color: #252b75; color: #93c5fd; border: 1px solid #3b82f6; }
         .nav-item-active { color: #00ffaa; }
         .nav-item-inactive { color: #64748b; }
+        
+        /* Pipeline Status Badges */
+        .step-active { background-color: #00ffaa; color: #0d1033; font-weight: 800; }
+        .step-inactive { background-color: #1c205e; color: #94a3b8; border: 1px solid #303796; }
     </style>
 </head>
 <body class="bg-[#0d1033] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500 pb-20">
@@ -76,7 +80,7 @@
             </div>
         </div>
 
-        <!-- TAB 1: ACCUEIL -->
+        <!-- TAB 1: ACCUEIL (التأشير العادي) -->
         <div id="tabAccueil" class="space-y-4">
             <div class="flex items-center justify-between my-2 text-xs gap-2">
                 <select id="filterStatus" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
@@ -91,12 +95,26 @@
             <div id="containersList" class="space-y-3"></div>
         </div>
 
-        <!-- TAB 2: CONFIGURATION DES MODÈLES & TEMPLATES EXCEL DE L'ENTREPRISE -->
+        <!-- TAB 2: SUIVI & WORKFLOW (نافذة تتبع مسار الحاوية المنعزلة) -->
+        <div id="tabSuivi" class="hidden space-y-4">
+            <div class="dpw-card p-4 rounded-2xl space-y-2">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-[#00ffaa] fa-route text-[#00ffaa]"></i>
+                    <span>Suivi du Flux (Navire ➔ Stock ➔ Douane)</span>
+                </h3>
+                <p class="text-xs text-gray-400">Changez l'étape de la conteneur en un seul clic pour suivre son parcours dans le terminal.</p>
+            </div>
+
+            <!-- Tracking List -->
+            <div id="trackingList" class="space-y-3"></div>
+        </div>
+
+        <!-- TAB 3: CONFIGURATION DES MODÈLES & TEMPLATES EXCEL -->
         <div id="tabSettings" class="hidden space-y-4">
             <div class="dpw-card p-4 rounded-2xl space-y-3">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
                     <i class="fa-solid fa-file-invoice text-[#00ffaa]"></i>
-                    <span>Modèles & القوالب الرسمية للشركة</span>
+                    <span>Modèles & Templates Excel</span>
                 </h3>
                 <p class="text-xs text-gray-400">Ajoutez des modèles et chargez le fichier Excel officiel de l'entreprise pour chaque modèle.</p>
                 
@@ -109,22 +127,26 @@
             </div>
 
             <div class="dpw-card p-4 rounded-2xl space-y-4">
-                <h4 class="font-semibold text-xs text-gray-300">Modèles & Qabalib Excel Officiels</h4>
+                <h4 class="font-semibold text-xs text-gray-300">Modèles configurés & Templates</h4>
                 <div id="modelsList" class="space-y-3"></div>
             </div>
         </div>
 
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR WITH CUSTOM FOOTER WATERMARK -->
+    <!-- BOTTOM NAVIGATION BAR -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-lg mx-auto">
-        <div class="flex items-center justify-around py-2 px-4 text-center">
+        <div class="flex items-center justify-around py-2 px-3 text-center">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
-                <i class="fa-solid fa-house text-lg"></i>
+                <i class="fa-solid fa-house text-base"></i>
                 <span class="text-[10px] font-semibold">Accueil</span>
             </button>
+            <button id="navBtnSuivi" onclick="switchTab('suivi')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
+                <i class="fa-solid fa-route text-base"></i>
+                <span class="text-[10px] font-semibold">Suivi Flux</span>
+            </button>
             <button id="navBtnSettings" onclick="switchTab('settings')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
-                <i class="fa-solid fa-sliders text-lg"></i>
+                <i class="fa-solid fa-sliders text-base"></i>
                 <span class="text-[10px] font-semibold">Modèles</span>
             </button>
         </div>
@@ -219,7 +241,6 @@
             'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
             'Embarquement': ['Destination', 'Poids (Tonnes)']
         };
-        // Stores uploaded binary templates per model
         let modelTemplates = JSON.parse(localStorage.getItem('dpw_model_templates')) || {};
         let currentUploadTemplateTarget = '';
 
@@ -227,7 +248,6 @@
         function saveModelConfigs() { localStorage.setItem('dpw_model_configs', JSON.stringify(modelConfigs)); }
         function saveModelTemplates() { localStorage.setItem('dpw_model_templates', JSON.stringify(modelTemplates)); }
 
-        // Camera OCR Scanner Logic
         function triggerCameraOCR() { document.getElementById('ocrCameraInput').click(); }
 
         function processOCRImage(event) {
@@ -254,33 +274,88 @@
                         statusEl.innerText = "✓ Texte extrait. Vérifiez le numéro.";
                     } else {
                         statusEl.className = "text-[10px] text-red-400 mt-1 font-bold";
-                        statusEl.innerText = "⚠ Impossible de lire le numéro. Réessayez avec une photo plus nette.";
+                        statusEl.innerText = "⚠ Impossible de lire le numéro.";
                     }
                 })
                 .catch(err => {
                     statusEl.className = "text-[10px] text-red-400 mt-1 font-bold";
-                    statusEl.innerText = "Erreur lors de la lecture الكاميرا.";
+                    statusEl.innerText = "Erreur lors de la الكاميرا.";
                 });
         }
 
         function switchTab(tabName) {
             const accueilTab = document.getElementById('tabAccueil');
+            const suiviTab = document.getElementById('tabSuivi');
             const settingsTab = document.getElementById('tabSettings');
+            
             const btnAccueil = document.getElementById('navBtnAccueil');
+            const btnSuivi = document.getElementById('navBtnSuivi');
             const btnSettings = document.getElementById('navBtnSettings');
+
+            accueilTab.classList.add('hidden');
+            suiviTab.classList.add('hidden');
+            settingsTab.classList.add('hidden');
+
+            btnAccueil.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
+            btnSuivi.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
+            btnSettings.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
 
             if (tabName === 'accueil') {
                 accueilTab.classList.remove('hidden');
-                settingsTab.classList.add('hidden');
                 btnAccueil.className = "flex flex-col items-center gap-1 nav-item-active transition";
-                btnSettings.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
+            } else if (tabName === 'suivi') {
+                suiviTab.classList.remove('hidden');
+                btnSuivi.className = "flex flex-col items-center gap-1 nav-item-active transition";
+                renderTrackingList();
             } else {
-                accueilTab.classList.add('hidden');
                 settingsTab.classList.remove('hidden');
-                btnAccueil.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
                 btnSettings.className = "flex flex-col items-center gap-1 nav-item-active transition";
                 renderModelsList();
             }
+        }
+
+        // Render Tracking / Suivi Pipeline Area
+        function renderTrackingList() {
+            const listEl = document.getElementById('trackingList');
+            listEl.innerHTML = '';
+
+            if (containers.length === 0) {
+                listEl.innerHTML = `<div class="text-center py-12 text-gray-500 font-medium text-xs">Aucun conteneur à suivre.</div>`;
+                return;
+            }
+
+            containers.forEach((item, index) => {
+                const currentStep = item.stage || 'Navire';
+                
+                const card = document.createElement('div');
+                card.className = "dpw-card p-4 rounded-2xl space-y-3 text-xs";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-base text-white tracking-wider">${item.id}</span>
+                        <span class="text-[10px] text-gray-400 font-medium">${item.loc}</span>
+                    </div>
+
+                    <!-- STEPPER PIPELINE BUTTONS -->
+                    <div class="grid grid-cols-3 gap-1.5 pt-1">
+                        <button onclick="updateContainerStage(${index}, 'Navire')" class="py-2 rounded-xl text-[11px] font-bold transition ${currentStep === 'Navire' ? 'step-active shadow' : 'step-inactive'}">
+                            <i class="fa-solid fa-ship text-[10px] block mb-0.5"></i> Navire
+                        </button>
+                        <button onclick="updateContainerStage(${index}, 'Stock')" class="py-2 rounded-xl text-[11px] font-bold transition ${currentStep === 'Stock' ? 'step-active shadow' : 'step-inactive'}">
+                            <i class="fa-solid fa-boxes-stacked text-[10px] block mb-0.5"></i> Stock
+                        </button>
+                        <button onclick="updateContainerStage(${index}, 'Douane')" class="py-2 rounded-xl text-[11px] font-bold transition ${currentStep === 'Douane' ? 'step-active shadow' : 'step-inactive'}">
+                            <i class="fa-solid fa-building-columns text-[10px] block mb-0.5"></i> Douane
+                        </button>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        function updateContainerStage(index, newStage) {
+            containers[index].stage = newStage;
+            saveContainers();
+            renderTrackingList();
         }
 
         function populateModelSelect() {
@@ -336,17 +411,13 @@
                         <div class="flex items-center gap-2">
                             <button onclick="triggerUploadTemplate('${mName}')" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 ${hasTemplate ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}" title="Upload Company Template">
                                 <i class="fa-solid fa-file-excel"></i>
-                                <span>${hasTemplate ? 'Template OK (Changer)' : '+ Template Excel'}</span>
+                                <span>${hasTemplate ? 'Template OK' : '+ Template Excel'}</span>
                             </button>
                             <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-1.5 pt-1">
                         ${fields.map(f => `<span class="bg-[#15194a] text-gray-300 px-2 py-0.5 rounded-md border border-[#252b75] text-[10px]">${f}</span>`).join('')}
-                    </div>
-                    <div class="flex items-center gap-2 pt-1">
-                        <input type="text" id="addField_${mName.replace(/\s+/g, '')}" placeholder="Ajouter une colonne (ex: Navire)" class="input-dpw p-2 rounded-lg text-xs flex-1">
-                        <button onclick="addFieldToModel('${mName}')" class="btn-dpw-blue px-3 py-2 rounded-lg text-xs font-bold">+ Champ</button>
                     </div>
                 `;
                 listEl.appendChild(card);
@@ -381,16 +452,6 @@
                 document.getElementById('inpNewModel').value = '';
                 renderModelsList();
                 populateModelSelect();
-            }
-        }
-
-        function addFieldToModel(modelName) {
-            const inputId = `addField_${modelName.replace(/\s+/g, '')}`;
-            const fieldName = document.getElementById(inputId).value.trim();
-            if (fieldName && !modelConfigs[modelName].includes(fieldName)) {
-                modelConfigs[modelName].push(fieldName);
-                saveModelConfigs();
-                renderModelsList();
             }
         }
 
@@ -439,7 +500,7 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
-                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] badge-dpw">${item.model}</span>
+                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] badge-dpw">${item.stage || 'Navire'}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
@@ -483,15 +544,7 @@
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const selectedModel = document.getElementById('inpModel').value;
-
-            // Anti-duplicate warning
             const inputIdVal = document.getElementById('inpId').value.toUpperCase().trim();
-            const exists = containers.find(c => c.id === inputIdVal);
-            if (exists) {
-                if (!confirm(`⚠ Le conteneur ${inputIdVal} a déjà été pointé aujourd'hui à ${exists.time}. Voulez-vous l'ajouter à nouveau ?`)) {
-                    return;
-                }
-            }
 
             const customData = {};
             const customInputs = document.querySelectorAll('[data-custom-field]');
@@ -503,6 +556,7 @@
             const newItem = {
                 id: inputIdVal,
                 model: selectedModel,
+                stage: 'Navire', // Default Initial Step
                 type: document.getElementById('inpType').value,
                 loc: document.getElementById('inpLoc').value.toUpperCase(),
                 status: document.getElementById('inpStatus').value,
@@ -525,7 +579,6 @@
             document.getElementById('ocrStatus').classList.add('hidden');
         }
 
-        // Export directly into Company Excel Template if available!
         function exportToExcel() {
             if (containers.length === 0) {
                 alert("Aucun conteneur à exporter.");
@@ -537,54 +590,25 @@
             Object.keys(modelConfigs).forEach(mName => {
                 const filtered = containers.filter(c => c.model === mName);
                 if (filtered.length > 0) {
-                    
-                    // If Company Excel Template exists for this model
-                    if (modelTemplates[mName]) {
-                        const base64 = modelTemplates[mName];
-                        const tWorkbook = XLSX.read(base64, { type: 'base64' });
-                        const firstSheetName = tWorkbook.SheetNames[0];
-                        const worksheet = tWorkbook.Sheets[firstSheetName];
-
-                        const rowsToAppend = filtered.map(c => {
-                            let rowObj = {
-                                "Date": c.date,
-                                "Heure": c.time,
-                                "N° Conteneur": c.id,
-                                "Type & Taille": c.type,
-                                "Emplacement": c.loc,
-                                "État": c.status,
-                                "N° Plomb": c.seal
-                            };
-                            if (c.customData) {
-                                for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
-                            }
-                            rowObj["Remarques"] = c.notes;
-                            return rowObj;
-                        });
-
-                        XLSX.utils.sheet_add_json(worksheet, rowsToAppend, { skipHeader: true, origin: -1 });
-                        XLSX.utils.book_append_sheet(workbook, worksheet, mName.substring(0, 30));
-                    } else {
-                        // Standard export
-                        const modelData = filtered.map(c => {
-                            let rowObj = {
-                                "Date": c.date,
-                                "Heure": c.time,
-                                "N° Conteneur": c.id,
-                                "Type & Taille": c.type,
-                                "Emplacement": c.loc,
-                                "État": c.status,
-                                "N° Plomb": c.seal
-                            };
-                            if (c.customData) {
-                                for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
-                            }
-                            rowObj["Remarques"] = c.notes;
-                            return rowObj;
-                        });
-                        const wsModel = XLSX.utils.json_to_sheet(modelData);
-                        XLSX.utils.book_append_sheet(workbook, wsModel, mName.substring(0, 30));
-                    }
+                    const modelData = filtered.map(c => {
+                        let rowObj = {
+                            "Date": c.date,
+                            "Heure": c.time,
+                            "N° Conteneur": c.id,
+                            "Étape Flux": c.stage || 'Navire',
+                            "Type & Taille": c.type,
+                            "Emplacement": c.loc,
+                            "État": c.status,
+                            "N° Plomb": c.seal
+                        };
+                        if (c.customData) {
+                            for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
+                        }
+                        rowObj["Remarques"] = c.notes;
+                        return rowObj;
+                    });
+                    const wsModel = XLSX.utils.json_to_sheet(modelData);
+                    XLSX.utils.book_append_sheet(workbook, wsModel, mName.substring(0, 30));
                 }
             });
 
