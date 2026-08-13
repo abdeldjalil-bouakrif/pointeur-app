@@ -4,69 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pointeur conteneurs - DP World</title>
-    <!-- Tailwind CSS & Icons & SheetJS -->
+    <!-- Tailwind CSS & SheetJS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #121212; 
+            background-color: #070e17; 
             color: #ffffff; 
             margin: 0;
             padding: 0;
             min-height: 100vh;
         }
-        .card-dark { background-color: #1a1a1a; border: 1px solid #2a2a2a; }
-        .input-dark { background-color: #262626; border: 1px solid #333333; color: #ffffff; }
-        .input-dark:focus { border-color: #ff3b30; outline: none; }
-        .btn-orange { background-color: #ff3b30; color: white; }
-        .btn-orange:hover { background-color: #e03228; }
-        .btn-green { background-color: #34c759; color: white; }
-        .btn-green:hover { background-color: #2fb04f; }
-        .btn-blue { background-color: #007aff; color: white; }
-        .badge-green { background-color: #1a382b; color: #34c759; border: 1px solid #24523b; }
-        .badge-red { background-color: #381a1a; color: #ff453a; border: 1px solid #522424; }
-        .badge-blue { background-color: #1a2b38; color: #3897ff; border: 1px solid #243e52; }
-        .nav-item-active { color: #ff3b30; }
-        .nav-item-inactive { color: #8e8e93; }
+        .dpw-card { background-color: #0d1b2a; border: 1px solid #1b2e4b; }
+        .input-dpw { background-color: #132337; border: 1px solid #233a5e; color: #ffffff; }
+        .input-dpw:focus { border-color: #ff5e1e; outline: none; }
+        .btn-dpw-orange { background-color: #ff5e1e; color: white; }
+        .btn-dpw-orange:hover { background-color: #e04e15; }
+        .btn-dpw-blue { background-color: #0066cc; color: white; }
+        .btn-dpw-blue:hover { background-color: #0052a3; }
+        .btn-green { background-color: #10b981; color: white; }
+        .btn-green:hover { background-color: #059669; }
+        .badge-green { background-color: #064e3b; color: #34d399; border: 1px solid #047857; }
+        .badge-red { background-color: #4c0519; color: #fb7185; border: 1px solid #9f1239; }
+        .badge-dpw { background-color: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
+        .nav-item-active { color: #ff5e1e; }
+        .nav-item-inactive { color: #64748b; }
     </style>
 </head>
-<body class="bg-[#121212] min-h-screen flex flex-col justify-between antialiased selection:bg-red-500 pb-20">
+<body class="bg-[#070e17] min-h-screen flex flex-col justify-between antialiased selection:bg-orange-500 pb-20">
 
     <!-- Container Main Area -->
     <div class="w-full p-4 sm:p-6 max-w-lg mx-auto">
 
-        <!-- Header Section -->
-        <div class="flex items-center justify-between mt-2 mb-4">
+        <!-- DP WORLD BRAND HEADER SECTION -->
+        <div class="flex items-center justify-between mt-2 mb-5 pb-3 border-b border-[#1b2e4b]">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 bg-[#ff3b30] rounded-2xl flex items-center justify-center text-white text-xl shadow-lg">
-                    <i class="fa-solid fa-box font-bold"></i>
+                <!-- DP World Official Vector Logo -->
+                <div class="bg-white p-2 rounded-xl shadow-md flex items-center justify-center">
+                    <svg class="h-7 w-auto" viewBox="0 0 200 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.5 10H0V35H12.5C19.4 35 25 29.4 25 22.5C25 15.6 19.4 10 12.5 10ZM12.5 28H7V17H12.5C15.5 17 18 19.5 18 22.5C18 25.5 15.5 28 12.5 28Z" fill="#0D1B2A"/>
+                        <path d="M32 10H27V35H32V26H38C42.4 26 46 22.4 46 18C46 13.6 42.4 10 38 10H32ZM38 19.5H32V16.5H38C38.8 16.5 39.5 17.2 39.5 18C39.5 18.8 38.8 19.5 38 19.5Z" fill="#0D1B2A"/>
+                        <path d="M62 10L56.5 35H62.5L65.5 21L68.5 35H74.5L69 10H62Z" fill="#FF5E1E"/>
+                        <path d="M85 10C78.1 10 72.5 15.6 72.5 22.5C72.5 29.4 78.1 35 85 35C91.9 35 97.5 29.4 97.5 22.5C97.5 15.6 91.9 10 85 10ZM85 28C81.9 28 79.5 25.5 79.5 22.5C79.5 19.5 81.9 17 85 17C88.1 17 90.5 19.5 90.5 22.5C90.5 25.5 88.1 28 85 28Z" fill="#0D1B2A"/>
+                        <path d="M102 10V35H108V10H102Z" fill="#0D1B2A"/>
+                        <path d="M115 10V35H128V28H121V10H115Z" fill="#0D1B2A"/>
+                        <path d="M133 10V35H144C151 35 156.5 29.4 156.5 22.5C156.5 15.6 151 10 144 10H133ZM144 28H139V17H144C147 17 149.5 19.5 149.5 22.5C149.5 25.5 147 28 144 28Z" fill="#0D1B2A"/>
+                    </svg>
                 </div>
                 <div>
-                    <h1 class="font-bold text-xl leading-tight">Pointeur<br>conteneurs</h1>
-                    <p class="text-xs text-gray-400 font-medium">DP World Djendjen</p>
+                    <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white">Pointeur Conteneurs</h1>
+                    <p class="text-[11px] text-gray-400 font-semibold tracking-wider uppercase">Djendjen Port Terminal</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-2">
-                <button onclick="exportToExcel()" class="btn-green px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Télécharger Excel">
+                <button onclick="exportToExcel()" class="btn-green px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Exporter Excel">
                     <i class="fa-solid fa-file-excel text-sm"></i>
                     <span>Excel</span>
                 </button>
-                <button onclick="openModal()" class="btn-orange px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition">
+                <button onclick="openModal()" class="btn-dpw-orange px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition">
                     <i class="fa-solid fa-plus"></i>
                     <span>+ Pointer</span>
                 </button>
             </div>
         </div>
 
-        <!-- TAB 1: SECTION ACCUEIL -->
+        <!-- TAB 1: ACCUEIL -->
         <div id="tabAccueil" class="space-y-4">
             <div class="flex items-center justify-between my-2 text-xs gap-2">
-                <select id="filterStatus" onchange="filterContainers()" class="input-dark px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
+                <select id="filterStatus" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All">Tous les états</option>
                     <option value="Bon état">Bon état</option>
                     <option value="Endommagé">Endommagé</option>
@@ -78,25 +88,25 @@
             <div id="containersList" class="space-y-3"></div>
         </div>
 
-        <!-- TAB 2: SECTION CONFIGURATION DES MODÈLES (إدارة نماذج الجدول) -->
+        <!-- TAB 2: CONFIGURATION DES MODÈLES DE TABLEAU -->
         <div id="tabSettings" class="hidden space-y-4">
-            <div class="card-dark p-4 rounded-2xl space-y-3">
+            <div class="dpw-card p-4 rounded-2xl space-y-3">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i class="fa-solid fa-table-columns text-[#ff3b30]"></i>
+                    <i class="fa-solid fa-table-columns text-[#ff5e1e]"></i>
                     <span>Créer un Modèle de Tableau</span>
                 </h3>
-                <p class="text-xs text-gray-400">Ajoutez un nouveau modèle et définissez les colonnes/champs spécifiques à remplir.</p>
+                <p class="text-xs text-gray-400">Ajoutez un modèle d'opération et définissez les colonnes/champs spécifiques.</p>
                 
                 <div class="flex items-center gap-2 pt-1">
-                    <input type="text" id="inpNewModel" placeholder="Nom du modèle (ex: Visite Douane)" class="input-dark p-2.5 rounded-xl text-xs flex-1">
-                    <button onclick="addNewModel()" class="btn-orange px-4 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition">
+                    <input type="text" id="inpNewModel" placeholder="Nom du modèle (ex: Visite Douane)" class="input-dpw p-2.5 rounded-xl text-xs flex-1">
+                    <button onclick="addNewModel()" class="btn-dpw-orange px-4 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition">
                         Créer
                     </button>
                 </div>
             </div>
 
             <!-- Active Models & Custom Fields -->
-            <div class="card-dark p-4 rounded-2xl space-y-4">
+            <div class="dpw-card p-4 rounded-2xl space-y-4">
                 <h4 class="font-semibold text-xs text-gray-300">Modèles configurés & Colonnes</h4>
                 <div id="modelsList" class="space-y-3"></div>
             </div>
@@ -105,7 +115,7 @@
     </div>
 
     <!-- BOTTOM NAVIGATION BAR -->
-    <div class="fixed bottom-0 left-0 right-0 bg-[#1c1c1e]/95 backdrop-blur-md border-t border-[#2c2c2e] z-40 max-w-lg mx-auto">
+    <div class="fixed bottom-0 left-0 right-0 bg-[#0d1b2a]/95 backdrop-blur-md border-t border-[#1b2e4b] z-40 max-w-lg mx-auto">
         <div class="flex items-center justify-around py-2.5 px-4 text-center">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
                 <i class="fa-solid fa-house text-lg"></i>
@@ -120,9 +130,9 @@
 
     <!-- POPUP MODAL (Pointer un conteneur) -->
     <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-        <div class="w-full max-w-lg bg-[#1c1c1e] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#2c2c2e] shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="w-full max-w-lg bg-[#0d1b2a] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#1b2e4b] shadow-2xl max-h-[90vh] overflow-y-auto">
             
-            <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+            <div class="flex items-center justify-between mb-4 border-b border-[#1b2e4b] pb-3">
                 <h3 class="font-bold text-base text-center w-full">Pointer un conteneur</h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-white text-lg p-1">
                     <i class="fa-solid fa-xmark"></i>
@@ -132,18 +142,18 @@
             <form onsubmit="handleSave(event)" class="space-y-3.5 text-xs">
                 <div>
                     <label class="block text-gray-300 font-medium mb-1">Modèle de pointeage</label>
-                    <select id="inpModel" onchange="updateDynamicFormFields()" required class="w-full input-dark p-3 rounded-xl font-bold text-[#ff3b30] bg-[#222]"></select>
+                    <select id="inpModel" onchange="updateDynamicFormFields()" required class="w-full input-dpw p-3 rounded-xl font-bold text-[#ff5e1e] bg-[#132337]"></select>
                 </div>
 
                 <div>
                     <label class="block text-gray-300 font-medium mb-1">N° conteneur</label>
-                    <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dark p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
+                    <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dpw p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-gray-300 font-medium mb-1">Type & taille</label>
-                        <select id="inpType" required class="w-full input-dark p-3 rounded-xl">
+                        <select id="inpType" required class="w-full input-dpw p-3 rounded-xl">
                             <option value="20' ST">20' ST</option>
                             <option value="40' HC">40' HC</option>
                             <option value="40' RF">40' RF</option>
@@ -152,7 +162,7 @@
                     </div>
                     <div>
                         <label class="block text-gray-300 font-medium mb-1">État</label>
-                        <select id="inpStatus" class="w-full input-dark p-3 rounded-xl">
+                        <select id="inpStatus" class="w-full input-dpw p-3 rounded-xl">
                             <option value="Bon état">Bon état</option>
                             <option value="Endommagé">Endommagé</option>
                         </select>
@@ -162,25 +172,25 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-gray-300 font-medium mb-1">Emplacement</label>
-                        <input type="text" id="inpLoc" required placeholder="B01-R04-T2" class="w-full input-dark p-3 rounded-xl uppercase">
+                        <input type="text" id="inpLoc" required placeholder="B01-R04-T2" class="w-full input-dpw p-3 rounded-xl uppercase">
                     </div>
                     <div>
                         <label class="block text-gray-300 font-medium mb-1">N° plomb</label>
-                        <input type="text" id="inpSeal" placeholder="SL-00000" class="w-full input-dark p-3 rounded-xl uppercase">
+                        <input type="text" id="inpSeal" placeholder="SL-00000" class="w-full input-dpw p-3 rounded-xl uppercase">
                     </div>
                 </div>
 
-                <!-- DYNAMIC CUSTOM FIELDS FOR THE SELECTED MODEL (حقول إضافية حسب النموذج) -->
-                <div id="dynamicFieldsContainer" class="space-y-3 pt-2 border-t border-gray-800"></div>
+                <!-- DYNAMIC CUSTOM FIELDS FOR THE SELECTED MODEL -->
+                <div id="dynamicFieldsContainer" class="space-y-3 pt-2 border-t border-[#1b2e4b]"></div>
 
                 <div>
                     <label class="block text-gray-300 font-medium mb-1">Remarques générales</label>
-                    <textarea id="inpNotes" rows="2" placeholder="Informations complémentaires..." class="w-full input-dark p-3 rounded-xl"></textarea>
+                    <textarea id="inpNotes" rows="2" placeholder="Informations complémentaires..." class="w-full input-dpw p-3 rounded-xl"></textarea>
                 </div>
 
                 <div class="flex items-center gap-3 pt-2">
-                    <button type="button" onclick="closeModal()" class="w-1/2 bg-[#2c2c2e] hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-xs">Annuler</button>
-                    <button type="submit" class="w-1/2 btn-orange font-bold py-3 rounded-xl text-xs shadow-lg">Enregistrer</button>
+                    <button type="button" onclick="closeModal()" class="w-1/2 bg-[#1b2e4b] hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-xs">Annuler</button>
+                    <button type="submit" class="w-1/2 btn-dpw-orange font-bold py-3 rounded-xl text-xs shadow-lg">Enregistrer</button>
                 </div>
             </form>
         </div>
@@ -189,7 +199,6 @@
     <!-- Application Script -->
     <script>
         let containers = JSON.parse(localStorage.getItem('dpw_containers')) || [];
-        // Structure: { 'ModelName': ['Field1', 'Field2'] }
         let modelConfigs = JSON.parse(localStorage.getItem('dpw_model_configs')) || {
             'Débarquement': ['Navire', 'N° Manifeste', 'Température'],
             'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
@@ -239,7 +248,7 @@
             const fields = modelConfigs[currentModel] || [];
             if (fields.length > 0) {
                 const title = document.createElement('p');
-                title.className = "text-[11px] font-bold text-[#ff3b30] uppercase tracking-wider mb-2";
+                title.className = "text-[11px] font-bold text-[#ff5e1e] uppercase tracking-wider mb-2";
                 title.innerText = `Champs spécifiques (${currentModel})`;
                 container.appendChild(title);
 
@@ -248,7 +257,7 @@
                     div.className = "mb-2";
                     div.innerHTML = `
                         <label class="block text-gray-300 font-medium mb-1">${fName}</label>
-                        <input type="text" data-custom-field="${fName}" placeholder="Renseigner ${fName}..." class="w-full input-dark p-2.5 rounded-xl text-xs">
+                        <input type="text" data-custom-field="${fName}" placeholder="Renseigner ${fName}..." class="w-full input-dpw p-2.5 rounded-xl text-xs">
                     `;
                     container.appendChild(div);
                 });
@@ -262,19 +271,19 @@
             Object.keys(modelConfigs).forEach(mName => {
                 const fields = modelConfigs[mName];
                 const card = document.createElement('div');
-                card.className = "bg-[#262626] p-3 rounded-xl text-xs space-y-2 border border-gray-800";
+                card.className = "bg-[#132337] p-3 rounded-xl text-xs space-y-2 border border-[#233a5e]";
                 
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-white text-sm">${mName}</span>
-                        <button onclick="deleteModel('${mName}')" class="text-gray-500 hover:text-red-500 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                        <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                     <div class="flex flex-wrap gap-1.5 pt-1">
-                        ${fields.map(f => `<span class="bg-[#1c1c1e] text-gray-300 px-2 py-0.5 rounded-md border border-gray-700 text-[10px]">${f}</span>`).join('')}
+                        ${fields.map(f => `<span class="bg-[#0d1b2a] text-gray-300 px-2 py-0.5 rounded-md border border-[#1b2e4b] text-[10px]">${f}</span>`).join('')}
                     </div>
                     <div class="flex items-center gap-2 pt-2">
-                        <input type="text" id="addField_${mName.replace(/\s+/g, '')}" placeholder="Ajouter une colonne (ex: Navire)" class="input-dark p-2 rounded-lg text-xs flex-1">
-                        <button onclick="addFieldToModel('${mName}')" class="btn-blue px-3 py-2 rounded-lg text-xs font-bold">+ Champ</button>
+                        <input type="text" id="addField_${mName.replace(/\s+/g, '')}" placeholder="Ajouter une colonne (ex: Navire)" class="input-dpw p-2 rounded-lg text-xs flex-1">
+                        <button onclick="addFieldToModel('${mName}')" class="btn-dpw-blue px-3 py-2 rounded-lg text-xs font-bold">+ Champ</button>
                     </div>
                 `;
                 listEl.appendChild(card);
@@ -330,32 +339,31 @@
                 const isGood = item.status === 'Bon état';
                 const badgeClass = isGood ? 'badge-green' : 'badge-red';
 
-                // Display custom fields summary
                 let customFieldsHTML = '';
                 if (item.customData && Object.keys(item.customData).length > 0) {
                     customFieldsHTML = `<div class="flex flex-wrap gap-2 pt-1 text-[11px] text-gray-300">`;
                     for (const [key, val] of Object.entries(item.customData)) {
-                        if (val) customFieldsHTML += `<span class="bg-[#242426] px-2 py-0.5 rounded border border-gray-700"><b>${key}:</b> ${val}</span>`;
+                        if (val) customFieldsHTML += `<span class="bg-[#132337] px-2 py-0.5 rounded border border-[#233a5e]"><b>${key}:</b> ${val}</span>`;
                     }
                     customFieldsHTML += `</div>`;
                 }
 
                 const card = document.createElement('div');
-                card.className = "card-dark p-4 rounded-2xl space-y-2 text-xs mb-3 shadow-sm relative";
+                card.className = "dpw-card p-4 rounded-2xl space-y-2 text-xs mb-3 shadow-sm relative";
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
-                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] badge-blue">${item.model}</span>
+                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] badge-dpw">${item.model}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
-                            <button onclick="deleteContainer(${index})" class="text-gray-500 hover:text-red-500 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="deleteContainer(${index})" class="text-gray-500 hover:text-red-400 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </div>
                     <p class="text-gray-400 font-medium text-xs">${item.type} • ${item.loc} • Plomb: ${item.seal}</p>
                     ${customFieldsHTML}
-                    <div class="flex items-center gap-3 text-gray-400 text-[11px] pt-1 border-t border-gray-800/60">
+                    <div class="flex items-center gap-3 text-gray-400 text-[11px] pt-1 border-t border-[#1b2e4b]">
                         <span>${item.time}</span>
                         <span>•</span>
                         <span>${item.date}</span>
@@ -391,7 +399,6 @@
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const selectedModel = document.getElementById('inpModel').value;
 
-            // Collect Custom Fields
             const customData = {};
             const customInputs = document.querySelectorAll('[data-custom-field]');
             customInputs.forEach(input => {
@@ -423,7 +430,6 @@
             document.getElementById('inpNotes').value = '';
         }
 
-        // Export to Multi-sheet Excel workbook with custom columns per model
         function exportToExcel() {
             if (containers.length === 0) {
                 alert("Aucun conteneur à exporter.");
@@ -432,7 +438,6 @@
 
             const workbook = XLSX.utils.book_new();
 
-            // Export each Model into its own customized Sheet
             Object.keys(modelConfigs).forEach(mName => {
                 const filtered = containers.filter(c => c.model === mName);
                 if (filtered.length > 0) {
@@ -447,7 +452,6 @@
                             "N° Plomb": c.seal
                         };
 
-                        // Add model specific dynamic columns to Excel
                         if (c.customData) {
                             for (const [k, v] of Object.entries(c.customData)) {
                                 rowObj[k] = v;
