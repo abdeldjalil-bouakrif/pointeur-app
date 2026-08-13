@@ -37,6 +37,7 @@
         .stage-navire { background-color: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
         .stage-stock { background-color: #36200d; color: #f97316; border: 1px solid #ea580c; }
         .stage-douane { background-color: #2e1065; color: #c084fc; border: 1px solid #9333ea; }
+        .stage-embarque { background-color: #064e3b; color: #34d399; border: 1px solid #047857; }
 
         .nav-item-active { color: #00ffaa; }
         .nav-item-inactive { color: #64748b; }
@@ -101,15 +102,15 @@
             </div>
         </div>
 
-        <!-- TAB 1: ACCUEIL (الواجهة الرئيسية بالتصنيف المباشر) -->
+        <!-- TAB 1: ACCUEIL (الواجهة الرئيسية) -->
         <div id="tabAccueil" class="space-y-4">
             <div class="flex items-center justify-between my-2 text-xs gap-2">
-                <!-- Filter by Stage Workflow -->
                 <select id="filterStage" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All">Tous les emplacements</option>
                     <option value="Navire">🚢 En Navire</option>
                     <option value="Stock">📦 En Stockage</option>
                     <option value="Douane">🏛️ En Douane</option>
+                    <option value="Embarqué">⚓ Embarqué / Livré</option>
                 </select>
                 <select id="filterStatus" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All">Tous les états</option>
@@ -125,14 +126,14 @@
             <div id="containersList" class="space-y-3"></div>
         </div>
 
-        <!-- TAB 2: SUIVI FLUX (شريط زمني متوهج وتفاعلي) -->
+        <!-- TAB 2: SUIVI FLUX (شريط زمني متوهج يدعم الاستيراد والتصدير) -->
         <div id="tabSuivi" class="hidden space-y-4">
             <div class="dpw-card p-4 rounded-2xl space-y-2">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
                     <i class="fa-solid fa-route text-[#00ffaa]"></i>
-                    <span>Suivi Chronologique du Flux</span>
+                    <span>Suivi Flux (Import & Export)</span>
                 </h3>
-                <p class="text-xs text-gray-400">Suivez et modifiez la position exacte de chaque conteneur en temps réel sur la ligne de temps.</p>
+                <p class="text-xs text-gray-400">Cliquez sur les étapes pour mettre à jour la position du conteneur en temps réel.</p>
             </div>
 
             <!-- Glowing Interactive Pipeline List -->
@@ -345,7 +346,7 @@
             }
         }
 
-        // Render GLOWING TIMELINE PIPELINE for Tracking
+        // Render GLOWING TIMELINE PIPELINE for Tracking (Supports 4 stages)
         function renderTrackingList() {
             const listEl = document.getElementById('trackingList');
             listEl.innerHTML = '';
@@ -361,8 +362,8 @@
                 const card = document.createElement('div');
                 card.className = "dpw-card p-4 rounded-2xl space-y-3.5 text-xs border border-[#252b75]";
                 
-                // Stages mapping: 0=Navire, 1=Stock, 2=Douane
-                const stages = ['Navire', 'Stock', 'Douane'];
+                // Stages: 0=Navire, 1=Stock, 2=Douane, 3=Embarqué
+                const stages = ['Navire', 'Stock', 'Douane', 'Embarqué'];
                 const stageIndex = stages.indexOf(currentStage);
 
                 card.innerHTML = `
@@ -371,38 +372,45 @@
                             <span class="font-extrabold text-base text-white tracking-wider">${item.id}</span>
                             <p class="text-[10px] text-gray-400">${item.type} • Emplacement: <b class="text-white">${item.loc}</b></p>
                         </div>
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${currentStage === 'Navire' ? 'stage-navire' : currentStage === 'Stock' ? 'stage-stock' : 'stage-douane'}">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${currentStage === 'Navire' ? 'stage-navire' : currentStage === 'Stock' ? 'stage-stock' : currentStage === 'Douane' ? 'stage-douane' : 'stage-embarque'}">
                             En ${currentStage}
                         </span>
                     </div>
 
-                    <!-- GLOWING TIMELINE BAR WITH CIRCLES -->
-                    <div class="relative flex items-center justify-between pt-2 px-2">
-                        <!-- Line Background -->
-                        <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 ${stageIndex > 0 ? 'glow-line-active' : 'glow-line-inactive'} z-0"></div>
+                    <!-- GLOWING TIMELINE BAR WITH 4 NODES -->
+                    <div class="relative flex items-center justify-between pt-2 px-1">
+                        <div class="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-1 ${stageIndex > 0 ? 'glow-line-active' : 'glow-line-inactive'} z-0"></div>
 
                         <!-- Step 1: Navire -->
-                        <button onclick="updateContainerStage(${index}, 'Navire')" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${stageIndex >= 0 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
+                        <button onclick="updateContainerStage(${index}, 'Navire')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${stageIndex >= 0 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
                                 <i class="fa-solid fa-ship"></i>
                             </div>
-                            <span class="text-[10px] font-bold ${stageIndex === 0 ? 'text-[#00ffaa]' : 'text-gray-400'}">Navire</span>
+                            <span class="text-[9px] font-bold ${stageIndex === 0 ? 'text-[#00ffaa]' : 'text-gray-400'}">Navire</span>
                         </button>
 
                         <!-- Step 2: Stock -->
-                        <button onclick="updateContainerStage(${index}, 'Stock')" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${stageIndex >= 1 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
+                        <button onclick="updateContainerStage(${index}, 'Stock')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${stageIndex >= 1 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
                                 <i class="fa-solid fa-boxes-stacked"></i>
                             </div>
-                            <span class="text-[10px] font-bold ${stageIndex === 1 ? 'text-[#00ffaa]' : 'text-gray-400'}">Stockage</span>
+                            <span class="text-[9px] font-bold ${stageIndex === 1 ? 'text-[#00ffaa]' : 'text-gray-400'}">Stock</span>
                         </button>
 
                         <!-- Step 3: Douane -->
-                        <button onclick="updateContainerStage(${index}, 'Douane')" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${stageIndex >= 2 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
+                        <button onclick="updateContainerStage(${index}, 'Douane')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${stageIndex >= 2 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
                                 <i class="fa-solid fa-building-columns"></i>
                             </div>
-                            <span class="text-[10px] font-bold ${stageIndex === 2 ? 'text-[#00ffaa]' : 'text-gray-400'}">Douane</span>
+                            <span class="text-[9px] font-bold ${stageIndex === 2 ? 'text-[#00ffaa]' : 'text-gray-400'}">Douane</span>
+                        </button>
+
+                        <!-- Step 4: Embarqué / Livré -->
+                        <button onclick="updateContainerStage(${index}, 'Embarqué')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${stageIndex >= 3 ? 'glow-node-active animate-pulse' : 'glow-node-inactive'}">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <span class="text-[9px] font-bold ${stageIndex === 3 ? 'text-[#00ffaa]' : 'text-gray-400'}">Sortie</span>
                         </button>
                     </div>
                 `;
@@ -524,7 +532,6 @@
             }
         }
 
-        // Render Accueil List with Stage Badges
         function renderList(data = containers) {
             const listEl = document.getElementById('containersList');
             document.getElementById('containerCount').innerText = `${data.length} conteneur${data.length > 1 ? 's' : ''}`;
@@ -548,6 +555,7 @@
                 let stageBadgeClass = 'stage-navire';
                 if (currentStage === 'Stock') stageBadgeClass = 'stage-stock';
                 if (currentStage === 'Douane') stageBadgeClass = 'stage-douane';
+                if (currentStage === 'Embarqué') stageBadgeClass = 'stage-embarque';
 
                 let customFieldsHTML = '';
                 if (item.customData && Object.keys(item.customData).length > 0) {
@@ -625,7 +633,7 @@
             const newItem = {
                 id: inputIdVal,
                 model: selectedModel,
-                stage: 'Navire', // Starts at Navire
+                stage: 'Navire',
                 type: document.getElementById('inpType').value,
                 loc: document.getElementById('inpLoc').value.toUpperCase(),
                 status: document.getElementById('inpStatus').value,
