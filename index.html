@@ -26,6 +26,7 @@
         .btn-orange:hover { background-color: #e03228; }
         .btn-green { background-color: #34c759; color: white; }
         .btn-green:hover { background-color: #2fb04f; }
+        .btn-blue { background-color: #007aff; color: white; }
         .badge-green { background-color: #1a382b; color: #34c759; border: 1px solid #24523b; }
         .badge-red { background-color: #381a1a; color: #ff453a; border: 1px solid #522424; }
         .badge-blue { background-color: #1a2b38; color: #3897ff; border: 1px solid #243e52; }
@@ -62,9 +63,8 @@
             </div>
         </div>
 
-        <!-- TAB 1: SECTION ACCUEIL (الرئيسية) -->
+        <!-- TAB 1: SECTION ACCUEIL -->
         <div id="tabAccueil" class="space-y-4">
-            <!-- Filter Controls -->
             <div class="flex items-center justify-between my-2 text-xs gap-2">
                 <select id="filterStatus" onchange="filterContainers()" class="input-dark px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All">Tous les états</option>
@@ -78,48 +78,43 @@
             <div id="containersList" class="space-y-3"></div>
         </div>
 
-        <!-- TAB 2: SECTION RÉGLAGES & MODÈLES (منطقة التعديلات والأصناف) -->
+        <!-- TAB 2: SECTION CONFIGURATION DES MODÈLES (إدارة نماذج الجدول) -->
         <div id="tabSettings" class="hidden space-y-4">
             <div class="card-dark p-4 rounded-2xl space-y-3">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i class="fa-solid fa-sliders text-[#ff3b30]"></i>
-                    <span>Gestion des modèles / catégories</span>
+                    <i class="fa-solid fa-table-columns text-[#ff3b30]"></i>
+                    <span>Créer un Modèle de Tableau</span>
                 </h3>
-                <p class="text-xs text-gray-400">Ajoutez de nouveaux modèles d'opérations pour personnaliser vos tableaux Excel.</p>
+                <p class="text-xs text-gray-400">Ajoutez un nouveau modèle et définissez les colonnes/champs spécifiques à remplir.</p>
                 
-                <div class="flex items-center gap-2 pt-2">
-                    <input type="text" id="inpNewModel" placeholder="Ex: Import Frigo, Transit..." class="input-dark p-2.5 rounded-xl text-xs flex-1">
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="text" id="inpNewModel" placeholder="Nom du modèle (ex: Visite Douane)" class="input-dark p-2.5 rounded-xl text-xs flex-1">
                     <button onclick="addNewModel()" class="btn-orange px-4 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition">
-                        Ajouter
+                        Créer
                     </button>
                 </div>
             </div>
 
-            <!-- Custom Models List -->
-            <div class="card-dark p-4 rounded-2xl space-y-3">
-                <h4 class="font-semibold text-xs text-gray-300">Modèles actifs</h4>
-                <div id="modelsList" class="space-y-2"></div>
+            <!-- Active Models & Custom Fields -->
+            <div class="card-dark p-4 rounded-2xl space-y-4">
+                <h4 class="font-semibold text-xs text-gray-300">Modèles configurés & Colonnes</h4>
+                <div id="modelsList" class="space-y-3"></div>
             </div>
         </div>
 
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR (شريط التنقل السفلي) -->
+    <!-- BOTTOM NAVIGATION BAR -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#1c1c1e]/95 backdrop-blur-md border-t border-[#2c2c2e] z-40 max-w-lg mx-auto">
         <div class="flex items-center justify-around py-2.5 px-4 text-center">
-            
-            <!-- Button Accueil -->
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
                 <i class="fa-solid fa-house text-lg"></i>
                 <span class="text-[10px] font-semibold">Accueil</span>
             </button>
-
-            <!-- Button Réglages -->
             <button id="navBtnSettings" onclick="switchTab('settings')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
-                <i class="fa-solid fa-[#ff3b30] fa-sliders text-lg"></i>
+                <i class="fa-solid fa-sliders text-lg"></i>
                 <span class="text-[10px] font-semibold">Modèles</span>
             </button>
-
         </div>
     </div>
 
@@ -136,20 +131,19 @@
 
             <form onsubmit="handleSave(event)" class="space-y-3.5 text-xs">
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1">N° conteneur</label>
-                    <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dark p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
+                    <label class="block text-gray-300 font-medium mb-1">Modèle de pointeage</label>
+                    <select id="inpModel" onchange="updateDynamicFormFields()" required class="w-full input-dark p-3 rounded-xl font-bold text-[#ff3b30] bg-[#222]"></select>
                 </div>
 
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1">Modèle / Opération</label>
-                    <select id="inpModel" required class="w-full input-dark p-3 rounded-xl"></select>
+                    <label class="block text-gray-300 font-medium mb-1">N° conteneur</label>
+                    <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dark p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-gray-300 font-medium mb-1">Type & taille</label>
                         <select id="inpType" required class="w-full input-dark p-3 rounded-xl">
-                            <option value="">Choisir...</option>
                             <option value="20' ST">20' ST</option>
                             <option value="40' HC">40' HC</option>
                             <option value="40' RF">40' RF</option>
@@ -176,18 +170,12 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-gray-300 font-medium mb-1">Vacation</label>
-                    <select id="inpShift" class="w-full input-dark p-3 rounded-xl">
-                        <option value="Vacation 1">Vacation 1</option>
-                        <option value="Vacation 2">Vacation 2</option>
-                        <option value="Vacation 3">Vacation 3</option>
-                    </select>
-                </div>
+                <!-- DYNAMIC CUSTOM FIELDS FOR THE SELECTED MODEL (حقول إضافية حسب النموذج) -->
+                <div id="dynamicFieldsContainer" class="space-y-3 pt-2 border-t border-gray-800"></div>
 
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1">Remarques</label>
-                    <textarea id="inpNotes" rows="2" placeholder="Porte déformée, frigo OK..." class="w-full input-dark p-3 rounded-xl"></textarea>
+                    <label class="block text-gray-300 font-medium mb-1">Remarques générales</label>
+                    <textarea id="inpNotes" rows="2" placeholder="Informations complémentaires..." class="w-full input-dark p-3 rounded-xl"></textarea>
                 </div>
 
                 <div class="flex items-center gap-3 pt-2">
@@ -201,14 +189,16 @@
     <!-- Application Script -->
     <script>
         let containers = JSON.parse(localStorage.getItem('dpw_containers')) || [];
-        let models = JSON.parse(localStorage.getItem('dpw_models')) || [
-            'Débarquement', 'Embarquement', 'Transfert Yard', 'Visite Douane', 'Livraison Client'
-        ];
+        // Structure: { 'ModelName': ['Field1', 'Field2'] }
+        let modelConfigs = JSON.parse(localStorage.getItem('dpw_model_configs')) || {
+            'Débarquement': ['Navire', 'N° Manifeste', 'Température'],
+            'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
+            'Embarquement': ['Destination', 'Poids (Tonnes)']
+        };
 
         function saveContainers() { localStorage.setItem('dpw_containers', JSON.stringify(containers)); }
-        function saveModels() { localStorage.setItem('dpw_models', JSON.stringify(models)); }
+        function saveModelConfigs() { localStorage.setItem('dpw_model_configs', JSON.stringify(modelConfigs)); }
 
-        // Navigation Tabs Switcher
         function switchTab(tabName) {
             const accueilTab = document.getElementById('tabAccueil');
             const settingsTab = document.getElementById('tabSettings');
@@ -232,43 +222,90 @@
         function populateModelSelect() {
             const selectEl = document.getElementById('inpModel');
             selectEl.innerHTML = '';
-            models.forEach(m => {
+            Object.keys(modelConfigs).forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m;
                 opt.innerText = m;
                 selectEl.appendChild(opt);
             });
+            updateDynamicFormFields();
+        }
+
+        function updateDynamicFormFields() {
+            const currentModel = document.getElementById('inpModel').value;
+            const container = document.getElementById('dynamicFieldsContainer');
+            container.innerHTML = '';
+
+            const fields = modelConfigs[currentModel] || [];
+            if (fields.length > 0) {
+                const title = document.createElement('p');
+                title.className = "text-[11px] font-bold text-[#ff3b30] uppercase tracking-wider mb-2";
+                title.innerText = `Champs spécifiques (${currentModel})`;
+                container.appendChild(title);
+
+                fields.forEach(fName => {
+                    const div = document.createElement('div');
+                    div.className = "mb-2";
+                    div.innerHTML = `
+                        <label class="block text-gray-300 font-medium mb-1">${fName}</label>
+                        <input type="text" data-custom-field="${fName}" placeholder="Renseigner ${fName}..." class="w-full input-dark p-2.5 rounded-xl text-xs">
+                    `;
+                    container.appendChild(div);
+                });
+            }
         }
 
         function renderModelsList() {
             const listEl = document.getElementById('modelsList');
             listEl.innerHTML = '';
-            models.forEach((m, idx) => {
-                const item = document.createElement('div');
-                item.className = "flex items-center justify-between bg-[#262626] p-2.5 rounded-xl text-xs";
-                item.innerHTML = `
-                    <span class="font-medium text-gray-200">${m}</span>
-                    ${models.length > 1 ? `<button onclick="deleteModel(${idx})" class="text-gray-500 hover:text-red-500 p-1"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+            
+            Object.keys(modelConfigs).forEach(mName => {
+                const fields = modelConfigs[mName];
+                const card = document.createElement('div');
+                card.className = "bg-[#262626] p-3 rounded-xl text-xs space-y-2 border border-gray-800";
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-white text-sm">${mName}</span>
+                        <button onclick="deleteModel('${mName}')" class="text-gray-500 hover:text-red-500 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        ${fields.map(f => `<span class="bg-[#1c1c1e] text-gray-300 px-2 py-0.5 rounded-md border border-gray-700 text-[10px]">${f}</span>`).join('')}
+                    </div>
+                    <div class="flex items-center gap-2 pt-2">
+                        <input type="text" id="addField_${mName.replace(/\s+/g, '')}" placeholder="Ajouter une colonne (ex: Navire)" class="input-dark p-2 rounded-lg text-xs flex-1">
+                        <button onclick="addFieldToModel('${mName}')" class="btn-blue px-3 py-2 rounded-lg text-xs font-bold">+ Champ</button>
+                    </div>
                 `;
-                listEl.appendChild(item);
+                listEl.appendChild(card);
             });
         }
 
         function addNewModel() {
             const val = document.getElementById('inpNewModel').value.trim();
-            if (val && !models.includes(val)) {
-                models.push(val);
-                saveModels();
+            if (val && !modelConfigs[val]) {
+                modelConfigs[val] = [];
+                saveModelConfigs();
                 document.getElementById('inpNewModel').value = '';
                 renderModelsList();
                 populateModelSelect();
             }
         }
 
-        function deleteModel(idx) {
-            if (confirm("Voulez-vous supprimer ce modèle ?")) {
-                models.splice(idx, 1);
-                saveModels();
+        function addFieldToModel(modelName) {
+            const inputId = `addField_${modelName.replace(/\s+/g, '')}`;
+            const fieldName = document.getElementById(inputId).value.trim();
+            if (fieldName && !modelConfigs[modelName].includes(fieldName)) {
+                modelConfigs[modelName].push(fieldName);
+                saveModelConfigs();
+                renderModelsList();
+            }
+        }
+
+        function deleteModel(modelName) {
+            if (confirm(`Voulez-vous vraiment supprimer le modèle "${modelName}" ?`)) {
+                delete modelConfigs[modelName];
+                saveModelConfigs();
                 renderModelsList();
                 populateModelSelect();
             }
@@ -293,30 +330,36 @@
                 const isGood = item.status === 'Bon état';
                 const badgeClass = isGood ? 'badge-green' : 'badge-red';
 
+                // Display custom fields summary
+                let customFieldsHTML = '';
+                if (item.customData && Object.keys(item.customData).length > 0) {
+                    customFieldsHTML = `<div class="flex flex-wrap gap-2 pt-1 text-[11px] text-gray-300">`;
+                    for (const [key, val] of Object.entries(item.customData)) {
+                        if (val) customFieldsHTML += `<span class="bg-[#242426] px-2 py-0.5 rounded border border-gray-700"><b>${key}:</b> ${val}</span>`;
+                    }
+                    customFieldsHTML += `</div>`;
+                }
+
                 const card = document.createElement('div');
                 card.className = "card-dark p-4 rounded-2xl space-y-2 text-xs mb-3 shadow-sm relative";
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
-                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] badge-blue">${item.model || 'Débarquement'}</span>
+                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] badge-blue">${item.model}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
-                            <button onclick="deleteContainer(${index})" class="text-gray-500 hover:text-red-500 p-1.5 transition" title="Supprimer">
-                                <i class="fa-solid fa-trash-can text-sm"></i>
-                            </button>
+                            <button onclick="deleteContainer(${index})" class="text-gray-500 hover:text-red-500 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </div>
-                    <p class="text-gray-400 font-medium text-xs">${item.type} • ${item.loc}</p>
+                    <p class="text-gray-400 font-medium text-xs">${item.type} • ${item.loc} • Plomb: ${item.seal}</p>
+                    ${customFieldsHTML}
                     <div class="flex items-center gap-3 text-gray-400 text-[11px] pt-1 border-t border-gray-800/60">
-                        <span>Plomb ${item.seal}</span>
-                        <span>•</span>
-                        <span>${item.shift}</span>
-                        <span>•</span>
                         <span>${item.time}</span>
+                        <span>•</span>
+                        <span>${item.date}</span>
                     </div>
-                    ${item.notes ? `<p class="text-gray-300 font-medium pt-1 text-xs">${item.notes}</p>` : ''}
                 `;
                 listEl.appendChild(card);
             });
@@ -346,16 +389,25 @@
             e.preventDefault();
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const selectedModel = document.getElementById('inpModel').value;
+
+            // Collect Custom Fields
+            const customData = {};
+            const customInputs = document.querySelectorAll('[data-custom-field]');
+            customInputs.forEach(input => {
+                const fieldName = input.getAttribute('data-custom-field');
+                customData[fieldName] = input.value || '-';
+            });
 
             const newItem = {
                 id: document.getElementById('inpId').value.toUpperCase(),
-                model: document.getElementById('inpModel').value,
+                model: selectedModel,
                 type: document.getElementById('inpType').value,
                 loc: document.getElementById('inpLoc').value.toUpperCase(),
                 status: document.getElementById('inpStatus').value,
                 seal: document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000',
-                shift: document.getElementById('inpShift').value,
                 notes: document.getElementById('inpNotes').value || 'RAS',
+                customData: customData,
                 time: timeStr,
                 date: now.toLocaleDateString('fr-FR')
             };
@@ -371,7 +423,7 @@
             document.getElementById('inpNotes').value = '';
         }
 
-        // Export to Multi-sheet Excel workbook based on Models!
+        // Export to Multi-sheet Excel workbook with custom columns per model
         function exportToExcel() {
             if (containers.length === 0) {
                 alert("Aucun conteneur à exporter.");
@@ -380,40 +432,34 @@
 
             const workbook = XLSX.utils.book_new();
 
-            // 1. Full List Sheet
-            const allData = containers.map(c => ({
-                "Date": c.date || new Date().toLocaleDateString('fr-FR'),
-                "Heure": c.time,
-                "N° Conteneur": c.id,
-                "Modèle / Opération": c.model || 'Débarquement',
-                "Type & Taille": c.type,
-                "Emplacement": c.loc,
-                "État": c.status,
-                "N° Plomb": c.seal,
-                "Vacation": c.shift,
-                "Remarques": c.notes || ''
-            }));
-            const wsAll = XLSX.utils.json_to_sheet(allData);
-            XLSX.utils.book_append_sheet(workbook, wsAll, "Tous les conteneurs");
-
-            // 2. Separate Sheet per Model
-            models.forEach(m => {
-                const filtered = containers.filter(c => (c.model || 'Débarquement') === m);
+            // Export each Model into its own customized Sheet
+            Object.keys(modelConfigs).forEach(mName => {
+                const filtered = containers.filter(c => c.model === mName);
                 if (filtered.length > 0) {
-                    const modelData = filtered.map(c => ({
-                        "Date": c.date || new Date().toLocaleDateString('fr-FR'),
-                        "Heure": c.time,
-                        "N° Conteneur": c.id,
-                        "Type & Taille": c.type,
-                        "Emplacement": c.loc,
-                        "État": c.status,
-                        "N° Plomb": c.seal,
-                        "Vacation": c.shift,
-                        "Remarques": c.notes || ''
-                    }));
+                    const modelData = filtered.map(c => {
+                        let rowObj = {
+                            "Date": c.date,
+                            "Heure": c.time,
+                            "N° Conteneur": c.id,
+                            "Type & Taille": c.type,
+                            "Emplacement": c.loc,
+                            "État": c.status,
+                            "N° Plomb": c.seal
+                        };
+
+                        // Add model specific dynamic columns to Excel
+                        if (c.customData) {
+                            for (const [k, v] of Object.entries(c.customData)) {
+                                rowObj[k] = v;
+                            }
+                        }
+
+                        rowObj["Remarques"] = c.notes;
+                        return rowObj;
+                    });
+
                     const wsModel = XLSX.utils.json_to_sheet(modelData);
-                    // Sheet name max 31 chars in Excel
-                    XLSX.utils.book_append_sheet(workbook, wsModel, m.substring(0, 30));
+                    XLSX.utils.book_append_sheet(workbook, wsModel, mName.substring(0, 30));
                 }
             });
 
