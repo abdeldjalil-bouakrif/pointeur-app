@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pointeur conteneurs - DP World</title>
-    <!-- Tailwind CSS & Icons -->
+    <!-- Tailwind CSS & Icons & SheetJS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -29,40 +29,43 @@
         .badge-green { background-color: #1a382b; color: #34c759; border: 1px solid #24523b; }
         .badge-red { background-color: #381a1a; color: #ff453a; border: 1px solid #522424; }
         .badge-blue { background-color: #1a2b38; color: #3897ff; border: 1px solid #243e52; }
+        .nav-item-active { color: #ff3b30; }
+        .nav-item-inactive { color: #8e8e93; }
     </style>
 </head>
-<body class="bg-[#121212] min-h-screen flex flex-col justify-between antialiased selection:bg-red-500">
+<body class="bg-[#121212] min-h-screen flex flex-col justify-between antialiased selection:bg-red-500 pb-20">
 
-    <!-- Container Main Area Full Screen -->
-    <div class="w-full min-h-screen p-4 sm:p-6 flex flex-col justify-between max-w-lg mx-auto">
+    <!-- Container Main Area -->
+    <div class="w-full p-4 sm:p-6 max-w-lg mx-auto">
 
         <!-- Header Section -->
-        <div>
-            <div class="flex items-center justify-between mt-2 mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 bg-[#ff3b30] rounded-2xl flex items-center justify-center text-white text-xl shadow-lg">
-                        <i class="fa-solid fa-box font-bold"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-bold text-xl leading-tight">Pointeur<br>conteneurs</h1>
-                        <p class="text-xs text-gray-400 font-medium">DP World Djendjen</p>
-                    </div>
+        <div class="flex items-center justify-between mt-2 mb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 bg-[#ff3b30] rounded-2xl flex items-center justify-center text-white text-xl shadow-lg">
+                    <i class="fa-solid fa-box font-bold"></i>
                 </div>
-                
-                <div class="flex items-center gap-2">
-                    <button onclick="exportToExcel()" class="btn-green px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Télécharger Excel">
-                        <i class="fa-solid fa-file-excel text-sm"></i>
-                        <span>Excel</span>
-                    </button>
-                    <button onclick="openModal()" class="btn-orange px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>+ Pointer</span>
-                    </button>
+                <div>
+                    <h1 class="font-bold text-xl leading-tight">Pointeur<br>conteneurs</h1>
+                    <p class="text-xs text-gray-400 font-medium">DP World Djendjen</p>
                 </div>
             </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="exportToExcel()" class="btn-green px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Télécharger Excel">
+                    <i class="fa-solid fa-file-excel text-sm"></i>
+                    <span>Excel</span>
+                </button>
+                <button onclick="openModal()" class="btn-orange px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>+ Pointer</span>
+                </button>
+            </div>
+        </div>
 
+        <!-- TAB 1: SECTION ACCUEIL (الرئيسية) -->
+        <div id="tabAccueil" class="space-y-4">
             <!-- Filter Controls -->
-            <div class="flex items-center justify-between my-4 text-xs gap-2">
+            <div class="flex items-center justify-between my-2 text-xs gap-2">
                 <select id="filterStatus" onchange="filterContainers()" class="input-dark px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All">Tous les états</option>
                     <option value="Bon état">Bon état</option>
@@ -72,99 +75,203 @@
             </div>
 
             <!-- Containers Dynamic List -->
-            <div id="containersList" class="space-y-3 pb-20">
-            </div>
+            <div id="containersList" class="space-y-3"></div>
         </div>
 
-        <!-- POPUP MODAL (Pointer un conteneur) -->
-        <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-            <div class="w-full max-w-lg bg-[#1c1c1e] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#2c2c2e] shadow-2xl max-h-[90vh] overflow-y-auto">
+        <!-- TAB 2: SECTION RÉGLAGES & MODÈLES (منطقة التعديلات والأصناف) -->
+        <div id="tabSettings" class="hidden space-y-4">
+            <div class="card-dark p-4 rounded-2xl space-y-3">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-[#ff3b30]"></i>
+                    <span>Gestion des modèles / catégories</span>
+                </h3>
+                <p class="text-xs text-gray-400">Ajoutez de nouveaux modèles d'opérations pour personnaliser vos tableaux Excel.</p>
                 
-                <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
-                    <h3 class="font-bold text-base text-center w-full">Pointer un conteneur</h3>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-white text-lg p-1">
-                        <i class="fa-solid fa-xmark"></i>
+                <div class="flex items-center gap-2 pt-2">
+                    <input type="text" id="inpNewModel" placeholder="Ex: Import Frigo, Transit..." class="input-dark p-2.5 rounded-xl text-xs flex-1">
+                    <button onclick="addNewModel()" class="btn-orange px-4 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition">
+                        Ajouter
                     </button>
                 </div>
+            </div>
 
-                <form onsubmit="handleSave(event)" class="space-y-3.5 text-xs">
-                    <div>
-                        <label class="block text-gray-300 font-medium mb-1">N° conteneur</label>
-                        <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dark p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
-                    </div>
-
-                    <div>
-                        <label class="block text-gray-300 font-medium mb-1">Modèle / Opération</label>
-                        <select id="inpModel" required class="w-full input-dark p-3 rounded-xl">
-                            <option value="Débarquement">Débarquement (Import)</option>
-                            <option value="Embarquement">Embarquement (Export)</option>
-                            <option value="Transfert Yard">Transfert Yard</option>
-                            <option value="Visite Douane">Visite Douane</option>
-                            <option value="Livraison Client">Livraison Client</option>
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-gray-300 font-medium mb-1">Type & taille</label>
-                            <select id="inpType" required class="w-full input-dark p-3 rounded-xl">
-                                <option value="">Choisir...</option>
-                                <option value="20' ST">20' ST</option>
-                                <option value="40' HC">40' HC</option>
-                                <option value="40' RF">40' RF</option>
-                                <option value="45' HC">45' HC</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-gray-300 font-medium mb-1">État</label>
-                            <select id="inpStatus" class="w-full input-dark p-3 rounded-xl">
-                                <option value="Bon état">Bon état</option>
-                                <option value="Endommagé">Endommagé</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-gray-300 font-medium mb-1">Emplacement</label>
-                            <input type="text" id="inpLoc" required placeholder="B01-R04-T2" class="w-full input-dark p-3 rounded-xl uppercase">
-                        </div>
-                        <div>
-                            <label class="block text-gray-300 font-medium mb-1">N° plomb</label>
-                            <input type="text" id="inpSeal" placeholder="SL-00000" class="w-full input-dark p-3 rounded-xl uppercase">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-gray-300 font-medium mb-1">Vacation</label>
-                        <select id="inpShift" class="w-full input-dark p-3 rounded-xl">
-                            <option value="Vacation 1">Vacation 1</option>
-                            <option value="Vacation 2">Vacation 2</option>
-                            <option value="Vacation 3">Vacation 3</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-gray-300 font-medium mb-1">Remarques</label>
-                        <textarea id="inpNotes" rows="2" placeholder="Porte déformée, frigo OK..." class="w-full input-dark p-3 rounded-xl"></textarea>
-                    </div>
-
-                    <div class="flex items-center gap-3 pt-2">
-                        <button type="button" onclick="closeModal()" class="w-1/2 bg-[#2c2c2e] hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-xs">Annuler</button>
-                        <button type="submit" class="w-1/2 btn-orange font-bold py-3 rounded-xl text-xs shadow-lg">Enregistrer</button>
-                    </div>
-                </form>
+            <!-- Custom Models List -->
+            <div class="card-dark p-4 rounded-2xl space-y-3">
+                <h4 class="font-semibold text-xs text-gray-300">Modèles actifs</h4>
+                <div id="modelsList" class="space-y-2"></div>
             </div>
         </div>
 
     </div>
 
+    <!-- BOTTOM NAVIGATION BAR (شريط التنقل السفلي) -->
+    <div class="fixed bottom-0 left-0 right-0 bg-[#1c1c1e]/95 backdrop-blur-md border-t border-[#2c2c2e] z-40 max-w-lg mx-auto">
+        <div class="flex items-center justify-around py-2.5 px-4 text-center">
+            
+            <!-- Button Accueil -->
+            <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
+                <i class="fa-solid fa-house text-lg"></i>
+                <span class="text-[10px] font-semibold">Accueil</span>
+            </button>
+
+            <!-- Button Réglages -->
+            <button id="navBtnSettings" onclick="switchTab('settings')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
+                <i class="fa-solid fa-[#ff3b30] fa-sliders text-lg"></i>
+                <span class="text-[10px] font-semibold">Modèles</span>
+            </button>
+
+        </div>
+    </div>
+
+    <!-- POPUP MODAL (Pointer un conteneur) -->
+    <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
+        <div class="w-full max-w-lg bg-[#1c1c1e] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#2c2c2e] shadow-2xl max-h-[90vh] overflow-y-auto">
+            
+            <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                <h3 class="font-bold text-base text-center w-full">Pointer un conteneur</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-lg p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleSave(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1">N° conteneur</label>
+                    <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dark p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1">Modèle / Opération</label>
+                    <select id="inpModel" required class="w-full input-dark p-3 rounded-xl"></select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1">Type & taille</label>
+                        <select id="inpType" required class="w-full input-dark p-3 rounded-xl">
+                            <option value="">Choisir...</option>
+                            <option value="20' ST">20' ST</option>
+                            <option value="40' HC">40' HC</option>
+                            <option value="40' RF">40' RF</option>
+                            <option value="45' HC">45' HC</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1">État</label>
+                        <select id="inpStatus" class="w-full input-dark p-3 rounded-xl">
+                            <option value="Bon état">Bon état</option>
+                            <option value="Endommagé">Endommagé</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1">Emplacement</label>
+                        <input type="text" id="inpLoc" required placeholder="B01-R04-T2" class="w-full input-dark p-3 rounded-xl uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1">N° plomb</label>
+                        <input type="text" id="inpSeal" placeholder="SL-00000" class="w-full input-dark p-3 rounded-xl uppercase">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1">Vacation</label>
+                    <select id="inpShift" class="w-full input-dark p-3 rounded-xl">
+                        <option value="Vacation 1">Vacation 1</option>
+                        <option value="Vacation 2">Vacation 2</option>
+                        <option value="Vacation 3">Vacation 3</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1">Remarques</label>
+                    <textarea id="inpNotes" rows="2" placeholder="Porte déformée, frigo OK..." class="w-full input-dark p-3 rounded-xl"></textarea>
+                </div>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" onclick="closeModal()" class="w-1/2 bg-[#2c2c2e] hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-xs">Annuler</button>
+                    <button type="submit" class="w-1/2 btn-orange font-bold py-3 rounded-xl text-xs shadow-lg">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Application Script -->
     <script>
         let containers = JSON.parse(localStorage.getItem('dpw_containers')) || [];
+        let models = JSON.parse(localStorage.getItem('dpw_models')) || [
+            'Débarquement', 'Embarquement', 'Transfert Yard', 'Visite Douane', 'Livraison Client'
+        ];
 
-        function saveContainers() {
-            localStorage.setItem('dpw_containers', JSON.stringify(containers));
+        function saveContainers() { localStorage.setItem('dpw_containers', JSON.stringify(containers)); }
+        function saveModels() { localStorage.setItem('dpw_models', JSON.stringify(models)); }
+
+        // Navigation Tabs Switcher
+        function switchTab(tabName) {
+            const accueilTab = document.getElementById('tabAccueil');
+            const settingsTab = document.getElementById('tabSettings');
+            const btnAccueil = document.getElementById('navBtnAccueil');
+            const btnSettings = document.getElementById('navBtnSettings');
+
+            if (tabName === 'accueil') {
+                accueilTab.classList.remove('hidden');
+                settingsTab.classList.add('hidden');
+                btnAccueil.className = "flex flex-col items-center gap-1 nav-item-active transition";
+                btnSettings.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
+            } else {
+                accueilTab.classList.add('hidden');
+                settingsTab.classList.remove('hidden');
+                btnAccueil.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
+                btnSettings.className = "flex flex-col items-center gap-1 nav-item-active transition";
+                renderModelsList();
+            }
+        }
+
+        function populateModelSelect() {
+            const selectEl = document.getElementById('inpModel');
+            selectEl.innerHTML = '';
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.innerText = m;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function renderModelsList() {
+            const listEl = document.getElementById('modelsList');
+            listEl.innerHTML = '';
+            models.forEach((m, idx) => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between bg-[#262626] p-2.5 rounded-xl text-xs";
+                item.innerHTML = `
+                    <span class="font-medium text-gray-200">${m}</span>
+                    ${models.length > 1 ? `<button onclick="deleteModel(${idx})" class="text-gray-500 hover:text-red-500 p-1"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function addNewModel() {
+            const val = document.getElementById('inpNewModel').value.trim();
+            if (val && !models.includes(val)) {
+                models.push(val);
+                saveModels();
+                document.getElementById('inpNewModel').value = '';
+                renderModelsList();
+                populateModelSelect();
+            }
+        }
+
+        function deleteModel(idx) {
+            if (confirm("Voulez-vous supprimer ce modèle ?")) {
+                models.splice(idx, 1);
+                saveModels();
+                renderModelsList();
+                populateModelSelect();
+            }
         }
 
         function renderList(data = containers) {
@@ -221,7 +328,10 @@
             else renderList(containers.filter(c => c.status === val));
         }
 
-        function openModal() { document.getElementById('modalOverlay').classList.remove('hidden'); }
+        function openModal() { 
+            populateModelSelect();
+            document.getElementById('modalOverlay').classList.remove('hidden'); 
+        }
         function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
 
         function deleteContainer(index) {
@@ -261,13 +371,17 @@
             document.getElementById('inpNotes').value = '';
         }
 
+        // Export to Multi-sheet Excel workbook based on Models!
         function exportToExcel() {
             if (containers.length === 0) {
                 alert("Aucun conteneur à exporter.");
                 return;
             }
 
-            const dataToExport = containers.map(c => ({
+            const workbook = XLSX.utils.book_new();
+
+            // 1. Full List Sheet
+            const allData = containers.map(c => ({
                 "Date": c.date || new Date().toLocaleDateString('fr-FR'),
                 "Heure": c.time,
                 "N° Conteneur": c.id,
@@ -279,15 +393,35 @@
                 "Vacation": c.shift,
                 "Remarques": c.notes || ''
             }));
+            const wsAll = XLSX.utils.json_to_sheet(allData);
+            XLSX.utils.book_append_sheet(workbook, wsAll, "Tous les conteneurs");
 
-            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Conteneurs");
+            // 2. Separate Sheet per Model
+            models.forEach(m => {
+                const filtered = containers.filter(c => (c.model || 'Débarquement') === m);
+                if (filtered.length > 0) {
+                    const modelData = filtered.map(c => ({
+                        "Date": c.date || new Date().toLocaleDateString('fr-FR'),
+                        "Heure": c.time,
+                        "N° Conteneur": c.id,
+                        "Type & Taille": c.type,
+                        "Emplacement": c.loc,
+                        "État": c.status,
+                        "N° Plomb": c.seal,
+                        "Vacation": c.shift,
+                        "Remarques": c.notes || ''
+                    }));
+                    const wsModel = XLSX.utils.json_to_sheet(modelData);
+                    // Sheet name max 31 chars in Excel
+                    XLSX.utils.book_append_sheet(workbook, wsModel, m.substring(0, 30));
+                }
+            });
 
             const fileName = `Pointeur_DPW_${new Date().toISOString().slice(0, 10)}.xlsx`;
             XLSX.writeFile(workbook, fileName);
         }
 
+        populateModelSelect();
         renderList();
     </script>
 </body>
