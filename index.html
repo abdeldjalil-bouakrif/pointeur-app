@@ -23,6 +23,8 @@
         .input-dark:focus { border-color: #ff3b30; outline: none; }
         .btn-orange { background-color: #ff3b30; color: white; }
         .btn-orange:hover { background-color: #e03228; }
+        .btn-green { background-color: #34c759; color: white; }
+        .btn-green:hover { background-color: #2fb04f; }
         .badge-green { background-color: #1a382b; color: #34c759; border: 1px solid #24523b; }
         .badge-red { background-color: #381a1a; color: #ff453a; border: 1px solid #522424; }
     </style>
@@ -34,7 +36,7 @@
 
         <!-- Header Section -->
         <div>
-            <div class="flex items-center justify-between mt-2 mb-5">
+            <div class="flex items-center justify-between mt-2 mb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 bg-[#ff3b30] rounded-2xl flex items-center justify-center text-white text-xl shadow-lg">
                         <i class="fa-solid fa-box font-bold"></i>
@@ -44,10 +46,17 @@
                         <p class="text-xs text-gray-400 font-medium">DP World Djendjen</p>
                     </div>
                 </div>
-                <button onclick="openModal()" class="btn-orange px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-md active:scale-95 transition">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>+ Pointer</span>
-                </button>
+                
+                <div class="flex items-center gap-2">
+                    <button onclick="exportToExcel()" class="btn-green px-3 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Télécharger Excel">
+                        <i class="fa-solid fa-file-excel text-sm"></i>
+                        <span>Excel</span>
+                    </button>
+                    <button onclick="openModal()" class="btn-orange px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>+ Pointer</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Filter Controls -->
@@ -139,7 +148,6 @@
 
     <!-- Application Script -->
     <script>
-        // Retrieve containers from LocalStorage or initialize an empty array
         let containers = JSON.parse(localStorage.getItem('dpw_containers')) || [];
 
         function saveContainers() {
@@ -221,7 +229,8 @@
                 seal: document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000',
                 shift: document.getElementById('inpShift').value,
                 notes: document.getElementById('inpNotes').value || 'RAS',
-                time: timeStr
+                time: timeStr,
+                date: now.toLocaleDateString('fr-FR')
             };
 
             containers.unshift(newItem);
@@ -233,6 +242,41 @@
             document.getElementById('inpLoc').value = '';
             document.getElementById('inpSeal').value = '';
             document.getElementById('inpNotes').value = '';
+        }
+
+        // Export Function to CSV (Excel Compatible)
+        function exportToExcel() {
+            if (containers.length === 0) {
+                alert("Aucun conteneur à exporter.");
+                return;
+            }
+
+            let csvContent = "\uFEFF"; // BOM for Excel UTF-8 UTF
+            csvContent += "Date;Heure;N° Conteneur;Type & Taille;Emplacement;Etat;N° Plomb;Vacation;Remarques\n";
+
+            containers.forEach(c => {
+                let row = [
+                    c.date || new Date().toLocaleDateString('fr-FR'),
+                    c.time,
+                    c.id,
+                    c.type,
+                    c.loc,
+                    c.status,
+                    c.seal,
+                    c.shift,
+                    `"${(c.notes || '').replace(/"/g, '""')}"`
+                ].join(";");
+                csvContent += row + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Pointeur_DPW_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         renderList();
