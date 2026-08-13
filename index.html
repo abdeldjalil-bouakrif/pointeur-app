@@ -57,7 +57,7 @@
                     <option value="Bon état">Bon état</option>
                     <option value="Endommagé">Endommagé</option>
                 </select>
-                <span id="containerCount" class="text-gray-400 font-semibold">3 conteneurs</span>
+                <span id="containerCount" class="text-gray-400 font-semibold">0 conteneur</span>
             </div>
 
             <!-- Containers Dynamic List -->
@@ -139,16 +139,27 @@
 
     <!-- Application Script -->
     <script>
-        let containers = [
-            { id: 'SUDU5544332', type: "40' RF", loc: 'C05-R01-T3', seal: 'SL-77610', shift: 'Vacation 1', time: '11:00', status: 'Bon état', notes: 'Conteneur Frigo OK' },
-            { id: 'CMAU9876543', type: "20' ST", loc: 'A02-R10-T1', seal: 'SL-33412', shift: 'Vacation 1', time: '10:15', status: 'Endommagé', notes: 'Porte déformée' },
-            { id: 'MSCU1234567', type: "40' HC", loc: 'B01-R04-T2', seal: 'SL-99821', shift: 'Vacation 1', time: '09:30', status: 'Bon état', notes: 'RAS' }
-        ];
+        // Retrieve containers from LocalStorage or initialize an empty array
+        let containers = JSON.parse(localStorage.getItem('dpw_containers')) || [];
+
+        function saveContainers() {
+            localStorage.setItem('dpw_containers', JSON.stringify(containers));
+        }
 
         function renderList(data = containers) {
             const listEl = document.getElementById('containersList');
-            document.getElementById('containerCount').innerText = `${data.length} conteneurs`;
+            document.getElementById('containerCount').innerText = `${data.length} conteneur${data.length > 1 ? 's' : ''}`;
             listEl.innerHTML = '';
+
+            if (data.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-12 text-gray-500 font-medium text-xs">
+                        <i class="fa-solid fa-box-open text-3xl mb-2 block text-gray-600"></i>
+                        Aucun conteneur pointé pour le moment.
+                    </div>
+                `;
+                return;
+            }
 
             data.forEach((item, index) => {
                 const isGood = item.status === 'Bon état';
@@ -192,6 +203,7 @@
         function deleteContainer(index) {
             if (confirm("Voulez-vous vraiment supprimer ce conteneur ?")) {
                 containers.splice(index, 1);
+                saveContainers();
                 renderList();
             }
         }
@@ -213,6 +225,7 @@
             };
 
             containers.unshift(newItem);
+            saveContainers();
             renderList();
             closeModal();
             
