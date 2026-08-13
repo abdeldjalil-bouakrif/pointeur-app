@@ -13,7 +13,7 @@
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #0b0d2c; 
+            background-color: #0d1033; 
             color: #ffffff; 
             margin: 0;
             padding: 0;
@@ -21,60 +21,38 @@
             position: relative;
             overflow-x: hidden;
         }
-        .dpw-card { background-color: #141747; border: 1px solid #232870; }
-        .input-dpw { background-color: #1c205e; border: 1px solid #303799; color: #ffffff; }
+        .dpw-card { background-color: #15194a; border: 1px solid #252b75; }
+        .input-dpw { background-color: #1d2263; border: 1px solid #303796; color: #ffffff; }
         .input-dpw:focus { border-color: #00ffaa; outline: none; }
         .btn-dpw-gradient { background: linear-gradient(135deg, #ff2a6d 0%, #ff5e1e 100%); color: white; }
         .btn-dpw-gradient:hover { opacity: 0.95; }
-        .btn-dpw-green { background-color: #00ffaa; color: #0b0d2c; }
+        .btn-dpw-green { background-color: #00ffaa; color: #0d1033; }
         .btn-dpw-green:hover { background-color: #00cc88; }
         .btn-dpw-blue { background-color: #3b82f6; color: white; }
         .badge-green { background-color: #064e3b; color: #34d399; border: 1px solid #047857; }
         .badge-red { background-color: #4c0519; color: #fb7185; border: 1px solid #9f1239; }
-        .badge-dpw { background-color: #232870; color: #93c5fd; border: 1px solid #3b82f6; }
+        .badge-dpw { background-color: #252b75; color: #93c5fd; border: 1px solid #3b82f6; }
         .nav-item-active { color: #00ffaa; }
         .nav-item-inactive { color: #64748b; }
-
-        /* Watermark Background Styling */
-        .watermark-bg {
-            position: fixed;
-            bottom: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 320px;
-            height: 320px;
-            opacity: 0.05; /* الشفافية الهادئة */
-            pointer-events: none;
-            z-index: 0;
-        }
     </style>
 </head>
-<body class="bg-[#0b0d2c] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500 pb-20">
-
-    <!-- BACKGROUND TRANSPARENT WATERMARK (العلامة المائية الشفافة) -->
-    <div class="watermark-bg">
-        <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22 52C22 30 42 26 62 27C45 30 34 38 32 52C31 65 22 52 22 52Z" fill="#FF2A6D"/>
-            <path d="M2 62C22 43 49 57 72 38C72 38 70 51 51 58C32 65 15 53 2 62Z" fill="#00FFAA"/>
-            <path d="M28 63C38 76 60 77 74 50C71 70 49 79 28 63Z" fill="#FFFFFF"/>
-        </svg>
-    </div>
+<body class="bg-[#0d1033] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500 pb-20">
 
     <!-- Container Main Area -->
     <div class="w-full p-4 sm:p-6 max-w-lg mx-auto relative z-10">
 
         <!-- BRAND HEADER SECTION -->
-        <div class="flex items-center justify-between mt-2 mb-5 pb-3 border-b border-[#232870]">
+        <div class="flex items-center justify-between mt-2 mb-5 pb-3 border-b border-[#252b75]">
             <div class="flex items-center gap-3">
-                <!-- HD Clear Sharp Logo Vector -->
-                <div class="w-12 h-12 flex items-center justify-center relative">
+                <!-- HD Clear Sharp & Smooth Continuous Logo Vector -->
+                <div class="w-11 h-11 flex items-center justify-center shrink-0">
                     <svg class="w-full h-full filter drop-shadow-[0_2px_8px_rgba(0,255,170,0.3)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Upper Arc with Gradient -->
+                        <!-- Upper Red/Pink Arc -->
                         <path d="M22 52C22 30 42 26 62 27C45 30 34 38 32 52C31 65 22 52 22 52Z" fill="url(#logo_grad_clear)"/>
-                        <!-- Sharp Green Ribbon -->
+                        <!-- Green Flow Ribbon -->
                         <path d="M2 62C22 43 49 57 72 38C72 38 70 51 51 58C32 65 15 53 2 62Z" fill="#00FFAA"/>
-                        <!-- Pure White Crescent -->
-                        <path d="M28 63C38 76 60 77 74 50C71 70 49 79 28 63Z" fill="#FFFFFF"/>
+                        <!-- Smooth Continuous White Bottom Arc -->
+                        <path d="M 28 62 C 40 76 65 74 74 48 C 66 69 44 72 28 62 Z" fill="#FFFFFF"/>
                         <defs>
                             <linearGradient id="logo_grad_clear" x1="22" y1="26" x2="62" y2="52" gradientUnits="userSpaceOnUse">
                                 <stop stop-color="#FF2A6D"/>
@@ -84,11 +62,7 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="flex items-center gap-1.5">
-                        <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white">Pointeur Conteneurs</h1>
-                        <!-- Circled (c) Copyright Symbol -->
-                        <span class="text-[10px] text-gray-400 font-bold border border-gray-600 rounded-full w-4 h-4 inline-flex items-center justify-center leading-none">©</span>
-                    </div>
+                    <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white">Pointeur Conteneurs</h1>
                     <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP World Djendjen</p>
                 </div>
             </div>
@@ -146,8 +120,8 @@
 
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR WITH COPYRIGHT FOOTER -->
-    <div class="fixed bottom-0 left-0 right-0 bg-[#141747]/95 backdrop-blur-md border-t border-[#232870] z-40 max-w-lg mx-auto">
+    <!-- BOTTOM NAVIGATION BAR WITH CUSTOM FOOTER WATERMARK -->
+    <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-lg mx-auto">
         <div class="flex items-center justify-around py-2 px-4 text-center">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
                 <i class="fa-solid fa-house text-lg"></i>
@@ -158,16 +132,16 @@
                 <span class="text-[10px] font-semibold">Modèles</span>
             </button>
         </div>
-        <div class="text-[9px] text-center text-gray-500 pb-1.5 font-medium flex items-center justify-center gap-1">
-            <span>© 2026 DP World Djendjen Terminal. All rights reserved.</span>
+        <div class="text-[9.5px] text-center text-gray-400 pb-2 font-medium flex items-center justify-center gap-1 tracking-wide">
+            <span>© 2026 DP World Djendjen Terminal. By djalil</span>
         </div>
     </div>
 
     <!-- POPUP MODAL (Pointer un conteneur) -->
     <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-        <div class="w-full max-w-lg bg-[#141747] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#232870] shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="w-full max-w-lg bg-[#15194a] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#252b75] shadow-2xl max-h-[90vh] overflow-y-auto">
             
-            <div class="flex items-center justify-between mb-4 border-b border-[#232870] pb-3">
+            <div class="flex items-center justify-between mb-4 border-b border-[#252b75] pb-3">
                 <h3 class="font-bold text-base text-center w-full">Pointer un conteneur</h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-white text-lg p-1">
                     <i class="fa-solid fa-xmark"></i>
@@ -177,7 +151,7 @@
             <form onsubmit="handleSave(event)" class="space-y-3.5 text-xs">
                 <div>
                     <label class="block text-gray-300 font-medium mb-1">Modèle de pointeage</label>
-                    <select id="inpModel" onchange="updateDynamicFormFields()" required class="w-full input-dpw p-3 rounded-xl font-bold text-[#00ffaa] bg-[#1c205e]"></select>
+                    <select id="inpModel" onchange="updateDynamicFormFields()" required class="w-full input-dpw p-3 rounded-xl font-bold text-[#00ffaa] bg-[#1d2263]"></select>
                 </div>
 
                 <div>
@@ -216,7 +190,7 @@
                 </div>
 
                 <!-- DYNAMIC CUSTOM FIELDS FOR THE SELECTED MODEL -->
-                <div id="dynamicFieldsContainer" class="space-y-3 pt-2 border-t border-[#232870]"></div>
+                <div id="dynamicFieldsContainer" class="space-y-3 pt-2 border-t border-[#252b75]"></div>
 
                 <div>
                     <label class="block text-gray-300 font-medium mb-1">Remarques générales</label>
@@ -224,7 +198,7 @@
                 </div>
 
                 <div class="flex items-center gap-3 pt-2">
-                    <button type="button" onclick="closeModal()" class="w-1/2 bg-[#232870] hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-xs">Annuler</button>
+                    <button type="button" onclick="closeModal()" class="w-1/2 bg-[#252b75] hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-xs">Annuler</button>
                     <button type="submit" class="w-1/2 btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg">Enregistrer</button>
                 </div>
             </form>
@@ -306,7 +280,7 @@
             Object.keys(modelConfigs).forEach(mName => {
                 const fields = modelConfigs[mName];
                 const card = document.createElement('div');
-                card.className = "bg-[#1c205e] p-3 rounded-xl text-xs space-y-2 border border-[#303799]";
+                card.className = "bg-[#1d2263] p-3 rounded-xl text-xs space-y-2 border border-[#303796]";
                 
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
@@ -314,7 +288,7 @@
                         <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                     <div class="flex flex-wrap gap-1.5 pt-1">
-                        ${fields.map(f => `<span class="bg-[#141747] text-gray-300 px-2 py-0.5 rounded-md border border-[#232870] text-[10px]">${f}</span>`).join('')}
+                        ${fields.map(f => `<span class="bg-[#15194a] text-gray-300 px-2 py-0.5 rounded-md border border-[#252b75] text-[10px]">${f}</span>`).join('')}
                     </div>
                     <div class="flex items-center gap-2 pt-2">
                         <input type="text" id="addField_${mName.replace(/\s+/g, '')}" placeholder="Ajouter une colonne (ex: Navire)" class="input-dpw p-2 rounded-lg text-xs flex-1">
@@ -378,7 +352,7 @@
                 if (item.customData && Object.keys(item.customData).length > 0) {
                     customFieldsHTML = `<div class="flex flex-wrap gap-2 pt-1 text-[11px] text-gray-300">`;
                     for (const [key, val] of Object.entries(item.customData)) {
-                        if (val) customFieldsHTML += `<span class="bg-[#1c205e] px-2 py-0.5 rounded border border-[#303799]"><b>${key}:</b> ${val}</span>`;
+                        if (val) customFieldsHTML += `<span class="bg-[#1d2263] px-2 py-0.5 rounded border border-[#303796]"><b>${key}:</b> ${val}</span>`;
                     }
                     customFieldsHTML += `</div>`;
                 }
@@ -398,7 +372,7 @@
                     </div>
                     <p class="text-gray-400 font-medium text-xs">${item.type} • ${item.loc} • Plomb: ${item.seal}</p>
                     ${customFieldsHTML}
-                    <div class="flex items-center gap-3 text-gray-400 text-[11px] pt-1 border-t border-[#232870]">
+                    <div class="flex items-center gap-3 text-gray-400 text-[11px] pt-1 border-t border-[#252b75]">
                         <span>${item.time}</span>
                         <span>•</span>
                         <span>${item.date}</span>
