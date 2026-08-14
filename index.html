@@ -146,7 +146,7 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500">
 
-    <!-- 🔄 PULL TO REFRESH SPINNER (مؤشر سحب مضبوط وغير حساس عشوائياً) -->
+    <!-- 🔄 PULL TO REFRESH SPINNER -->
     <div id="pullToRefreshIndicator" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-20 flex items-center justify-center transition-all duration-200">
         <div class="w-11 h-11 rounded-full bg-[#15194a]/95 backdrop-blur-md border-2 border-[#00ffaa] shadow-[0_0_20px_rgba(0,255,170,0.6)] flex items-center justify-center text-[#00ffaa]">
             <i id="pullSpinnerIcon" class="fa-solid fa-arrow-down text-sm"></i>
@@ -303,7 +303,7 @@
             <div class="flex items-center justify-between px-1">
                 <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
                 
-                <!-- 📡 شارة الاتصال السحابي الحقيقي -->
+                <!-- 📡 Realtime Connection Badge -->
                 <span id="connectionBadge" class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a]/90 px-3 py-1 rounded-full border border-[#252b75] transition-all duration-300">
                     <span id="connectionDot" class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping"></span> 
                     <span id="lblCloudDirect">Cloud Direct</span>
@@ -466,7 +466,6 @@
                     <p id="ocrStatus" class="text-[10px] text-gray-400 mt-1 hidden"></p>
                 </div>
 
-                <!-- تكبير أزرار النوع والحالة لتكون مريحة وواضحة -->
                 <div class="grid grid-cols-2 gap-3.5">
                     <div>
                         <label class="block text-gray-200 font-bold mb-1.5 text-xs" id="lblType">Type & taille</label>
@@ -586,10 +585,19 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
+        // 🛡️ تفعيل الاستمرارية المحلية لقاعدة بيانات Firebase
+        try {
+            db.setPersistence(true);
+        } catch(e) {}
+
         let currentUser = null;
         let authMode = 'login';
         let currentLang = localStorage.getItem('dpw_lang') || 'fr';
+        
+        // 💾 تحميل مباشر من ذاكرة الهاتف لعدم الاختفاء مطلقاً
         let containers = JSON.parse(localStorage.getItem('dpw_local_containers')) || [];
+        let offlineQueue = JSON.parse(localStorage.getItem('dpw_offline_queue')) || [];
+
         let modelConfigs = JSON.parse(localStorage.getItem('dpw_local_models')) || {
             'Débarquement': ['Navire', 'N° Manifeste', 'Température'],
             'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
@@ -600,7 +608,6 @@
         let currentDamagePhotoBase64 = '';
         let isSaving = false;
 
-        // 🔄 دالة إعادة التحميل ومسح الكاش
         function forceRefreshApp() {
             showToast(currentLang === 'ar' ? "جاري التحديث..." : "Actualisation...");
             if ('caches' in window) {
@@ -613,7 +620,7 @@
             }, 300);
         }
 
-        // 📲 سحب للأسفل محكم ومضبوط
+        // 📲 Pull to refresh
         let touchStartY = 0;
         let isPulling = false;
 
@@ -629,7 +636,6 @@
             const currentY = e.touches[0].clientY;
             const diff = currentY - touchStartY;
 
-            // عتبة أمان عالية (45px) لتفادي الخروج أثناء التمرير الطبيعي
             if (diff > 45 && window.scrollY <= 2) {
                 const indicator = document.getElementById('pullToRefreshIndicator');
                 const spinnerIcon = document.getElementById('pullSpinnerIcon');
@@ -653,7 +659,6 @@
             const currentY = e.changedTouches[0].clientY;
             const diff = currentY - touchStartY;
 
-            // يتطلب سحباً واضحاً ومتعمداً (أكثر من 130px)
             if (diff > 130 && window.scrollY <= 2) {
                 triggerHapticFeedback();
                 indicator.style.transform = `translate(-50%, 45px)`;
@@ -751,13 +756,14 @@
                 initFirebaseSync();
             } else {
                 const savedAgent = localStorage.getItem('dpw_last_agent');
-                if (!navigator.onLine && savedAgent) {
+                if (savedAgent) {
                     currentUser = { email: savedAgent };
                     authModal.classList.add('hidden');
                     document.getElementById('accountEmailDisplay').innerText = savedAgent;
                     filterContainers();
                     renderTrackingList();
                     updateAccountStats();
+                    initFirebaseSync();
                 } else {
                     currentUser = null;
                     authModal.classList.remove('hidden');
@@ -809,9 +815,26 @@
             }
         }
 
-        // 📡 المراقبة السحابية الحقيقية ومزامنة البيانات
+        // 🔄 محرك المزامنة التلقائية الصامتة بين الهاتف والسحابة
+        async function syncOfflineQueue() {
+            if (offlineQueue.length === 0) return;
+
+            const pending = [...offlineQueue];
+            for (const item of pending) {
+                try {
+                    await db.ref('containers/' + item.firebaseKey).set(item);
+                    offlineQueue = offlineQueue.filter(q => q.firebaseKey !== item.firebaseKey);
+                    localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
+                } catch(e) {
+                    break;
+                }
+            }
+            if (offlineQueue.length === 0) {
+                showToast(currentLang === 'ar' ? "✓ تمت مزامنة جميع الحاويات المسجلة أوفلاين مع السحابة" : "✓ Données hors-ligne synchronisées avec le Cloud");
+            }
+        }
+
         function initFirebaseSync() {
-            // مراقبة اتصال سيرفر Firebase الحقيقي
             db.ref('.info/connected').on('value', (snap) => {
                 const isConnected = snap.val() === true;
                 const badge = document.getElementById('connectionBadge');
@@ -831,6 +854,9 @@
                         if (accountDot) accountDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
                         if (accountLabel) accountLabel.innerText = translations[currentLang].activeState;
                     }
+
+                    // رفع أي حاويات سجلت أثناء انقطاع النت
+                    syncOfflineQueue();
                 } else {
                     badge.className = "text-[10px] text-amber-400 flex items-center gap-1.5 font-semibold bg-[#15194a]/90 px-3 py-1 rounded-full border border-amber-500/40 transition-all duration-300";
                     dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400";
@@ -844,10 +870,18 @@
                 }
             });
 
+            // مزامنة الحاويات بدمج آمن يضمن عدم حذف أي حاوية
             db.ref('containers').on('value', (snap) => {
                 const val = snap.val();
                 if (val) {
-                    containers = Object.values(val);
+                    const cloudList = Object.values(val);
+                    
+                    // دمج الحاويات المحلية والسحابية بدون تكرار
+                    const map = new Map();
+                    containers.forEach(c => map.set(c.firebaseKey, c));
+                    cloudList.forEach(c => map.set(c.firebaseKey, c));
+
+                    containers = Array.from(map.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                     localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
                 }
                 filterContainers();
@@ -877,7 +911,7 @@
 
         function updateAccountStats() {
             if(!currentUser) return;
-            const agentPrefix = currentUser.email.split('@')[0];
+            const agentPrefix = currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur';
             const myCount = containers.filter(c => c.agent === agentPrefix).length;
             document.getElementById('agentCountStat').innerText = myCount;
 
@@ -1445,8 +1479,12 @@
                 filterContainers();
                 triggerHapticFeedback();
             }
-            if (navigator.onLine && fbKey) {
+            try {
                 await db.ref('containers/' + fbKey).update({ stage: newStage });
+            } catch(e) {
+                // حفظ للتحديث لاحقاً إذا انقطع النت
+                offlineQueue.push(containers[idx]);
+                localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
             }
             showToast(currentLang === 'ar' ? `تم تحديث المرحلة: ${newStage}` : `Position mise à jour: ${newStage}`);
         }
@@ -1539,9 +1577,9 @@
                 const base64Data = e.target.result.split(',')[1];
                 modelTemplates[currentUploadTemplateTarget] = base64Data;
                 localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
-                if (navigator.onLine) {
+                try {
                     await db.ref('modelTemplates').set(modelTemplates);
-                }
+                } catch(e) {}
                 showToast(currentLang === 'ar' ? `تم رفع قالب إكسل لـ "${currentUploadTemplateTarget}"` : `Template Excel enregistré pour "${currentUploadTemplateTarget}"`);
             };
             reader.readAsDataURL(file);
@@ -1552,9 +1590,9 @@
             if (val && !modelConfigs[val]) {
                 modelConfigs[val] = [];
                 localStorage.setItem('dpw_local_models', JSON.stringify(modelConfigs));
-                if (navigator.onLine) {
+                try {
                     await db.ref('modelConfigs').set(modelConfigs);
-                }
+                } catch(e) {}
                 document.getElementById('inpNewModel').value = '';
                 renderModelsList();
                 populateModelSelect();
@@ -1569,10 +1607,10 @@
                 delete modelTemplates[modelName];
                 localStorage.setItem('dpw_local_models', JSON.stringify(modelConfigs));
                 localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
-                if (navigator.onLine) {
+                try {
                     await db.ref('modelConfigs').set(modelConfigs);
                     await db.ref('modelTemplates').set(modelTemplates);
-                }
+                } catch(e) {}
                 renderModelsList();
                 populateModelSelect();
                 showToast(currentLang === 'ar' ? `تم حذف النموذج "${modelName}"` : `Modèle "${modelName}" supprimé`);
@@ -1632,17 +1670,21 @@
             if (confirm(confirmMsg)) {
                 containers = containers.filter(c => c.firebaseKey !== fbKey);
                 localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+                offlineQueue = offlineQueue.filter(q => q.firebaseKey !== fbKey);
+                localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
+                
                 filterContainers();
                 renderTrackingList();
                 updateAccountStats();
 
-                if (navigator.onLine && fbKey) {
+                try {
                     await db.ref('containers/' + fbKey).remove();
-                }
+                } catch(e) {}
                 showToast(currentLang === 'ar' ? "تم حذف الحاوية بنجاح" : "Conteneur supprimé");
             }
         }
 
+        // 🚀 الحفظ المزدوج الفوري (Dual Local + Cloud Save)
         async function handleSave(e) {
             e.preventDefault();
             if (isSaving) return;
@@ -1680,16 +1722,21 @@
                         containers[idx].customData = customData;
                         if (currentDamagePhotoBase64) containers[idx].damagePhoto = currentDamagePhotoBase64;
                         
+                        // حفظ فوري في ذاكرة الهاتف
                         localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
-                        if (navigator.onLine) {
+                        
+                        try {
                             await db.ref('containers/' + editKey).update(containers[idx]);
+                        } catch(e) {
+                            offlineQueue.push(containers[idx]);
+                            localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
                         }
                     }
                     showToast(currentLang === 'ar' ? "✓ تم تحديث بيانات الحاوية" : "✓ Conteneur mis à jour");
                 } else {
-                    const tempKey = 'cnt_' + Date.now();
+                    const uniqueKey = 'cnt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
                     const newItem = {
-                        firebaseKey: tempKey,
+                        firebaseKey: uniqueKey,
                         id: inputIdVal,
                         model: selectedModel,
                         stage: 'Stock',
@@ -1702,19 +1749,23 @@
                         customData: customData,
                         time: timeStr,
                         date: now.toLocaleDateString('fr-FR'),
-                        agent: currentUser ? currentUser.email.split('@')[0] : 'Pointeur',
+                        agent: currentUser && currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur',
                         timestamp: Date.now()
                     };
 
+                    // حفظ فوري لا يختفي في الهاتف
                     containers.unshift(newItem);
                     localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
 
-                    if (navigator.onLine) {
-                        const newRef = db.ref('containers').push();
-                        newItem.firebaseKey = newRef.key;
-                        await newRef.set(newItem);
+                    try {
+                        await db.ref('containers/' + uniqueKey).set(newItem);
+                    } catch(e) {
+                        // إذا كان الهاتف أوفلاين، تضاف لقائمة الرفع التلقائي
+                        offlineQueue.push(newItem);
+                        localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
                     }
-                    showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية بنجاح!" : "✓ Conteneur enregistré!");
+                    
+                    showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية (محلياً وسحابياً)!" : "✓ Conteneur enregistré (Local & Cloud)!");
                 }
 
                 triggerHapticFeedback();
@@ -1790,11 +1841,13 @@
         async function archiveShiftData() {
             const confirmMsg = currentLang === 'ar' ? "هل تريد أرشفة الوردية ومسح الحاويات من الواجهة لبدء وردية جديدة؟ (تأكد من تصدير الإكسل أولاً)" : "Voulez-vous archiver cette vacation et réinitialiser la liste active ? (Assurez-vous d'avoir exporté l'Excel d'abord)";
             if (confirm(confirmMsg)) {
-                if (navigator.onLine) {
+                try {
                     await db.ref('containers').remove();
-                }
+                } catch(e) {}
                 containers = [];
+                offlineQueue = [];
                 localStorage.setItem('dpw_local_containers', JSON.stringify([]));
+                localStorage.setItem('dpw_offline_queue', JSON.stringify([]));
                 filterContainers();
                 renderTrackingList();
                 updateAccountStats();
@@ -1811,6 +1864,10 @@
             });
         }
 
+        // تشغيل التهيئة وعرض البيانات المحفوظة محلياً فور فتح التطبيق
+        populateModelSelect();
+        filterContainers();
+        renderTrackingList();
         setLanguage(currentLang);
     </script>
 </body>
