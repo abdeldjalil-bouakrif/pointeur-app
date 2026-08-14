@@ -1,440 +1,860 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" id="htmlTag">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Pointeur Conteneurs - DP WORLD DJENDJEN</title>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- SheetJS for Excel Export -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;900&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pointeur conteneurs - DP World</title>
+    <!-- Tailwind CSS, SheetJS & Tesseract OCR -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     
-    body {
-      font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif;
-      background-color: #070b19;
-      color: #ffffff;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .dpw-glow {
-      box-shadow: 0 0 20px rgba(0, 242, 174, 0.45);
-    }
-    
-    .timeline-line {
-      background: linear-gradient(90deg, #00f2ae 0%, #00f2ae 66%, rgba(244, 63, 94, 0.6) 66%, rgba(255, 255, 255, 0.1) 100%);
-    }
-
-    .card-bg {
-      background-color: #101730;
-      border: 1px solid #1c264a;
-    }
-  </style>
-</head>
-<body class="min-h-screen flex flex-col justify-between pb-24">
-
-  <!-- ================= AUTH MODAL (نافذة الدخول السحابية) ================= -->
-  <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#070b19]/95 backdrop-blur-md p-4">
-    <div class="card-bg w-full max-w-xs p-5 rounded-3xl shadow-2xl text-center">
-      <div class="w-12 h-12 mx-auto mb-3">
-        <!-- Official DP World Icon -->
-        <svg viewBox="0 0 100 100" class="w-full h-full">
-          <path d="M10 50 Q 50 10, 90 50 Q 50 90, 10 50" fill="none" stroke="#00f2ae" stroke-width="8" />
-          <path d="M20 50 Q 50 25, 80 50 Q 50 75, 20 50" fill="none" stroke="#ff4b55" stroke-width="8" />
-          <circle cx="50" cy="50" r="10" fill="#00d2ff"/>
-        </svg>
-      </div>
-      <h3 class="font-extrabold text-base text-white">DP WORLD DJENDJEN</h3>
-      <p class="text-[11px] text-slate-400 mb-4">Connexion au Cloud Pointeur</p>
-
-      <div class="flex border-b border-slate-700/60 mb-3 text-xs font-bold">
-        <button id="btn-tab-login" onclick="switchAuth('login')" class="flex-1 py-1.5 text-[#00f2ae] border-b-2 border-[#00f2ae]">Connexion</button>
-        <button id="btn-tab-reg" onclick="switchAuth('reg')" class="flex-1 py-1.5 text-slate-400">Créer compte</button>
-      </div>
-
-      <form onsubmit="handleAuthSubmit(event)" class="space-y-2.5 text-xs text-left">
-        <input type="email" id="user-email" placeholder="Email (ex: djalil@dpw.dz)" required class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-[#00f2ae]">
-        <input type="password" id="user-pass" placeholder="Mot de passe" required class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-[#00f2ae]">
-        <button type="submit" id="auth-main-btn" class="w-full bg-[#00f2ae] hover:bg-[#00d296] text-[#070b19] font-black py-2.5 rounded-xl shadow-lg transition">
-          Se connecter
-        </button>
-        <p id="auth-msg" class="text-[10px] text-rose-400 text-center"></p>
-      </form>
-    </div>
-  </div>
-
-  <!-- ================= TOP HEADER ================= -->
-  <header class="px-5 pt-4">
-    <div class="flex items-center justify-between mb-4">
-      <!-- Logo & Titles -->
-      <div class="flex items-center gap-3">
-        <!-- DP World Multi-color Flow Shape -->
-        <div class="w-10 h-10 flex-shrink-0">
-          <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
-            <path d="M10 50 Q 50 10, 90 50 Q 50 90, 10 50" fill="none" stroke="#00f2ae" stroke-width="9" stroke-linecap="round"/>
-            <path d="M20 50 Q 50 25, 80 50 Q 50 75, 20 50" fill="none" stroke="#ff4b55" stroke-width="9" stroke-linecap="round"/>
-            <circle cx="50" cy="50" r="8" fill="#00d2ff"/>
-          </svg>
-        </div>
-        <div>
-          <h1 class="text-lg font-extrabold tracking-tight text-white leading-tight">Pointeur<br>Conteneurs</h1>
-          <p class="text-[11px] font-bold text-[#00f2ae] tracking-wider">DP WORLD DJENDJEN</p>
-        </div>
-      </div>
-
-      <!-- Header Action Buttons (Excel & Pointer) -->
-      <div class="flex items-center gap-2">
-        <button onclick="exportExcel()" class="bg-[#00f2ae] hover:bg-[#00d296] text-[#070b19] font-extrabold text-xs px-3.5 py-2.5 rounded-2xl flex items-center gap-1.5 shadow-lg shadow-[#00f2ae]/20 transition">
-          <i class="fa-solid fa-file-excel text-sm"></i> Excel
-        </button>
-        <button onclick="openAddModal()" class="bg-gradient-to-r from-[#ff4b55] to-[#ff7347] text-white font-extrabold text-xs px-3.5 py-2.5 rounded-2xl flex items-center gap-1.5 shadow-lg shadow-[#ff4b55]/30 transition">
-          <span class="text-sm font-black">+</span> Pointer
-        </button>
-      </div>
-    </div>
-
-    <!-- Language Selector -->
-    <div class="flex items-center justify-center gap-2 text-xs font-semibold py-1">
-      <span class="text-slate-400 flex items-center gap-1"><i class="fa-solid fa-globe"></i> Language:</span>
-      <button class="bg-[#00f2ae] text-[#070b19] font-black px-2.5 py-0.5 rounded-md text-[11px]">FR</button>
-      <button class="text-slate-400 hover:text-white px-2 py-0.5 text-[11px]">عربي</button>
-      <button class="text-slate-400 hover:text-white px-2 py-0.5 text-[11px]">EN</button>
-    </div>
-  </header>
-
-  <!-- ================= MAIN FLOW VIEW ================= -->
-  <main class="px-4 space-y-4 mt-2">
-    
-    <!-- Top Info Card -->
-    <div class="card-bg p-4 rounded-3xl">
-      <div class="flex items-center gap-2 text-[#00f2ae] font-bold text-sm mb-1">
-        <i class="fa-solid fa-route text-base"></i>
-        <span>Suivi Flux (Import & Export)</span>
-      </div>
-      <p class="text-[11px] text-slate-400 leading-relaxed">
-        Cliquez sur les étapes pour mettre à jour la position du conteneur en temps réel.
-      </p>
-    </div>
-
-    <!-- Live Active Containers Cards (Rendered from Firebase) -->
-    <div id="containers-list" class="space-y-4">
-      <!-- Example Active Card matching your exact screenshot -->
-      <div class="card-bg p-5 rounded-3xl relative overflow-hidden">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-lg font-bold text-white tracking-wide">حاوية نبيلة</h2>
-            <p class="text-[11px] text-slate-400">20' ST • Emplacement: <span class="text-slate-200 font-semibold">ابتفو</span></p>
-          </div>
-          <span class="bg-[#2c1b4d] text-[#b388ff] text-[11px] font-bold px-3 py-1 rounded-full border border-[#b388ff]/30">
-            En Douane
-          </span>
-        </div>
-
-        <!-- 4 Step Glowing Timeline -->
-        <div class="relative pt-2 pb-1">
-          <!-- Horizontal Line -->
-          <div class="timeline-line absolute top-6 left-6 right-6 h-[3px] -translate-y-1/2 z-0"></div>
-
-          <div class="relative z-10 flex justify-between text-center">
-            <!-- Navire (Done) -->
-            <div class="flex flex-col items-center">
-              <div class="w-8 h-8 rounded-full bg-[#00f2ae] text-[#070b19] flex items-center justify-center text-xs font-bold shadow-md">
-                <i class="fa-solid fa-ship"></i>
-              </div>
-              <span class="text-[10px] text-slate-400 font-bold mt-1.5">Navire</span>
-            </div>
-
-            <!-- Stock (Done) -->
-            <div class="flex flex-col items-center">
-              <div class="w-8 h-8 rounded-full bg-[#00f2ae] text-[#070b19] flex items-center justify-center text-xs font-bold shadow-md">
-                <i class="fa-solid fa-boxes-stacked"></i>
-              </div>
-              <span class="text-[10px] text-slate-400 font-bold mt-1.5">Stock</span>
-            </div>
-
-            <!-- Douane (Active Glow) -->
-            <div class="flex flex-col items-center">
-              <div class="w-9 h-9 -mt-0.5 rounded-full bg-[#070b19] border-2 border-[#00f2ae] text-[#00f2ae] flex items-center justify-center text-xs font-bold dpw-glow">
-                <i class="fa-solid fa-building-columns"></i>
-              </div>
-              <span class="text-[10px] text-[#00f2ae] font-bold mt-1.5">Douane</span>
-            </div>
-
-            <!-- Sortie (Upcoming) -->
-            <div class="flex flex-col items-center">
-              <div class="w-8 h-8 rounded-full bg-[#1b254b] text-slate-500 flex items-center justify-center text-xs">
-                <i class="fa-solid fa-check"></i>
-              </div>
-              <span class="text-[10px] text-slate-500 font-bold mt-1.5">Sortie</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- ================= ADD MODAL (Pointer) ================= -->
-  <div id="add-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-    <div class="card-bg w-full max-w-sm p-5 rounded-3xl space-y-3">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-        <h3 class="font-bold text-sm text-white flex items-center gap-2">
-          <i class="fa-solid fa-plus text-[#00f2ae]"></i> Nouveau Conteneur
-        </h3>
-        <button onclick="closeAddModal()" class="text-slate-400 hover:text-white text-base">✕</button>
-      </div>
-
-      <form onsubmit="saveNewContainer(event)" class="space-y-2.5 text-xs text-right">
-        <input type="text" id="add-num" placeholder="اسم / رقم الحاوية (ex: MSCU1234567)" required class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-[#00f2ae]">
-        <div class="grid grid-cols-2 gap-2">
-          <select id="add-type" class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-2 py-2 text-white outline-none">
-            <option value="20' ST">20' ST</option>
-            <option value="40' HC" selected>40' HC</option>
-            <option value="40' ST">40' ST</option>
-            <option value="Reefer">Reefer</option>
-          </select>
-          <input type="text" id="add-loc" placeholder="Emplacement (الموقع)" class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none">
-        </div>
-        <select id="add-step" class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-2 py-2 text-white outline-none">
-          <option value="Navire">1. Navire (تفريغ)</option>
-          <option value="Stock">2. Stock (في الساحة)</option>
-          <option value="Douane" selected>3. Douane (جمارك)</option>
-          <option value="Sortie">4. Sortie (خروج)</option>
-        </select>
-        <button type="submit" class="w-full bg-[#ff4b55] hover:bg-[#ff3843] text-white font-bold py-2.5 rounded-xl shadow-lg transition">
-          Enregistrer au Cloud
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- ================= FOOTER COPYRIGHT ================= -->
-  <footer class="text-center py-4 text-[11px] text-slate-500">
-    © 2026 DP World Djendjen Terminal. By djalil
-  </footer>
-
-  <!-- ================= BOTTOM NAVIGATION BAR ================= -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-[#070b19]/95 border-t border-slate-800/80 backdrop-blur-md px-6 py-2.5 z-40">
-    <div class="max-w-md mx-auto flex items-center justify-around text-center">
-      <!-- Accueil -->
-      <button class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300">
-        <i class="fa-solid fa-house text-base"></i>
-        <span class="text-[10px] font-semibold">Accueil</span>
-      </button>
-
-      <!-- Suivi Flux (Active) -->
-      <button class="flex flex-col items-center gap-1 text-[#00f2ae]">
-        <i class="fa-solid fa-route text-base"></i>
-        <span class="text-[10px] font-bold">Suivi Flux</span>
-      </button>
-
-      <!-- Modèles -->
-      <button class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300">
-        <i class="fa-solid fa-sliders text-base"></i>
-        <span class="text-[10px] font-semibold">Modèles</span>
-      </button>
-    </div>
-  </nav>
-
-  <!-- ================= FIREBASE LOGIC ================= -->
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAJ2eLg1TJ419Hxhi542A104GiGhi3k5Ps",
-      authDomain: "pointeur-167d6.firebaseapp.com",
-      databaseURL: "https://pointeur-167d6-default-rtdb.firebaseio.com",
-      projectId: "pointeur-167d6",
-      storageBucket: "pointeur-167d6.firebasestorage.app",
-      messagingSenderId: "2002696474",
-      appId: "1:2002696474:web:0fc47757b941c0a3b8d4a3",
-      measurementId: "G-3GWZV8BWE4"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
-
-    let authMode = 'login';
-    let currentContainers = [];
-
-    // Auth Observer
-    auth.onAuthStateChanged((user) => {
-      const modal = document.getElementById('auth-modal');
-      if (user) {
-        modal.classList.add('hidden');
-        loadFirebaseData();
-      } else {
-        modal.classList.remove('hidden');
-      }
-    });
-
-    function switchAuth(mode) {
-      authMode = mode;
-      const bLog = document.getElementById('btn-tab-login');
-      const bReg = document.getElementById('btn-tab-reg');
-      const btn = document.getElementById('auth-main-btn');
-
-      if(mode === 'login') {
-        btn.innerText = "Se connecter";
-        bLog.className = "flex-1 py-1.5 text-[#00f2ae] border-b-2 border-[#00f2ae]";
-        bReg.className = "flex-1 py-1.5 text-slate-400";
-      } else {
-        btn.innerText = "Créer compte";
-        bReg.className = "flex-1 py-1.5 text-[#00f2ae] border-b-2 border-[#00f2ae]";
-        bLog.className = "flex-1 py-1.5 text-slate-400";
-      }
-    }
-
-    async function handleAuthSubmit(e) {
-      e.preventDefault();
-      const em = document.getElementById('user-email').value;
-      const ps = document.getElementById('user-pass').value;
-      const msg = document.getElementById('auth-msg');
-      msg.innerText = "";
-
-      try {
-        if(authMode === 'login') {
-          await auth.signInWithEmailAndPassword(em, ps);
-        } else {
-          await auth.createUserWithEmailAndPassword(em, ps);
+    <style>
+        body { 
+            font-family: 'Inter', 'Cairo', sans-serif; 
+            background-color: #0d1033; 
+            color: #ffffff; 
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
-      } catch(err) {
-        msg.innerText = err.message;
-      }
-    }
-
-    function openAddModal() {
-      document.getElementById('add-modal').classList.remove('hidden');
-      document.getElementById('add-modal').classList.add('flex');
-    }
-
-    function closeAddModal() {
-      document.getElementById('add-modal').classList.add('hidden');
-      document.getElementById('add-modal').classList.remove('flex');
-    }
-
-    async function saveNewContainer(e) {
-      e.preventDefault();
-      const num = document.getElementById('add-num').value.trim();
-      const type = document.getElementById('add-type').value;
-      const loc = document.getElementById('add-loc').value.trim();
-      const step = document.getElementById('add-step').value;
-
-      const newRef = db.ref('containers').push();
-      await newRef.set({
-        id: newRef.key,
-        name: num,
-        type: type,
-        location: loc || "N/A",
-        step: step,
-        timestamp: Date.now()
-      });
-
-      closeAddModal();
-      document.getElementById('add-num').value = "";
-      document.getElementById('add-loc').value = "";
-    }
-
-    function loadFirebaseData() {
-      db.ref('containers').on('value', (snap) => {
-        const val = snap.val();
-        currentContainers = val ? Object.values(val).reverse() : [];
-        renderFlowCards(currentContainers);
-      });
-    }
-
-    async function updateContainerStep(id, newStep) {
-      await db.ref('containers/' + id).update({ step: newStep });
-    }
-
-    function renderFlowCards(list) {
-      const container = document.getElementById('containers-list');
-      if(list.length === 0) {
-        container.innerHTML = `<div class="text-center text-slate-500 text-xs py-8">Aucun conteneur pointé. Cliquez sur <b>+ Pointer</b> pour commencer.</div>`;
-        return;
-      }
-
-      const steps = ['Navire', 'Stock', 'Douane', 'Sortie'];
-      const icons = {
-        'Navire': 'fa-ship',
-        'Stock': 'fa-boxes-stacked',
-        'Douane': 'fa-building-columns',
-        'Sortie': 'fa-check'
-      };
-
-      container.innerHTML = list.map(c => {
-        const currentIdx = steps.indexOf(c.step);
+        .dpw-card { background-color: #15194a; border: 1px solid #252b75; }
+        .input-dpw { background-color: #1d2263; border: 1px solid #303796; color: #ffffff; }
+        .input-dpw:focus { border-color: #00ffaa; outline: none; }
+        .btn-dpw-gradient { background: linear-gradient(135deg, #ff2a6d 0%, #ff5e1e 100%); color: white; }
+        .btn-dpw-gradient:hover { opacity: 0.95; }
+        .btn-dpw-green { background-color: #00ffaa; color: #0d1033; }
+        .btn-dpw-green:hover { background-color: #00cc88; }
+        .btn-dpw-blue { background-color: #3b82f6; color: white; }
+        .badge-green { background-color: #064e3b; color: #34d399; border: 1px solid #047857; }
+        .badge-red { background-color: #4c0519; color: #fb7185; border: 1px solid #9f1239; }
         
-        return `
-          <div class="card-bg p-5 rounded-3xl relative overflow-hidden">
-            <div class="flex items-center justify-between mb-4">
-              <div>
-                <h2 class="text-base font-bold text-white">${c.name}</h2>
-                <p class="text-[11px] text-slate-400">${c.type} • Emplacement: <span class="text-slate-200 font-semibold">${c.location}</span></p>
-              </div>
-              <span class="bg-[#2c1b4d] text-[#b388ff] text-[11px] font-bold px-3 py-1 rounded-full border border-[#b388ff]/30">
-                ${c.step === 'Douane' ? 'En Douane' : c.step}
-              </span>
+        /* Stage Badges */
+        .stage-navire { background-color: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
+        .stage-stock { background-color: #36200d; color: #f97316; border: 1px solid #ea580c; }
+        .stage-douane { background-color: #2e1065; color: #c084fc; border: 1px solid #9333ea; }
+        .stage-embarque { background-color: #064e3b; color: #34d399; border: 1px solid #047857; }
+
+        .nav-item-active { color: #00ffaa; }
+        .nav-item-inactive { color: #64748b; }
+
+        /* GLOWING PIPELINE TIMELINE STYLES */
+        /* Active Glowing Node for Current Stage */
+        .glow-node-current {
+            background-color: #00ffaa !important;
+            color: #0d1033 !important;
+            box-shadow: 0 0 15px #00ffaa, 0 0 25px rgba(0,255,170,0.6);
+            border: 2px solid #ffffff !important;
+            transform: scale(1.15);
+        }
+        /* Visible Illuminated Nodes for Other Steps */
+        .glow-node-passed {
+            background-color: #1d2263;
+            color: #00ffaa;
+            border: 2px solid #00ffaa;
+        }
+        .glow-node-future {
+            background-color: #141747;
+            color: #64748b;
+            border: 2px solid #303796;
+        }
+        
+        .glow-line-active {
+            background: linear-gradient(90deg, #00ffaa, #ff2a6d);
+            box-shadow: 0 0 6px #00ffaa;
+        }
+        .glow-line-inactive {
+            background-color: #252b75;
+        }
+    </style>
+</head>
+<body class="bg-[#0d1033] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500 pb-20">
+
+    <!-- Container Main Area -->
+    <div class="w-full p-4 sm:p-6 max-w-lg mx-auto relative z-10">
+
+        <!-- BRAND HEADER SECTION -->
+        <div class="flex items-center justify-between mt-2 mb-3 pb-3 border-b border-[#252b75]">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 flex items-center justify-center shrink-0">
+                    <svg class="w-full h-full filter drop-shadow-[0_2px_8px_rgba(0,255,170,0.3)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22 52C22 30 42 26 62 27C45 30 34 38 32 52C31 65 22 52 22 52Z" fill="url(#logo_grad_clear)"/>
+                        <path d="M2 62C22 43 49 57 72 38C72 38 70 51 51 58C32 65 15 53 2 62Z" fill="#00FFAA"/>
+                        <path d="M 28 62 C 40 76 65 74 74 48 C 66 69 44 72 28 62 Z" fill="#FFFFFF"/>
+                        <defs>
+                            <linearGradient id="logo_grad_clear" x1="22" y1="26" x2="62" y2="52" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#FF2A6D"/>
+                                <stop offset="1" stop-color="#FF5E1E"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white" id="txtTitle">Pointeur Conteneurs</h1>
+                    <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP World Djendjen</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- EXCEL BUTTON (CLEAN NAME - THEORY LOGIC ONLY) -->
+                <button onclick="exportToExcel()" class="btn-dpw-green px-3 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Exporter Excel">
+                    <i class="fa-solid fa-file-excel text-sm"></i>
+                    <span>Excel</span>
+                </button>
+                <button onclick="openModal()" class="btn-dpw-gradient px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md active:scale-95 transition">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span id="btnPointerText">Pointer</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- LANGUAGE SELECTOR BAR -->
+        <div class="flex items-center justify-end gap-1.5 mb-4 text-[10px] font-bold">
+            <span class="text-gray-400 mr-1"><i class="fa-solid fa-globe"></i> Language:</span>
+            <button onclick="setLanguage('fr')" id="langBtn_fr" class="px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
+            <button onclick="setLanguage('ar')" id="langBtn_ar" class="px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300">عربي</button>
+            <button onclick="setLanguage('en')" id="langBtn_en" class="px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300">EN</button>
+        </div>
+
+        <!-- TAB 1: ACCUEIL -->
+        <div id="tabAccueil" class="space-y-4">
+            <div class="flex items-center justify-between my-2 text-xs gap-2">
+                <select id="filterStage" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
+                    <option value="All" id="optAllStages">Tous les emplacements</option>
+                    <option value="Navire" id="optNavire">🚢 En Navire</option>
+                    <option value="Stock" id="optStock">📦 En Stockage</option>
+                    <option value="Douane" id="optDouane">🏛️ En Douane</option>
+                    <option value="Embarqué" id="optEmbarque">⚓ Embarqué / Livré</option>
+                </select>
+                <select id="filterStatus" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
+                    <option value="All" id="optAllStatus">Tous les états</option>
+                    <option value="Bon état" id="optBonEtat">Bon état</option>
+                    <option value="Endommagé" id="optEndommage">Endommagé</option>
+                </select>
+            </div>
+            <div class="flex items-center justify-between px-1">
+                <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
             </div>
 
-            <div class="relative pt-2 pb-1">
-              <div class="timeline-line absolute top-6 left-6 right-6 h-[3px] -translate-y-1/2 z-0"></div>
-              <div class="relative z-10 flex justify-between text-center">
-                ${steps.map((st, i) => {
-                  const isDone = i < currentIdx;
-                  const isActive = i === currentIdx;
-                  
-                  let circleClass = "bg-[#1b254b] text-slate-500";
-                  let textClass = "text-slate-500";
-                  
-                  if(isDone) {
-                    circleClass = "bg-[#00f2ae] text-[#070b19]";
-                    textClass = "text-slate-400";
-                  } else if(isActive) {
-                    circleClass = "bg-[#070b19] border-2 border-[#00f2ae] text-[#00f2ae] dpw-glow";
-                    textClass = "text-[#00f2ae]";
-                  }
+            <!-- Containers Dynamic List -->
+            <div id="containersList" class="space-y-3"></div>
+        </div>
 
-                  return `
-                    <div onclick="updateContainerStep('${c.id}', '${st}')" class="flex flex-col items-center cursor-pointer">
-                      <div class="w-8 h-8 rounded-full ${circleClass} flex items-center justify-center text-xs font-bold transition">
-                        <i class="fa-solid ${icons[st]}"></i>
-                      </div>
-                      <span class="text-[10px] font-bold mt-1.5 ${textClass}">${st}</span>
+        <!-- TAB 2: SUIVI FLUX -->
+        <div id="tabSuivi" class="hidden space-y-4">
+            <div class="dpw-card p-4 rounded-2xl space-y-2">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-route text-[#00ffaa]"></i>
+                    <span id="txtSuiviTitle">Suivi Flux (Import & Export)</span>
+                </h3>
+                <p class="text-xs text-gray-400" id="txtSuiviDesc">Cliquez sur les étapes pour mettre à jour la position du conteneur en temps réel.</p>
+            </div>
+
+            <!-- Glowing Interactive Pipeline List -->
+            <div id="trackingList" class="space-y-4"></div>
+        </div>
+
+        <!-- TAB 3: CONFIGURATION DES MODÈLES & TEMPLATES EXCEL -->
+        <div id="tabSettings" class="hidden space-y-4">
+            <div class="dpw-card p-4 rounded-2xl space-y-3">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice text-[#00ffaa]"></i>
+                    <span id="txtModelsTitle">Modèles & Templates Excel</span>
+                </h3>
+                <p class="text-xs text-gray-400" id="txtModelsDesc">Ajoutez des modèles et chargez le fichier Excel officiel de l'entreprise.</p>
+                
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="text" id="inpNewModel" placeholder="Nom du modèle (ex: Visite Douane)" class="input-dpw p-2.5 rounded-xl text-xs flex-1">
+                    <button onclick="addNewModel()" class="btn-dpw-gradient px-4 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition" id="btnCreateModel">
+                        Créer
+                    </button>
+                </div>
+            </div>
+
+            <div class="dpw-card p-4 rounded-2xl space-y-4">
+                <h4 class="font-semibold text-xs text-gray-300" id="txtConfiguredModels">Modèles configurés & Templates</h4>
+                <div id="modelsList" class="space-y-3"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-lg mx-auto">
+        <div class="flex items-center justify-around py-2 px-3 text-center">
+            <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
+                <i class="fa-solid fa-house text-base"></i>
+                <span class="text-[10px] font-semibold" id="navAccueil">Accueil</span>
+            </button>
+            <button id="navBtnSuivi" onclick="switchTab('suivi')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
+                <i class="fa-solid fa-route text-base"></i>
+                <span class="text-[10px] font-semibold" id="navSuivi">Suivi Flux</span>
+            </button>
+            <button id="navBtnSettings" onclick="switchTab('settings')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
+                <i class="fa-solid fa-sliders text-base"></i>
+                <span class="text-[10px] font-semibold" id="navSettings">Modèles</span>
+            </button>
+        </div>
+        <div class="text-[9.5px] text-center text-gray-400 pb-2 font-medium flex items-center justify-center gap-1 tracking-wide">
+            <span>© 2026 DP World Djendjen Terminal. By djalil</span>
+        </div>
+    </div>
+
+    <!-- Hidden File Inputs -->
+    <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="hidden" onchange="processOCRImage(event)">
+    <input type="file" id="templateFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleTemplateUpload(event)">
+
+    <!-- POPUP MODAL (Pointer un conteneur) -->
+    <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
+        <div class="w-full max-w-lg bg-[#15194a] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#252b75] shadow-2xl max-h-[90vh] overflow-y-auto">
+            
+            <div class="flex items-center justify-between mb-4 border-b border-[#252b75] pb-3">
+                <h3 class="font-bold text-base text-center w-full" id="lblModalTitle">Pointer un conteneur</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-lg p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleSave(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1" id="lblModel">Modèle de pointeage</label>
+                    <select id="inpModel" onchange="updateDynamicFormFields()" required class="w-full input-dpw p-3 rounded-xl font-bold text-[#00ffaa] bg-[#1d2263]"></select>
+                </div>
+
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1" id="lblContainerNo">N° conteneur</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dpw p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
+                        <button type="button" onclick="triggerCameraOCR()" class="btn-dpw-gradient px-3 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 shadow" title="Scanner avec la caméra">
+                            <i class="fa-solid fa-camera text-base"></i>
+                        </button>
                     </div>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
+                    <p id="ocrStatus" class="text-[10px] text-gray-400 mt-1 hidden"></p>
+                </div>
 
-    function exportExcel() {
-      if(currentContainers.length === 0) return alert("Pas de données.");
-      const rows = currentContainers.map((c, i) => ({
-        "N°": i + 1,
-        "Conteneur / Nom": c.name,
-        "Type": c.type,
-        "Emplacement": c.location,
-        "Étape / Statut": c.step,
-        "Date": new Date(c.timestamp).toLocaleString("fr-FR")
-      }));
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "DPW_Suivi");
-      XLSX.writeFile(wb, `DPWorld_Djendjen_Flux.xlsx`);
-    }
-  </script>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1" id="lblType">Type & taille</label>
+                        <select id="inpType" required class="w-full input-dpw p-3 rounded-xl">
+                            <option value="20' ST">20' ST</option>
+                            <option value="40' HC">40' HC</option>
+                            <option value="40' RF">40' RF</option>
+                            <option value="45' HC">45' HC</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1" id="lblStatus">État</label>
+                        <select id="inpStatus" class="w-full input-dpw p-3 rounded-xl">
+                            <option value="Bon état" id="optGood">Bon état</option>
+                            <option value="Endommagé" id="optDamaged">Endommagé</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1" id="lblLocation">Emplacement</label>
+                        <input type="text" id="inpLoc" required placeholder="B01-R04-T2" class="w-full input-dpw p-3 rounded-xl uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1" id="lblSeal">N° plomb</label>
+                        <input type="text" id="inpSeal" placeholder="SL-00000" class="w-full input-dpw p-3 rounded-xl uppercase">
+                    </div>
+                </div>
+
+                <!-- DYNAMIC CUSTOM FIELDS -->
+                <div id="dynamicFieldsContainer" class="space-y-3 pt-2 border-t border-[#252b75]"></div>
+
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1" id="lblNotes">Remarques générales</label>
+                    <textarea id="inpNotes" rows="2" placeholder="Informations complémentaires..." class="w-full input-dpw p-3 rounded-xl"></textarea>
+                </div>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" onclick="closeModal()" class="w-1/2 bg-[#252b75] hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-xs" id="btnCancel">Annuler</button>
+                    <button type="submit" class="w-1/2 btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg" id="btnSave">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        let currentLang = localStorage.getItem('dpw_lang') || 'fr';
+        let containers = JSON.parse(localStorage.getItem('dpw_containers')) || [];
+        let modelConfigs = JSON.parse(localStorage.getItem('dpw_model_configs')) || {
+            'Débarquement': ['Navire', 'N° Manifeste', 'Température'],
+            'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
+            'Embarquement': ['Destination', 'Poids (Tonnes)']
+        };
+        let modelTemplates = JSON.parse(localStorage.getItem('dpw_model_templates')) || {};
+        let currentUploadTemplateTarget = '';
+
+        const translations = {
+            fr: {
+                title: "Pointeur Conteneurs",
+                btnPointer: "Pointer",
+                navAccueil: "Accueil",
+                navSuivi: "Suivi Flux",
+                navSettings: "Modèles",
+                allStages: "Tous les emplacements",
+                allStatus: "Tous les états",
+                good: "Bon état",
+                damaged: "Endommagé",
+                suiviTitle: "Suivi Flux (Import & Export)",
+                suiviDesc: "Cliquez sur les étapes pour mettre à jour la position du conteneur en temps réel.",
+                modelsTitle: "Modèles & Templates Excel",
+                modelsDesc: "Ajoutez des modèles et chargez le fichier Excel officiel de l'entreprise.",
+                create: "Créer",
+                modalTitle: "Pointer un conteneur",
+                modelLbl: "Modèle de pointeage",
+                containerNo: "N° conteneur",
+                typeLbl: "Type & taille",
+                statusLbl: "État",
+                locLbl: "Emplacement",
+                sealLbl: "N° plomb",
+                notesLbl: "Remarques générales",
+                cancel: "Annuler",
+                save: "Enregistrer"
+            },
+            ar: {
+                title: "راقم الحاويات",
+                btnPointer: "تسجيل +",
+                navAccueil: "الرئيسية",
+                navSuivi: "تتبع المسار",
+                navSettings: "النماذج",
+                allStages: "جميع المواقع",
+                allStatus: "جميع الحالات",
+                good: "حالة جيدة",
+                damaged: "تالف / متضرر",
+                suiviTitle: "متابعة تدفق الحاويات (استيراد وتصدير)",
+                suiviDesc: "انقر على المراحل لتحديث موقع الحاوية في الوقت الفعلي.",
+                modelsTitle: "النماذج وقوالب إكسل",
+                modelsDesc: "أضف النماذج وقم برفع ملف إكسل الرسمي للشركة.",
+                create: "إنشاء",
+                modalTitle: "تسجيل حاوية جديدة",
+                modelLbl: "نموذج العمل",
+                containerNo: "رقم الحاوية",
+                typeLbl: "النوع والحجم",
+                statusLbl: "الحالة",
+                locLbl: "الموقع في الساحة",
+                sealLbl: "رقم القفل (Plomb)",
+                notesLbl: "ملاحظات عامة",
+                cancel: "إلغاء",
+                save: "حفظ"
+            },
+            en: {
+                title: "Container Tally",
+                btnPointer: "Tally +",
+                navAccueil: "Home",
+                navSuivi: "Track & Trace",
+                navSettings: "Models",
+                allStages: "All Locations",
+                allStatus: "All Statuses",
+                good: "Good condition",
+                damaged: "Damaged",
+                suiviTitle: "Flow Tracking (Import & Export)",
+                suiviDesc: "Click steps to update container position in real time.",
+                modelsTitle: "Models & Excel Templates",
+                modelsDesc: "Add models and upload the company official Excel file.",
+                create: "Create",
+                modalTitle: "Tally Container",
+                modelLbl: "Model Template",
+                containerNo: "Container No.",
+                typeLbl: "Type & Size",
+                statusLbl: "Condition",
+                locLbl: "Yard Location",
+                sealLbl: "Seal No.",
+                notesLbl: "General Notes",
+                cancel: "Cancel",
+                save: "Save"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('dpw_lang', lang);
+
+            const htmlTag = document.getElementById('htmlTag');
+            if (lang === 'ar') {
+                htmlTag.setAttribute('dir', 'rtl');
+            } else {
+                htmlTag.setAttribute('dir', 'ltr');
+            }
+
+            ['fr', 'ar', 'en'].forEach(l => {
+                const btn = document.getElementById(`langBtn_${l}`);
+                if (l === lang) {
+                    btn.className = "px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]";
+                } else {
+                    btn.className = "px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300";
+                }
+            });
+
+            const t = translations[lang];
+            document.getElementById('txtTitle').innerText = t.title;
+            document.getElementById('btnPointerText').innerText = t.btnPointer;
+            document.getElementById('navAccueil').innerText = t.navAccueil;
+            document.getElementById('navSuivi').innerText = t.navSuivi;
+            document.getElementById('navSettings').innerText = t.navSettings;
+            document.getElementById('optAllStages').innerText = t.allStages;
+            document.getElementById('optAllStatus').innerText = t.allStatus;
+            document.getElementById('optBonEtat').innerText = t.good;
+            document.getElementById('optEndommage').innerText = t.damaged;
+            document.getElementById('txtSuiviTitle').innerText = t.suiviTitle;
+            document.getElementById('txtSuiviDesc').innerText = t.suiviDesc;
+            document.getElementById('txtModelsTitle').innerText = t.modelsTitle;
+            document.getElementById('txtModelsDesc').innerText = t.modelsDesc;
+            document.getElementById('btnCreateModel').innerText = t.create;
+            document.getElementById('lblModalTitle').innerText = t.modalTitle;
+            document.getElementById('lblModel').innerText = t.modelLbl;
+            document.getElementById('lblContainerNo').innerText = t.containerNo;
+            document.getElementById('lblType').innerText = t.typeLbl;
+            document.getElementById('lblStatus').innerText = t.statusLbl;
+            document.getElementById('optGood').innerText = t.good;
+            document.getElementById('optDamaged').innerText = t.damaged;
+            document.getElementById('lblLocation').innerText = t.locLbl;
+            document.getElementById('lblSeal').innerText = t.sealLbl;
+            document.getElementById('lblNotes').innerText = t.notesLbl;
+            document.getElementById('btnCancel').innerText = t.cancel;
+            document.getElementById('btnSave').innerText = t.save;
+
+            renderList();
+        }
+
+        function saveContainers() { localStorage.setItem('dpw_containers', JSON.stringify(containers)); }
+        function saveModelConfigs() { localStorage.setItem('dpw_model_configs', JSON.stringify(modelConfigs)); }
+        function saveModelTemplates() { localStorage.setItem('dpw_model_templates', JSON.stringify(modelTemplates)); }
+
+        function triggerCameraOCR() { document.getElementById('ocrCameraInput').click(); }
+
+        function processOCRImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const statusEl = document.getElementById('ocrStatus');
+            statusEl.classList.remove('hidden');
+            statusEl.className = "text-[10px] text-yellow-400 mt-1 font-bold animate-pulse";
+            statusEl.innerText = currentLang === 'ar' ? "جاري تحليل الصورة..." : "Analyse de la photo en cours...";
+
+            Tesseract.recognize(file, 'eng')
+                .then(({ data: { text } }) => {
+                    const cleanText = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                    const containerMatch = cleanText.match(/[A-Z]{4}\d{7}/);
+
+                    if (containerMatch) {
+                        document.getElementById('inpId').value = containerMatch[0];
+                        statusEl.className = "text-[10px] text-[#00ffaa] mt-1 font-bold";
+                        statusEl.innerText = "✓ N° conteneur détecté!";
+                    } else if (cleanText.length >= 7) {
+                        document.getElementById('inpId').value = cleanText.substring(0, 11);
+                        statusEl.className = "text-[10px] text-blue-400 mt-1 font-bold";
+                        statusEl.innerText = "✓ Texte extrait.";
+                    } else {
+                        statusEl.className = "text-[10px] text-red-400 mt-1 font-bold";
+                        statusEl.innerText = "⚠ Impossible de lire.";
+                    }
+                })
+                .catch(err => {
+                    statusEl.className = "text-[10px] text-red-400 mt-1 font-bold";
+                    statusEl.innerText = "Erreur الكاميرا.";
+                });
+        }
+
+        function switchTab(tabName) {
+            const accueilTab = document.getElementById('tabAccueil');
+            const suiviTab = document.getElementById('tabSuivi');
+            const settingsTab = document.getElementById('tabSettings');
+            
+            const btnAccueil = document.getElementById('navBtnAccueil');
+            const btnSuivi = document.getElementById('navBtnSuivi');
+            const btnSettings = document.getElementById('navBtnSettings');
+
+            accueilTab.classList.add('hidden');
+            suiviTab.classList.add('hidden');
+            settingsTab.classList.add('hidden');
+
+            btnAccueil.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
+            btnSuivi.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
+            btnSettings.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
+
+            if (tabName === 'accueil') {
+                accueilTab.classList.remove('hidden');
+                btnAccueil.className = "flex flex-col items-center gap-1 nav-item-active transition";
+                renderList();
+            } else if (tabName === 'suivi') {
+                suiviTab.classList.remove('hidden');
+                btnSuivi.className = "flex flex-col items-center gap-1 nav-item-active transition";
+                renderTrackingList();
+            } else {
+                settingsTab.classList.remove('hidden');
+                btnSettings.className = "flex flex-col items-center gap-1 nav-item-active transition";
+                renderModelsList();
+            }
+        }
+
+        // VISIBLE PATH NODES WITH GLOW ONLY ON CURRENT ACTIVE NODE
+        function renderTrackingList() {
+            const listEl = document.getElementById('trackingList');
+            listEl.innerHTML = '';
+
+            if (containers.length === 0) {
+                listEl.innerHTML = `<div class="text-center py-12 text-gray-500 font-medium text-xs">Aucun conteneur à suivre.</div>`;
+                return;
+            }
+
+            const stagesOrder = ['Navire', 'Stock', 'Douane', 'Embarqué'];
+
+            containers.forEach((item, index) => {
+                const currentStage = item.stage || 'Navire';
+                const stageIndex = stagesOrder.indexOf(currentStage);
+
+                const card = document.createElement('div');
+                card.className = "dpw-card p-4 rounded-2xl space-y-3.5 text-xs border border-[#252b75]";
+
+                // Function to get CSS class per node
+                const getNodeClass = (nodeStage, nodeIdx) => {
+                    if (nodeStage === currentStage) return 'glow-node-current animate-pulse';
+                    if (nodeIdx < stageIndex) return 'glow-node-passed';
+                    return 'glow-node-future';
+                };
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-extrabold text-base text-white tracking-wider">${item.id}</span>
+                            <p class="text-[10px] text-gray-400">${item.type} • Emplacement: <b class="text-white">${item.loc}</b></p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${currentStage === 'Navire' ? 'stage-navire' : currentStage === 'Stock' ? 'stage-stock' : currentStage === 'Douane' ? 'stage-douane' : 'stage-embarque'}">
+                            En ${currentStage}
+                        </span>
+                    </div>
+
+                    <!-- TIMELINE PATH -->
+                    <div class="relative flex items-center justify-between pt-2 px-1">
+                        <div class="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-1 glow-line-active z-0"></div>
+
+                        <!-- Step 1: Navire -->
+                        <button onclick="updateContainerStage(${index}, 'Navire')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Navire', 0)}">
+                                <i class="fa-solid fa-ship"></i>
+                            </div>
+                            <span class="text-[9px] font-bold ${currentStage === 'Navire' ? 'text-[#00ffaa]' : 'text-gray-300'}">Navire</span>
+                        </button>
+
+                        <!-- Step 2: Stock -->
+                        <button onclick="updateContainerStage(${index}, 'Stock')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Stock', 1)}">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                            </div>
+                            <span class="text-[9px] font-bold ${currentStage === 'Stock' ? 'text-[#00ffaa]' : 'text-gray-300'}">Stock</span>
+                        </button>
+
+                        <!-- Step 3: Douane -->
+                        <button onclick="updateContainerStage(${index}, 'Douane')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Douane', 2)}">
+                                <i class="fa-solid fa-building-columns"></i>
+                            </div>
+                            <span class="text-[9px] font-bold ${currentStage === 'Douane' ? 'text-[#00ffaa]' : 'text-gray-300'}">Douane</span>
+                        </button>
+
+                        <!-- Step 4: Embarqué -->
+                        <button onclick="updateContainerStage(${index}, 'Embarqué')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Embarqué', 3)}">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <span class="text-[9px] font-bold ${currentStage === 'Embarqué' ? 'text-[#00ffaa]' : 'text-gray-300'}">Sortie</span>
+                        </button>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        function updateContainerStage(index, newStage) {
+            containers[index].stage = newStage;
+            saveContainers();
+            renderTrackingList();
+        }
+
+        function populateModelSelect() {
+            const selectEl = document.getElementById('inpModel');
+            selectEl.innerHTML = '';
+            Object.keys(modelConfigs).forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.innerText = m;
+                selectEl.appendChild(opt);
+            });
+            updateDynamicFormFields();
+        }
+
+        function updateDynamicFormFields() {
+            const currentModel = document.getElementById('inpModel').value;
+            const container = document.getElementById('dynamicFieldsContainer');
+            container.innerHTML = '';
+
+            const fields = modelConfigs[currentModel] || [];
+            if (fields.length > 0) {
+                const title = document.createElement('p');
+                title.className = "text-[11px] font-bold text-[#00ffaa] uppercase tracking-wider mb-2";
+                title.innerText = `Champs spécifiques (${currentModel})`;
+                container.appendChild(title);
+
+                fields.forEach(fName => {
+                    const div = document.createElement('div');
+                    div.className = "mb-2";
+                    div.innerHTML = `
+                        <label class="block text-gray-300 font-medium mb-1">${fName}</label>
+                        <input type="text" data-custom-field="${fName}" placeholder="Renseigner ${fName}..." class="w-full input-dpw p-2.5 rounded-xl text-xs">
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function renderModelsList() {
+            const listEl = document.getElementById('modelsList');
+            listEl.innerHTML = '';
+            
+            Object.keys(modelConfigs).forEach(mName => {
+                const fields = modelConfigs[mName];
+                const hasTemplate = !!modelTemplates[mName];
+
+                const card = document.createElement('div');
+                card.className = "bg-[#1d2263] p-3 rounded-xl text-xs space-y-2.5 border border-[#303796]";
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-white text-sm">${mName}</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="triggerUploadTemplate('${mName}')" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 ${hasTemplate ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}" title="Upload Company Template">
+                                <i class="fa-solid fa-file-excel"></i>
+                                <span>${hasTemplate ? 'Template OK' : '+ Template Excel'}</span>
+                            </button>
+                            <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        ${fields.map(f => `<span class="bg-[#15194a] text-gray-300 px-2 py-0.5 rounded-md border border-[#252b75] text-[10px]">${f}</span>`).join('')}
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        function triggerUploadTemplate(modelName) {
+            currentUploadTemplateTarget = modelName;
+            document.getElementById('templateFileInput').click();
+        }
+
+        function handleTemplateUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result.split(',')[1];
+                modelTemplates[currentUploadTemplateTarget] = base64Data;
+                saveModelTemplates();
+                alert(`✓ Template Excel officiel pour "${currentUploadTemplateTarget}" enregistré avec succès!`);
+                renderModelsList();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function addNewModel() {
+            const val = document.getElementById('inpNewModel').value.trim();
+            if (val && !modelConfigs[val]) {
+                modelConfigs[val] = [];
+                saveModelConfigs();
+                document.getElementById('inpNewModel').value = '';
+                renderModelsList();
+                populateModelSelect();
+            }
+        }
+
+        function deleteModel(modelName) {
+            if (confirm(`Voulez-vous vraiment supprimer le modèle "${modelName}" ?`)) {
+                delete modelConfigs[modelName];
+                delete modelTemplates[modelName];
+                saveModelConfigs();
+                saveModelTemplates();
+                renderModelsList();
+                populateModelSelect();
+            }
+        }
+
+        function renderList(data = containers) {
+            const listEl = document.getElementById('containersList');
+            document.getElementById('containerCount').innerText = `${data.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
+            listEl.innerHTML = '';
+
+            if (data.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-12 text-gray-500 font-medium text-xs">
+                        <i class="fa-solid fa-box-open text-3xl mb-2 block text-gray-600"></i>
+                        ${currentLang === 'ar' ? 'لا توجد حاويات حتى الآن.' : 'Aucun conteneur pointé pour le moment.'}
+                    </div>
+                `;
+                return;
+            }
+
+            data.forEach((item, index) => {
+                const isGood = item.status === 'Bon état';
+                const badgeClass = isGood ? 'badge-green' : 'badge-red';
+                const currentStage = item.stage || 'Stock';
+                
+                let stageBadgeClass = 'stage-stock';
+                if (currentStage === 'Navire') stageBadgeClass = 'stage-navire';
+                if (currentStage === 'Douane') stageBadgeClass = 'stage-douane';
+                if (currentStage === 'Embarqué') stageBadgeClass = 'stage-embarque';
+
+                let customFieldsHTML = '';
+                if (item.customData && Object.keys(item.customData).length > 0) {
+                    customFieldsHTML = `<div class="flex flex-wrap gap-2 pt-1 text-[11px] text-gray-300">`;
+                    for (const [key, val] of Object.entries(item.customData)) {
+                        if (val) customFieldsHTML += `<span class="bg-[#1d2263] px-2 py-0.5 rounded border border-[#303796]"><b>${key}:</b> ${val}</span>`;
+                    }
+                    customFieldsHTML += `</div>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = "dpw-card p-4 rounded-2xl space-y-2 text-xs mb-3 shadow-sm relative";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
+                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] ${stageBadgeClass}">En ${currentStage}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
+                            <button onclick="deleteContainer(${index})" class="text-gray-500 hover:text-red-400 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 font-medium text-xs">${item.type} • ${item.loc} • Plomb: ${item.seal}</p>
+                    ${customFieldsHTML}
+                    <div class="flex items-center gap-3 text-gray-400 text-[11px] pt-1 border-t border-[#252b75]">
+                        <span>${item.time}</span>
+                        <span>•</span>
+                        <span>${item.date}</span>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        function filterContainers() {
+            const statusVal = document.getElementById('filterStatus').value;
+            const stageVal = document.getElementById('filterStage').value;
+
+            let filtered = containers;
+            if (statusVal !== 'All') filtered = filtered.filter(c => c.status === statusVal);
+            if (stageVal !== 'All') filtered = filtered.filter(c => (c.stage || 'Stock') === stageVal);
+
+            renderList(filtered);
+        }
+
+        function openModal() { 
+            populateModelSelect();
+            document.getElementById('modalOverlay').classList.remove('hidden'); 
+        }
+        function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
+
+        function deleteContainer(index) {
+            if (confirm("Voulez-vous vraiment supprimer ce conteneur ?")) {
+                containers.splice(index, 1);
+                saveContainers();
+                renderList();
+            }
+        }
+
+        function handleSave(e) {
+            e.preventDefault();
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const selectedModel = document.getElementById('inpModel').value;
+            const inputIdVal = document.getElementById('inpId').value.toUpperCase().trim();
+
+            const customData = {};
+            const customInputs = document.querySelectorAll('[data-custom-field]');
+            customInputs.forEach(input => {
+                const fieldName = input.getAttribute('data-custom-field');
+                customData[fieldName] = input.value || '-';
+            });
+
+            const newItem = {
+                id: inputIdVal,
+                model: selectedModel,
+                stage: 'Stock', // Default position: Stock
+                type: document.getElementById('inpType').value,
+                loc: document.getElementById('inpLoc').value.toUpperCase(),
+                status: document.getElementById('inpStatus').value,
+                seal: document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000',
+                notes: document.getElementById('inpNotes').value || 'RAS',
+                customData: customData,
+                time: timeStr,
+                date: now.toLocaleDateString('fr-FR')
+            };
+
+            containers.unshift(newItem);
+            saveContainers();
+            renderList();
+            closeModal();
+            
+            document.getElementById('inpId').value = '';
+            document.getElementById('inpLoc').value = '';
+            document.getElementById('inpSeal').value = '';
+            document.getElementById('inpNotes').value = '';
+            document.getElementById('ocrStatus').classList.add('hidden');
+        }
+
+        // EXPORT THEORETICALLY STOCK-ONLY CONTAINERS WITH CLEAN EXCEL BUTTON
+        function exportToExcel() {
+            const stockContainers = containers.filter(c => (c.stage || 'Stock') === 'Stock');
+
+            if (stockContainers.length === 0) {
+                alert(currentLang === 'ar' ? "لا توجد حاويات في المخزون للتصدير." : "Aucun conteneur en Stock à exporter.");
+                return;
+            }
+
+            const workbook = XLSX.utils.book_new();
+
+            Object.keys(modelConfigs).forEach(mName => {
+                const filtered = stockContainers.filter(c => c.model === mName);
+                if (filtered.length > 0) {
+                    const modelData = filtered.map(c => {
+                        let rowObj = {
+                            "Date": c.date,
+                            "Heure": c.time,
+                            "N° Conteneur": c.id,
+                            "Étape Flux": "En Stockage",
+                            "Type & Taille": c.type,
+                            "Emplacement": c.loc,
+                            "État": c.status,
+                            "N° Plomb": c.seal
+                        };
+                        if (c.customData) {
+                            for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
+                        }
+                        rowObj["Remarques"] = c.notes;
+                        return rowObj;
+                    });
+                    const wsModel = XLSX.utils.json_to_sheet(modelData);
+                    XLSX.utils.book_append_sheet(workbook, wsModel, mName.substring(0, 30));
+                }
+            });
+
+            const fileName = `Pointeur_DPW_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+        }
+
+        setLanguage(currentLang);
+        populateModelSelect();
+    </script>
 </body>
 </html>
