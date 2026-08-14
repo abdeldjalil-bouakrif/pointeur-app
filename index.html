@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pointeur conteneurs - DP World Djendjen</title>
+    <title>Pointeur Conteneurs - DP World Djendjen</title>
     
     <!-- Tailwind CSS, SheetJS & Tesseract OCR -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -104,7 +104,7 @@
         </div>
     </div>
 
-    <!-- ================= AUTH MODAL (تسجيل الدخول السحابي) ================= -->
+    <!-- ================= AUTH MODAL ================= -->
     <div id="authModalOverlay" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 mx-auto flex items-center justify-center">
@@ -121,8 +121,8 @@
                 </svg>
             </div>
             <div>
-                <h3 class="font-extrabold text-base text-white">DP World Djendjen</h3>
-                <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">Cloud Authentication</p>
+                <h3 class="font-extrabold text-base text-white">DP WORLD DJENDJEN</h3>
+                <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase" id="lblAuthCloudSub">Cloud Authentication</p>
             </div>
 
             <div class="flex border-b border-[#252b75] text-xs font-bold">
@@ -132,11 +132,11 @@
 
             <form onsubmit="handleAuthAction(event)" class="space-y-3 text-xs text-left">
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1">Email</label>
+                    <label class="block text-gray-300 font-medium mb-1" id="lblAuthEmail">Email</label>
                     <input type="email" id="authEmail" required placeholder="pointeur@dpw.dz" class="w-full input-dpw p-3 rounded-xl">
                 </div>
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1">Mot de passe</label>
+                    <label class="block text-gray-300 font-medium mb-1" id="lblAuthPass">Mot de passe</label>
                     <input type="password" id="authPassword" required placeholder="••••••••" class="w-full input-dpw p-3 rounded-xl">
                 </div>
                 <button type="submit" id="authSubmitBtn" class="w-full btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg active:scale-95 transition">
@@ -150,7 +150,7 @@
     <!-- ================= MAIN APP CONTAINER ================= -->
     <div class="w-full p-4 sm:p-6 max-w-lg mx-auto relative z-10">
 
-        <!-- BRAND HEADER SECTION -->
+        <!-- BRAND HEADER SECTION (هوية بصرية أصلية وثابتة) -->
         <div class="flex items-center justify-between mt-2 mb-3 pb-3 border-b border-[#252b75]">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 flex items-center justify-center shrink-0">
@@ -167,8 +167,9 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white" id="txtTitle">Pointeur Conteneurs</h1>
-                    <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP World Djendjen</p>
+                    <!-- الهوية الأصلية ثابتة -->
+                    <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white">Pointeur Conteneurs</h1>
+                    <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP WORLD DJENDJEN</p>
                 </div>
             </div>
             
@@ -196,13 +197,13 @@
         <!-- ================= TAB 1: ACCUEIL ================= -->
         <div id="tabAccueil" class="space-y-3">
             
-            <!-- Quick Search Bar -->
+            <!-- Quick Search Bar (يترجم حسب اللغة) -->
             <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-xs"></i>
                 <input type="text" id="liveSearchInput" onkeyup="filterContainers()" placeholder="Rechercher par N° ou emplacement..." class="w-full input-dpw pl-9 pr-3 py-2.5 rounded-xl text-xs font-medium outline-none">
             </div>
 
-            <!-- Filters -->
+            <!-- Filters (تترجم حسب اللغة) -->
             <div class="flex items-center justify-between text-xs gap-2">
                 <select id="filterStage" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All" id="optAllStages">Tous les emplacements</option>
@@ -222,7 +223,7 @@
             <div class="flex items-center justify-between px-1">
                 <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
                 <span class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a] px-2.5 py-1 rounded-full border border-[#252b75]">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping"></span> Cloud Direct
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping"></span> <span id="lblCloudDirect">Cloud Direct</span>
                 </span>
             </div>
 
@@ -276,20 +277,20 @@
                     </div>
                     <div>
                         <h3 id="accountEmailDisplay" class="font-extrabold text-sm text-white">Agent Pointeur</h3>
-                        <p class="text-[11px] text-[#00ffaa] font-bold uppercase tracking-wider">DP World Djendjen Terminal</p>
+                        <p class="text-[11px] text-[#00ffaa] font-bold uppercase tracking-wider">DP WORLD DJENDJEN TERMINAL</p>
                     </div>
                 </div>
 
                 <!-- Account Metrics -->
                 <div class="grid grid-cols-2 gap-3 text-center">
                     <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796]">
-                        <p class="text-[10px] text-gray-400 font-bold mb-1">Mes Pointages</p>
+                        <p class="text-[10px] text-gray-400 font-bold mb-1" id="lblMyCounts">Mes Pointages</p>
                         <h4 id="agentCountStat" class="text-lg font-black text-[#00ffaa]">0</h4>
                     </div>
                     <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796]">
-                        <p class="text-[10px] text-gray-400 font-bold mb-1">Serveur Cloud</p>
+                        <p class="text-[10px] text-gray-400 font-bold mb-1" id="lblCloudServer">Serveur Cloud</p>
                         <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Actif
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span id="lblActiveState">Actif</span>
                         </span>
                     </div>
                 </div>
@@ -306,13 +307,13 @@
             <!-- Terminal Info -->
             <div class="dpw-card p-4 rounded-2xl text-[11px] text-gray-400 space-y-1.5 border border-[#252b75]">
                 <p class="text-white font-bold flex items-center gap-1.5"><i class="fa-solid fa-anchor text-[#00ffaa]"></i> Port de Djendjen - Jijel</p>
-                <p>Système de pointage et gestion des flux de conteneurs sous environnement sécurisé Firebase.</p>
+                <p id="lblTerminalDesc">Système de pointage et gestion des flux de conteneurs sous environnement sécurisé Firebase.</p>
             </div>
         </div>
 
     </div>
 
-    <!-- ================= BOTTOM 4-TAB NAVIGATION BAR ================= -->
+    <!-- ================= BOTTOM NAVIGATION BAR ================= -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-lg mx-auto">
         <div class="grid grid-cols-4 py-2 text-center">
             <!-- 1. Accueil -->
@@ -330,14 +331,16 @@
                 <i class="fa-solid fa-sliders text-base"></i>
                 <span class="text-[10px] font-semibold" id="navSettings">Modèles</span>
             </button>
-            <!-- 4. Compte (جديد) -->
+            <!-- 4. Compte -->
             <button id="navBtnCompte" onclick="switchTab('compte')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
                 <i class="fa-solid fa-user-gear text-base"></i>
                 <span class="text-[10px] font-semibold" id="navCompte">Compte</span>
             </button>
         </div>
+        
+        <!-- تعديل العلامة المائية الرسمية المطلوبة بدقة -->
         <div class="text-[9.5px] text-center text-gray-400 pb-2 font-medium flex items-center justify-center gap-1 tracking-wide">
-            <span>© 2026 DP World Djendjen Terminal. By djalil</span>
+            <span>© 2026 DP World Djendjen Terminal. Powered by djalil</span>
         </div>
     </div>
 
@@ -481,7 +484,7 @@
                 authModal.classList.add('hidden');
                 document.getElementById('accountEmailDisplay').innerText = user.email;
                 initFirebaseSync();
-                showToast("Connecté avec succès au Cloud!");
+                showToast(currentLang === 'ar' ? "تم الاتصال بالسحابة بنجاح!" : "Connecté avec succès au Cloud!");
             } else {
                 currentUser = null;
                 authModal.classList.remove('hidden');
@@ -497,11 +500,11 @@
             if (mode === 'login') {
                 tabLogin.className = "flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]";
                 tabReg.className = "flex-1 py-2 text-gray-400";
-                submitBtn.innerText = "Se connecter";
+                submitBtn.innerText = currentLang === 'ar' ? "تسجيل الدخول" : "Se connecter";
             } else {
                 tabReg.className = "flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]";
                 tabLogin.className = "flex-1 py-2 text-gray-400";
-                submitBtn.innerText = "Créer compte";
+                submitBtn.innerText = currentLang === 'ar' ? "إنشاء حساب" : "Créer compte";
             }
         }
 
@@ -524,9 +527,10 @@
         }
 
         function logoutFirebase() {
-            if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
+            const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً تسجيل الخروج؟" : "Voulez-vous vraiment vous déconnecter ?";
+            if (confirm(confirmMsg)) {
                 auth.signOut();
-                showToast("Déconnexion réussie");
+                showToast(currentLang === 'ar' ? "تم تسجيل الخروج" : "Déconnexion réussie");
             }
         }
 
@@ -561,16 +565,21 @@
             document.getElementById('agentCountStat').innerText = myCount;
         }
 
-        // 5. TRANSLATIONS (FR / AR / EN)
+        // 5. TRANSLATIONS (المضمون الداخلي فقط بدون المساس بالهوية البصرية)
         const translations = {
             fr: {
-                title: "Pointeur Conteneurs",
                 btnPointer: "Pointer",
+                searchPlaceholder: "Rechercher par N° ou emplacement...",
+                cloudDirect: "Cloud Direct",
                 navAccueil: "Accueil",
                 navSuivi: "Suivi Flux",
                 navSettings: "Modèles",
                 navCompte: "Compte",
                 allStages: "Tous les emplacements",
+                navire: "🚢 En Navire",
+                stock: "📦 En Stockage",
+                douane: "🏛️ En Douane",
+                embarque: "⚓ Embarqué / Livré",
                 allStatus: "Tous les états",
                 good: "Bon état",
                 damaged: "Endommagé",
@@ -589,63 +598,88 @@
                 notesLbl: "Remarques générales",
                 cancel: "Annuler",
                 save: "Enregistrer",
-                logout: "Se déconnecter"
+                logout: "Se déconnecter",
+                myCounts: "Mes Pointages",
+                cloudServer: "Serveur Cloud",
+                activeState: "Actif",
+                terminalDesc: "Système de pointage et gestion des flux de conteneurs sous environnement sécurisé Firebase.",
+                stageNames: { Navire: 'En Navire', Stock: 'En Stock', Douane: 'En Douane', Embarqué: 'Embarqué / Sortie' }
             },
             ar: {
-                title: "راقم الحاويات",
                 btnPointer: "تسجيل +",
+                searchPlaceholder: "بحث برقم الحاوية أو الموقع في الساحة...",
+                cloudDirect: "اتصال سحابي مباشر",
                 navAccueil: "الرئيسية",
                 navSuivi: "تتبع المسار",
                 navSettings: "النماذج",
                 navCompte: "حسابي",
-                allStages: "جميع المواقع",
+                allStages: "جميع المواقع والمراحل",
+                navire: "🚢 تفريغ من السفينة",
+                stock: "📦 في ساحة التخزين",
+                douane: "🏛️ معاينة جمركية",
+                embarque: "⚓ خروج وتسليم",
                 allStatus: "جميع الحالات",
-                good: "حالة جيدة",
-                damaged: "تالف / متضرر",
+                good: "حالة سليمة (Bon)",
+                damaged: "متضرر (Endommagé)",
                 suiviTitle: "متابعة تدفق الحاويات (استيراد وتصدير)",
-                suiviDesc: "انقر على المراحل لتحديث موقع الحاوية في الوقت الفعلي.",
-                modelsTitle: "النماذج وقوالب إكسل",
-                modelsDesc: "أضف النماذج وقم برفع ملف إكسل الرسمي للشركة.",
-                create: "إنشاء",
-                modalTitle: "تسجيل حاوية جديدة",
-                modelLbl: "نموذج العمل",
-                containerNo: "رقم الحاوية",
-                typeLbl: "النوع والحجم",
-                statusLbl: "الحالة",
-                locLbl: "الموقع في الساحة",
-                sealLbl: "رقم القفل (Plomb)",
-                notesLbl: "ملاحظات عامة",
+                suiviDesc: "انقر على المحطات لتحديث مسار الحاوية فورياً في السيرفر.",
+                modelsTitle: "النماذج وقوالب إكسل الرسمية",
+                modelsDesc: "أضف نماذج العمل وقم برفع ملف إكسل الرسمي للشركة.",
+                create: "إنشاء نموذج",
+                modalTitle: "تسجيل ورصد حاوية جديدة",
+                modelLbl: "نموذج العمل الميداني",
+                containerNo: "رقم الحاوية (N° Conteneur)",
+                typeLbl: "النوع والحجم (ISO)",
+                statusLbl: "الحالة المادية",
+                locLbl: "الموقع في الساحة (Bay/Row/Tier)",
+                sealLbl: "رقم القفل والرصاص (Plomb)",
+                notesLbl: "ملاحظات إضافية",
                 cancel: "إلغاء",
-                save: "حفظ",
-                logout: "تسجيل الخروج"
+                save: "حفظ في السحابة",
+                logout: "تسجيل الخروج من الحساب",
+                myCounts: "تسجيلاتي الميدانية",
+                cloudServer: "الخادم السحابي",
+                activeState: "متصل ونشط",
+                terminalDesc: "نظام رصد ومتابعة تدفق الحاويات في محطة ميناء جن جن تحت بيئة سحابية آمنة.",
+                stageNames: { Navire: 'في السفينة', Stock: 'في الساحة', Douane: 'في الجمارك', Embarqué: 'تسليم وخروج' }
             },
             en: {
-                title: "Container Tally",
                 btnPointer: "Tally +",
+                searchPlaceholder: "Search by container ID or yard bay...",
+                cloudDirect: "Live Cloud",
                 navAccueil: "Home",
                 navSuivi: "Track & Trace",
                 navSettings: "Models",
                 navCompte: "Account",
                 allStages: "All Locations",
-                allStatus: "All Statuses",
+                navire: "🚢 On Vessel",
+                stock: "📦 In Yard Stock",
+                douane: "🏛️ In Customs",
+                embarque: "⚓ Loaded / Delivered",
+                allStatus: "All Conditions",
                 good: "Good condition",
                 damaged: "Damaged",
-                suiviTitle: "Flow Tracking (Import & Export)",
-                suiviDesc: "Click steps to update container position in real time.",
+                suiviTitle: "Container Flow Tracker (Import & Export)",
+                suiviDesc: "Click stages to update container location in real-time.",
                 modelsTitle: "Models & Excel Templates",
-                modelsDesc: "Add models and upload the company official Excel file.",
+                modelsDesc: "Add operation models and upload the company official Excel template.",
                 create: "Create",
-                modalTitle: "Tally Container",
-                modelLbl: "Model Template",
+                modalTitle: "Tally New Container",
+                modelLbl: "Operation Model",
                 containerNo: "Container No.",
                 typeLbl: "Type & Size",
                 statusLbl: "Condition",
-                locLbl: "Yard Location",
+                locLbl: "Yard Location (Bay)",
                 sealLbl: "Seal No.",
-                notesLbl: "General Notes",
+                notesLbl: "General Remarks",
                 cancel: "Cancel",
-                save: "Save",
-                logout: "Sign Out"
+                save: "Save to Cloud",
+                logout: "Sign Out",
+                myCounts: "My Tallies",
+                cloudServer: "Cloud Server",
+                activeState: "Active",
+                terminalDesc: "DP World Djendjen Terminal container flow monitoring under secure Firebase cloud.",
+                stageNames: { Navire: 'On Vessel', Stock: 'In Yard', Douane: 'In Customs', Embarqué: 'Delivered / Out' }
             }
         };
 
@@ -670,16 +704,25 @@
             });
 
             const t = translations[lang];
-            document.getElementById('txtTitle').innerText = t.title;
+            // المضمون الداخلي المترجم
             document.getElementById('btnPointerText').innerText = t.btnPointer;
+            document.getElementById('liveSearchInput').placeholder = t.searchPlaceholder;
+            document.getElementById('lblCloudDirect').innerText = t.cloudDirect;
             document.getElementById('navAccueil').innerText = t.navAccueil;
             document.getElementById('navSuivi').innerText = t.navSuivi;
             document.getElementById('navSettings').innerText = t.navSettings;
             document.getElementById('navCompte').innerText = t.navCompte;
+            
             document.getElementById('optAllStages').innerText = t.allStages;
+            document.getElementById('optNavire').innerText = t.navire;
+            document.getElementById('optStock').innerText = t.stock;
+            document.getElementById('optDouane').innerText = t.douane;
+            document.getElementById('optEmbarque').innerText = t.embarque;
+
             document.getElementById('optAllStatus').innerText = t.allStatus;
             document.getElementById('optBonEtat').innerText = t.good;
             document.getElementById('optEndommage').innerText = t.damaged;
+
             document.getElementById('txtSuiviTitle').innerText = t.suiviTitle;
             document.getElementById('txtSuiviDesc').innerText = t.suiviDesc;
             document.getElementById('txtModelsTitle').innerText = t.modelsTitle;
@@ -699,7 +742,13 @@
             document.getElementById('btnSave').innerText = t.save;
             document.getElementById('txtLogoutBtn').innerText = t.logout;
 
+            document.getElementById('lblMyCounts').innerText = t.myCounts;
+            document.getElementById('lblCloudServer').innerText = t.cloudServer;
+            document.getElementById('lblActiveState').innerText = t.activeState;
+            document.getElementById('lblTerminalDesc').innerText = t.terminalDesc;
+
             filterContainers();
+            renderTrackingList();
         }
 
         // 6. 4-TAB NAVIGATION SYSTEM
@@ -765,7 +814,7 @@
                 });
         }
 
-        // 8. RENDER CONTAINER LIST & GLOWING ACCENTS
+        // 8. RENDER CONTAINER LIST
         function renderList(data = containers) {
             const listEl = document.getElementById('containersList');
             document.getElementById('containerCount').innerText = `${data.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
@@ -781,6 +830,8 @@
                 return;
             }
 
+            const t = translations[currentLang];
+
             data.forEach((item) => {
                 const isGood = item.status === 'Bon état';
                 const badgeClass = isGood ? 'badge-green' : 'badge-red';
@@ -792,6 +843,9 @@
                 if (currentStage === 'Navire') stageBadgeClass = 'stage-navire';
                 if (currentStage === 'Douane') stageBadgeClass = 'stage-douane';
                 if (currentStage === 'Embarqué') stageBadgeClass = 'stage-embarque';
+
+                const stageDisplayName = t.stageNames[currentStage] || currentStage;
+                const statusDisplayName = isGood ? t.good : t.damaged;
 
                 let customFieldsHTML = '';
                 if (item.customData && Object.keys(item.customData).length > 0) {
@@ -808,16 +862,16 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
-                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] ${stageBadgeClass}">En ${currentStage}</span>
+                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] ${stageBadgeClass}">${stageDisplayName}</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
+                            <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${statusDisplayName}</span>
                             <button onclick="deleteContainer('${item.firebaseKey}')" class="text-gray-500 hover:text-red-400 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </div>
                     <p class="text-gray-400 font-medium text-xs flex items-center gap-1.5">
-                        ${isReefer ? '<i class="fa-solid fa-snowflake text-cyan-400" title="Reefer (مبرد)"></i>' : ''}
-                        <span>${item.type} • ${item.loc} • Plomb: ${item.seal}</span>
+                        ${isReefer ? '<i class="fa-solid fa-snowflake text-cyan-400" title="Reefer"></i>' : ''}
+                        <span>${item.type} • ${item.loc} • ${currentLang === 'ar' ? 'القفل:' : 'Plomb:'} ${item.seal}</span>
                     </p>
                     ${customFieldsHTML}
                     <div class="flex items-center justify-between text-gray-400 text-[11px] pt-1 border-t border-[#252b75]">
@@ -859,11 +913,12 @@
             listEl.innerHTML = '';
 
             if (containers.length === 0) {
-                listEl.innerHTML = `<div class="text-center py-12 text-gray-500 font-medium text-xs">Aucun conteneur à suivre.</div>`;
+                listEl.innerHTML = `<div class="text-center py-12 text-gray-500 font-medium text-xs">${currentLang === 'ar' ? 'لا توجد حاويات لتتبعها.' : 'Aucun conteneur à suivre.'}</div>`;
                 return;
             }
 
             const stagesOrder = ['Navire', 'Stock', 'Douane', 'Embarqué'];
+            const t = translations[currentLang];
 
             containers.forEach((item) => {
                 const currentStage = item.stage || 'Navire';
@@ -878,14 +933,16 @@
                     return 'glow-node-future';
                 };
 
+                const stageDisplayName = t.stageNames[currentStage] || currentStage;
+
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div>
                             <span class="font-extrabold text-base text-white tracking-wider">${item.id}</span>
-                            <p class="text-[10px] text-gray-400">${item.type} • Emplacement: <b class="text-white">${item.loc}</b></p>
+                            <p class="text-[10px] text-gray-400">${item.type} • ${currentLang === 'ar' ? 'الموقع:' : 'Emplacement:'} <b class="text-white">${item.loc}</b></p>
                         </div>
                         <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${currentStage === 'Navire' ? 'stage-navire' : currentStage === 'Stock' ? 'stage-stock' : currentStage === 'Douane' ? 'stage-douane' : 'stage-embarque'}">
-                            En ${currentStage}
+                            ${stageDisplayName}
                         </span>
                     </div>
 
@@ -898,7 +955,7 @@
                             <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Navire', 0)}">
                                 <i class="fa-solid fa-ship"></i>
                             </div>
-                            <span class="text-[9px] font-bold ${currentStage === 'Navire' ? 'text-[#00ffaa]' : 'text-gray-300'}">Navire</span>
+                            <span class="text-[9px] font-bold ${currentStage === 'Navire' ? 'text-[#00ffaa]' : 'text-gray-300'}">${currentLang === 'ar' ? 'السفينة' : 'Navire'}</span>
                         </button>
 
                         <!-- Step 2: Stock -->
@@ -906,7 +963,7 @@
                             <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Stock', 1)}">
                                 <i class="fa-solid fa-boxes-stacked"></i>
                             </div>
-                            <span class="text-[9px] font-bold ${currentStage === 'Stock' ? 'text-[#00ffaa]' : 'text-gray-300'}">Stock</span>
+                            <span class="text-[9px] font-bold ${currentStage === 'Stock' ? 'text-[#00ffaa]' : 'text-gray-300'}">${currentLang === 'ar' ? 'الساحة' : 'Stock'}</span>
                         </button>
 
                         <!-- Step 3: Douane -->
@@ -914,7 +971,7 @@
                             <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Douane', 2)}">
                                 <i class="fa-solid fa-building-columns"></i>
                             </div>
-                            <span class="text-[9px] font-bold ${currentStage === 'Douane' ? 'text-[#00ffaa]' : 'text-gray-300'}">Douane</span>
+                            <span class="text-[9px] font-bold ${currentStage === 'Douane' ? 'text-[#00ffaa]' : 'text-gray-300'}">${currentLang === 'ar' ? 'الجمارك' : 'Douane'}</span>
                         </button>
 
                         <!-- Step 4: Embarqué -->
@@ -922,7 +979,7 @@
                             <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Embarqué', 3)}">
                                 <i class="fa-solid fa-circle-check"></i>
                             </div>
-                            <span class="text-[9px] font-bold ${currentStage === 'Embarqué' ? 'text-[#00ffaa]' : 'text-gray-300'}">Sortie</span>
+                            <span class="text-[9px] font-bold ${currentStage === 'Embarqué' ? 'text-[#00ffaa]' : 'text-gray-300'}">${currentLang === 'ar' ? 'خروج' : 'Sortie'}</span>
                         </button>
                     </div>
                 `;
@@ -933,7 +990,7 @@
         async function updateContainerStage(fbKey, newStage) {
             if (!fbKey) return;
             await db.ref('containers/' + fbKey).update({ stage: newStage });
-            showToast(`Position mise à jour: ${newStage}`);
+            showToast(currentLang === 'ar' ? `تم تحديث المرحلة: ${newStage}` : `Position mise à jour: ${newStage}`);
         }
 
         // 11. DYNAMIC CUSTOM MODELS & FORM
@@ -958,7 +1015,7 @@
             if (fields.length > 0) {
                 const title = document.createElement('p');
                 title.className = "text-[11px] font-bold text-[#00ffaa] uppercase tracking-wider mb-2";
-                title.innerText = `Champs spécifiques (${currentModel})`;
+                title.innerText = currentLang === 'ar' ? `حقول خاصة بنموذج (${currentModel})` : `Champs spécifiques (${currentModel})`;
                 container.appendChild(title);
 
                 fields.forEach(fName => {
@@ -966,7 +1023,7 @@
                     div.className = "mb-2";
                     div.innerHTML = `
                         <label class="block text-gray-300 font-medium mb-1">${fName}</label>
-                        <input type="text" data-custom-field="${fName}" placeholder="Renseigner ${fName}..." class="w-full input-dpw p-2.5 rounded-xl text-xs">
+                        <input type="text" data-custom-field="${fName}" placeholder="${currentLang === 'ar' ? 'أدخل ' + fName : 'Renseigner ' + fName}..." class="w-full input-dpw p-2.5 rounded-xl text-xs">
                     `;
                     container.appendChild(div);
                 });
@@ -1017,7 +1074,7 @@
                 const base64Data = e.target.result.split(',')[1];
                 modelTemplates[currentUploadTemplateTarget] = base64Data;
                 await db.ref('modelTemplates').set(modelTemplates);
-                showToast(`Template Excel enregistré pour "${currentUploadTemplateTarget}"`);
+                showToast(currentLang === 'ar' ? `تم رفع قالب إكسل لـ "${currentUploadTemplateTarget}"` : `Template Excel enregistré pour "${currentUploadTemplateTarget}"`);
             };
             reader.readAsDataURL(file);
         }
@@ -1028,17 +1085,18 @@
                 modelConfigs[val] = [];
                 await db.ref('modelConfigs').set(modelConfigs);
                 document.getElementById('inpNewModel').value = '';
-                showToast(`Modèle "${val}" créé avec succès!`);
+                showToast(currentLang === 'ar' ? `تم إنشاء النموذج "${val}"!` : `Modèle "${val}" créé avec succès!`);
             }
         }
 
         async function deleteModel(modelName) {
-            if (confirm(`Voulez-vous vraiment supprimer le modèle "${modelName}" ?`)) {
+            const confirmMsg = currentLang === 'ar' ? `هل تريد بالتأكيد حذف النموذج "${modelName}" ؟` : `Voulez-vous vraiment supprimer le modèle "${modelName}" ?`;
+            if (confirm(confirmMsg)) {
                 delete modelConfigs[modelName];
                 delete modelTemplates[modelName];
                 await db.ref('modelConfigs').set(modelConfigs);
                 await db.ref('modelTemplates').set(modelTemplates);
-                showToast(`Modèle "${modelName}" supprimé`);
+                showToast(currentLang === 'ar' ? `تم حذف النموذج "${modelName}"` : `Modèle "${modelName}" supprimé`);
             }
         }
 
@@ -1050,10 +1108,11 @@
         function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
 
         async function deleteContainer(fbKey) {
-            if (confirm("Voulez-vous vraiment supprimer ce conteneur du Cloud ?")) {
+            const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً حذف الحاوية من السحابة؟" : "Voulez-vous vraiment supprimer ce conteneur du Cloud ?";
+            if (confirm(confirmMsg)) {
                 if (fbKey) {
                     await db.ref('containers/' + fbKey).remove();
-                    showToast("Conteneur supprimé du Cloud");
+                    showToast(currentLang === 'ar' ? "تم حذف الحاوية من السحابة" : "Conteneur supprimé du Cloud");
                 }
             }
         }
@@ -1061,7 +1120,7 @@
         async function handleSave(e) {
             e.preventDefault();
             if (!currentUser) {
-                showToast("Veuillez vous connecter", true);
+                showToast(currentLang === 'ar' ? "يرجى تسجيل الدخول أولاً" : "Veuillez vous connecter", true);
                 return;
             }
 
@@ -1097,7 +1156,7 @@
 
             await newRef.set(newItem);
             closeModal();
-            showToast("✓ Conteneur enregistré au Cloud!");
+            showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية في السحابة بنجاح!" : "✓ Conteneur enregistré au Cloud!");
             
             document.getElementById('inpId').value = '';
             document.getElementById('inpLoc').value = '';
@@ -1145,7 +1204,7 @@
 
             const fileName = `Pointeur_DPW_${new Date().toISOString().slice(0, 10)}.xlsx`;
             XLSX.writeFile(workbook, fileName);
-            showToast("Feuille Excel générée avec succès!");
+            showToast(currentLang === 'ar' ? "تم تصدير ملف إكسل بنجاح!" : "Feuille Excel générée avec succès!");
         }
 
         setLanguage(currentLang);
