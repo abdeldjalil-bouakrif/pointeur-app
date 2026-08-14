@@ -11,6 +11,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Firebase SDKs (Compat version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <style>
         body { 
             font-family: 'Inter', 'Cairo', sans-serif; 
@@ -43,7 +48,6 @@
         .nav-item-inactive { color: #64748b; }
 
         /* GLOWING PIPELINE TIMELINE STYLES */
-        /* Active Glowing Node for Current Stage */
         .glow-node-current {
             background-color: #00ffaa !important;
             color: #0d1033 !important;
@@ -51,7 +55,6 @@
             border: 2px solid #ffffff !important;
             transform: scale(1.15);
         }
-        /* Visible Illuminated Nodes for Other Steps */
         .glow-node-passed {
             background-color: #1d2263;
             color: #00ffaa;
@@ -74,6 +77,49 @@
 </head>
 <body class="bg-[#0d1033] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500 pb-20">
 
+    <!-- ================= AUTH MODAL (نافذة الحسابات السحابية بنفس النمط) ================= -->
+    <div id="authModalOverlay" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 mx-auto flex items-center justify-center">
+                <svg class="w-full h-full filter drop-shadow-[0_2px_8px_rgba(0,255,170,0.3)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 52C22 30 42 26 62 27C45 30 34 38 32 52C31 65 22 52 22 52Z" fill="url(#auth_logo_grad)"/>
+                    <path d="M2 62C22 43 49 57 72 38C72 38 70 51 51 58C32 65 15 53 2 62Z" fill="#00FFAA"/>
+                    <path d="M 28 62 C 40 76 65 74 74 48 C 66 69 44 72 28 62 Z" fill="#FFFFFF"/>
+                    <defs>
+                        <linearGradient id="auth_logo_grad" x1="22" y1="26" x2="62" y2="52" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#FF2A6D"/>
+                            <stop offset="1" stop-color="#FF5E1E"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-extrabold text-base text-white">DP World Djendjen</h3>
+                <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">Cloud Authentication</p>
+            </div>
+
+            <div class="flex border-b border-[#252b75] text-xs font-bold">
+                <button id="authTabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]">Connexion</button>
+                <button id="authTabReg" onclick="switchAuthTab('reg')" class="flex-1 py-2 text-gray-400">Créer compte</button>
+            </div>
+
+            <form onsubmit="handleAuthAction(event)" class="space-y-3 text-xs text-left">
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1">Email</label>
+                    <input type="email" id="authEmail" required placeholder="pointeur@dpw.dz" class="w-full input-dpw p-3 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1">Mot de passe</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full input-dpw p-3 rounded-xl">
+                </div>
+                <button type="submit" id="authSubmitBtn" class="w-full btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg active:scale-95 transition">
+                    Se connecter
+                </button>
+                <p id="authErrorMsg" class="text-[10px] text-rose-400 text-center font-semibold min-h-[1rem]"></p>
+            </form>
+        </div>
+    </div>
+
     <!-- Container Main Area -->
     <div class="w-full p-4 sm:p-6 max-w-lg mx-auto relative z-10">
 
@@ -95,12 +141,15 @@
                 </div>
                 <div>
                     <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white" id="txtTitle">Pointeur Conteneurs</h1>
-                    <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP World Djendjen</p>
+                    <div class="flex items-center gap-2">
+                        <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP World Djendjen</p>
+                        <span id="userConnectedBadge" class="text-[9px] bg-[#1d2263] text-gray-300 px-1.5 py-0.5 rounded border border-[#303796] hidden"></span>
+                    </div>
                 </div>
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- EXCEL BUTTON (CLEAN NAME - THEORY LOGIC ONLY) -->
+                <!-- EXCEL BUTTON -->
                 <button onclick="exportToExcel()" class="btn-dpw-green px-3 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Exporter Excel">
                     <i class="fa-solid fa-file-excel text-sm"></i>
                     <span>Excel</span>
@@ -108,6 +157,9 @@
                 <button onclick="openModal()" class="btn-dpw-gradient px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md active:scale-95 transition">
                     <i class="fa-solid fa-plus text-xs"></i>
                     <span id="btnPointerText">Pointer</span>
+                </button>
+                <button onclick="logoutFirebase()" class="bg-[#1d2263] hover:bg-rose-900/50 text-gray-400 hover:text-rose-300 p-2.5 rounded-xl text-xs border border-[#303796] transition" title="Déconnexion">
+                    <i class="fa-solid fa-power-off"></i>
                 </button>
             </div>
         </div>
@@ -138,6 +190,9 @@
             </div>
             <div class="flex items-center justify-between px-1">
                 <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
+                <span class="text-[10px] text-[#00ffaa] flex items-center gap-1 font-semibold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-pulse"></span> Cloud Synchronisé
+                </span>
             </div>
 
             <!-- Containers Dynamic List -->
@@ -282,17 +337,121 @@
         </div>
     </div>
 
-    <!-- Application Script -->
+    <!-- Application Script & Firebase Integration -->
     <script>
+        // --- 1. FIREBASE INITIALIZATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJ2eLg1TJ419Hxhi542A104GiGhi3k5Ps",
+            authDomain: "pointeur-167d6.firebaseapp.com",
+            databaseURL: "https://pointeur-167d6-default-rtdb.firebaseio.com",
+            projectId: "pointeur-167d6",
+            storageBucket: "pointeur-167d6.firebasestorage.app",
+            messagingSenderId: "2002696474",
+            appId: "1:2002696474:web:0fc47757b941c0a3b8d4a3",
+            measurementId: "G-3GWZV8BWE4"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let currentUser = null;
+        let authMode = 'login';
+
         let currentLang = localStorage.getItem('dpw_lang') || 'fr';
-        let containers = JSON.parse(localStorage.getItem('dpw_containers')) || [];
-        let modelConfigs = JSON.parse(localStorage.getItem('dpw_model_configs')) || {
+        let containers = [];
+        let modelConfigs = {
             'Débarquement': ['Navire', 'N° Manifeste', 'Température'],
             'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
             'Embarquement': ['Destination', 'Poids (Tonnes)']
         };
-        let modelTemplates = JSON.parse(localStorage.getItem('dpw_model_templates')) || {};
+        let modelTemplates = {};
         let currentUploadTemplateTarget = '';
+
+        // --- 2. AUTHENTICATION LOGIC ---
+        auth.onAuthStateChanged((user) => {
+            const authModal = document.getElementById('authModalOverlay');
+            const badge = document.getElementById('userConnectedBadge');
+            
+            if (user) {
+                currentUser = user;
+                authModal.classList.add('hidden');
+                badge.innerText = user.email.split('@')[0];
+                badge.classList.remove('hidden');
+                initFirebaseSync();
+            } else {
+                currentUser = null;
+                badge.classList.add('hidden');
+                authModal.classList.remove('hidden');
+            }
+        });
+
+        function switchAuthTab(mode) {
+            authMode = mode;
+            const tabLogin = document.getElementById('authTabLogin');
+            const tabReg = document.getElementById('authTabReg');
+            const submitBtn = document.getElementById('authSubmitBtn');
+
+            if (mode === 'login') {
+                tabLogin.className = "flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]";
+                tabReg.className = "flex-1 py-2 text-gray-400";
+                submitBtn.innerText = "Se connecter";
+            } else {
+                tabReg.className = "flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]";
+                tabLogin.className = "flex-1 py-2 text-gray-400";
+                submitBtn.innerText = "Créer compte";
+            }
+        }
+
+        async function handleAuthAction(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value.trim();
+            const pass = document.getElementById('authPassword').value;
+            const errEl = document.getElementById('authErrorMsg');
+            errEl.innerText = "";
+
+            try {
+                if (authMode === 'login') {
+                    await auth.signInWithEmailAndPassword(email, pass);
+                } else {
+                    await auth.createUserWithEmailAndPassword(email, pass);
+                }
+            } catch (err) {
+                errEl.innerText = err.message;
+            }
+        }
+
+        function logoutFirebase() {
+            if (confirm("Voulez-vous vous déconnecter ?")) {
+                auth.signOut();
+            }
+        }
+
+        // --- 3. CLOUD REALTIME SYNC ---
+        function initFirebaseSync() {
+            // Sync Containers
+            db.ref('containers').on('value', (snap) => {
+                const val = snap.val();
+                containers = val ? Object.values(val) : [];
+                renderList();
+                renderTrackingList();
+            });
+
+            // Sync Models
+            db.ref('modelConfigs').on('value', (snap) => {
+                const val = snap.val();
+                if (val) modelConfigs = val;
+                populateModelSelect();
+                renderModelsList();
+            });
+
+            // Sync Templates
+            db.ref('modelTemplates').on('value', (snap) => {
+                const val = snap.val();
+                if (val) modelTemplates = val;
+                renderModelsList();
+            });
+        }
 
         const translations = {
             fr: {
@@ -426,10 +585,6 @@
             renderList();
         }
 
-        function saveContainers() { localStorage.setItem('dpw_containers', JSON.stringify(containers)); }
-        function saveModelConfigs() { localStorage.setItem('dpw_model_configs', JSON.stringify(modelConfigs)); }
-        function saveModelTemplates() { localStorage.setItem('dpw_model_templates', JSON.stringify(modelTemplates)); }
-
         function triggerCameraOCR() { document.getElementById('ocrCameraInput').click(); }
 
         function processOCRImage(event) {
@@ -461,7 +616,7 @@
                 })
                 .catch(err => {
                     statusEl.className = "text-[10px] text-red-400 mt-1 font-bold";
-                    statusEl.innerText = "Erreur الكاميرا.";
+                    statusEl.innerText = "Erreur OCR.";
                 });
         }
 
@@ -497,7 +652,6 @@
             }
         }
 
-        // VISIBLE PATH NODES WITH GLOW ONLY ON CURRENT ACTIVE NODE
         function renderTrackingList() {
             const listEl = document.getElementById('trackingList');
             listEl.innerHTML = '';
@@ -516,7 +670,6 @@
                 const card = document.createElement('div');
                 card.className = "dpw-card p-4 rounded-2xl space-y-3.5 text-xs border border-[#252b75]";
 
-                // Function to get CSS class per node
                 const getNodeClass = (nodeStage, nodeIdx) => {
                     if (nodeStage === currentStage) return 'glow-node-current animate-pulse';
                     if (nodeIdx < stageIndex) return 'glow-node-passed';
@@ -539,7 +692,7 @@
                         <div class="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-1 glow-line-active z-0"></div>
 
                         <!-- Step 1: Navire -->
-                        <button onclick="updateContainerStage(${index}, 'Navire')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                        <button onclick="updateContainerStage('${item.firebaseKey}', 'Navire')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
                             <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Navire', 0)}">
                                 <i class="fa-solid fa-ship"></i>
                             </div>
@@ -547,7 +700,7 @@
                         </button>
 
                         <!-- Step 2: Stock -->
-                        <button onclick="updateContainerStage(${index}, 'Stock')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                        <button onclick="updateContainerStage('${item.firebaseKey}', 'Stock')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
                             <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Stock', 1)}">
                                 <i class="fa-solid fa-boxes-stacked"></i>
                             </div>
@@ -555,7 +708,7 @@
                         </button>
 
                         <!-- Step 3: Douane -->
-                        <button onclick="updateContainerStage(${index}, 'Douane')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                        <button onclick="updateContainerStage('${item.firebaseKey}', 'Douane')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
                             <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Douane', 2)}">
                                 <i class="fa-solid fa-building-columns"></i>
                             </div>
@@ -563,7 +716,7 @@
                         </button>
 
                         <!-- Step 4: Embarqué -->
-                        <button onclick="updateContainerStage(${index}, 'Embarqué')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
+                        <button onclick="updateContainerStage('${item.firebaseKey}', 'Embarqué')" class="relative z-10 flex flex-col items-center gap-1 focus:outline-none">
                             <div class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all duration-300 ${getNodeClass('Embarqué', 3)}">
                                 <i class="fa-solid fa-circle-check"></i>
                             </div>
@@ -575,10 +728,9 @@
             });
         }
 
-        function updateContainerStage(index, newStage) {
-            containers[index].stage = newStage;
-            saveContainers();
-            renderTrackingList();
+        async function updateContainerStage(fbKey, newStage) {
+            if (!fbKey) return;
+            await db.ref('containers/' + fbKey).update({ stage: newStage });
         }
 
         function populateModelSelect() {
@@ -657,35 +809,30 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const base64Data = e.target.result.split(',')[1];
                 modelTemplates[currentUploadTemplateTarget] = base64Data;
-                saveModelTemplates();
+                await db.ref('modelTemplates').set(modelTemplates);
                 alert(`✓ Template Excel officiel pour "${currentUploadTemplateTarget}" enregistré avec succès!`);
-                renderModelsList();
             };
             reader.readAsDataURL(file);
         }
 
-        function addNewModel() {
+        async function addNewModel() {
             const val = document.getElementById('inpNewModel').value.trim();
             if (val && !modelConfigs[val]) {
                 modelConfigs[val] = [];
-                saveModelConfigs();
+                await db.ref('modelConfigs').set(modelConfigs);
                 document.getElementById('inpNewModel').value = '';
-                renderModelsList();
-                populateModelSelect();
             }
         }
 
-        function deleteModel(modelName) {
+        async function deleteModel(modelName) {
             if (confirm(`Voulez-vous vraiment supprimer le modèle "${modelName}" ?`)) {
                 delete modelConfigs[modelName];
                 delete modelTemplates[modelName];
-                saveModelConfigs();
-                saveModelTemplates();
-                renderModelsList();
-                populateModelSelect();
+                await db.ref('modelConfigs').set(modelConfigs);
+                await db.ref('modelTemplates').set(modelTemplates);
             }
         }
 
@@ -704,7 +851,7 @@
                 return;
             }
 
-            data.forEach((item, index) => {
+            data.forEach((item) => {
                 const isGood = item.status === 'Bon état';
                 const badgeClass = isGood ? 'badge-green' : 'badge-red';
                 const currentStage = item.stage || 'Stock';
@@ -733,15 +880,18 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
-                            <button onclick="deleteContainer(${index})" class="text-gray-500 hover:text-red-400 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="deleteContainer('${item.firebaseKey}')" class="text-gray-500 hover:text-red-400 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </div>
                     <p class="text-gray-400 font-medium text-xs">${item.type} • ${item.loc} • Plomb: ${item.seal}</p>
                     ${customFieldsHTML}
-                    <div class="flex items-center gap-3 text-gray-400 text-[11px] pt-1 border-t border-[#252b75]">
-                        <span>${item.time}</span>
-                        <span>•</span>
-                        <span>${item.date}</span>
+                    <div class="flex items-center justify-between text-gray-400 text-[11px] pt-1 border-t border-[#252b75]">
+                        <div class="flex items-center gap-2">
+                            <span>${item.time}</span>
+                            <span>•</span>
+                            <span>${item.date}</span>
+                        </div>
+                        <span class="text-[10px] text-gray-500 font-mono">${item.agent || 'Pointeur'}</span>
                     </div>
                 `;
                 listEl.appendChild(card);
@@ -765,16 +915,21 @@
         }
         function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
 
-        function deleteContainer(index) {
-            if (confirm("Voulez-vous vraiment supprimer ce conteneur ?")) {
-                containers.splice(index, 1);
-                saveContainers();
-                renderList();
+        async function deleteContainer(fbKey) {
+            if (confirm("Voulez-vous vraiment supprimer ce conteneur du Cloud ?")) {
+                if (fbKey) {
+                    await db.ref('containers/' + fbKey).remove();
+                }
             }
         }
 
-        function handleSave(e) {
+        async function handleSave(e) {
             e.preventDefault();
+            if (!currentUser) {
+                alert("Veuillez vous connecter.");
+                return;
+            }
+
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const selectedModel = document.getElementById('inpModel').value;
@@ -787,10 +942,12 @@
                 customData[fieldName] = input.value || '-';
             });
 
+            const newRef = db.ref('containers').push();
             const newItem = {
+                firebaseKey: newRef.key,
                 id: inputIdVal,
                 model: selectedModel,
-                stage: 'Stock', // Default position: Stock
+                stage: 'Stock',
                 type: document.getElementById('inpType').value,
                 loc: document.getElementById('inpLoc').value.toUpperCase(),
                 status: document.getElementById('inpStatus').value,
@@ -798,12 +955,12 @@
                 notes: document.getElementById('inpNotes').value || 'RAS',
                 customData: customData,
                 time: timeStr,
-                date: now.toLocaleDateString('fr-FR')
+                date: now.toLocaleDateString('fr-FR'),
+                agent: currentUser.email.split('@')[0],
+                timestamp: Date.now()
             };
 
-            containers.unshift(newItem);
-            saveContainers();
-            renderList();
+            await newRef.set(newItem);
             closeModal();
             
             document.getElementById('inpId').value = '';
@@ -813,7 +970,6 @@
             document.getElementById('ocrStatus').classList.add('hidden');
         }
 
-        // EXPORT THEORETICALLY STOCK-ONLY CONTAINERS WITH CLEAN EXCEL BUTTON
         function exportToExcel() {
             const stockContainers = containers.filter(c => (c.stage || 'Stock') === 'Stock');
 
@@ -836,7 +992,8 @@
                             "Type & Taille": c.type,
                             "Emplacement": c.loc,
                             "État": c.status,
-                            "N° Plomb": c.seal
+                            "N° Plomb": c.seal,
+                            "Pointeur": c.agent || ""
                         };
                         if (c.customData) {
                             for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
@@ -854,7 +1011,6 @@
         }
 
         setLanguage(currentLang);
-        populateModelSelect();
     </script>
 </body>
 </html>
