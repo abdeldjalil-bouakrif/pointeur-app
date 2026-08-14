@@ -41,10 +41,10 @@
             position: relative;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: contain;
         }
         .nav-safe { padding-bottom: max(0.6rem, var(--sab)); }
         
-        /* Glassmorphism Cards */
         .dpw-card { 
             background: linear-gradient(135deg, rgba(25, 31, 89, 0.75) 0%, rgba(16, 20, 60, 0.88) 100%);
             backdrop-filter: blur(14px);
@@ -92,7 +92,6 @@
         .stage-douane { background-color: rgba(46, 16, 101, 0.85); color: #c084fc; border: 1px solid #a855f7; }
         .stage-embarque { background-color: rgba(6, 78, 59, 0.85); color: #34d399; border: 1px solid #10b981; }
 
-        /* Floating Nav Active Pill */
         .nav-pill-active {
             color: #00ffaa !important;
             background: rgba(0, 255, 170, 0.12);
@@ -131,13 +130,11 @@
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
         }
 
-        /* Container ID Font */
         .font-container-id {
             font-family: 'JetBrains Mono', monospace;
             letter-spacing: 0.06em;
         }
 
-        /* Smooth Modal Sheet Animation */
         .modal-sheet-enter {
             animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
@@ -149,8 +146,8 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500">
 
-    <!-- 🔄 PULL TO REFRESH SPINNER -->
-    <div id="pullToRefreshIndicator" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-16 flex items-center justify-center transition-all duration-200">
+    <!-- 🔄 PULL TO REFRESH SPINNER (مؤشر سحب مضبوط وغير حساس عشوائياً) -->
+    <div id="pullToRefreshIndicator" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-20 flex items-center justify-center transition-all duration-200">
         <div class="w-11 h-11 rounded-full bg-[#15194a]/95 backdrop-blur-md border-2 border-[#00ffaa] shadow-[0_0_20px_rgba(0,255,170,0.6)] flex items-center justify-center text-[#00ffaa]">
             <i id="pullSpinnerIcon" class="fa-solid fa-arrow-down text-sm"></i>
         </div>
@@ -305,8 +302,11 @@
 
             <div class="flex items-center justify-between px-1">
                 <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
-                <span id="connectionBadge" class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a]/90 px-3 py-1 rounded-full border border-[#252b75]">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping"></span> <span id="lblCloudDirect">Cloud Direct</span>
+                
+                <!-- 📡 شارة الاتصال السحابي الحقيقي -->
+                <span id="connectionBadge" class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a]/90 px-3 py-1 rounded-full border border-[#252b75] transition-all duration-300">
+                    <span id="connectionDot" class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping"></span> 
+                    <span id="lblCloudDirect">Cloud Direct</span>
                 </span>
             </div>
 
@@ -373,7 +373,7 @@
                     <div class="bg-[#1d2263]/80 p-4 rounded-xl border border-[#303796]">
                         <p class="text-xs text-gray-400 font-bold mb-1" id="lblCloudServer">Serveur Cloud</p>
                         <span id="accountCloudState" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 mt-1">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span id="lblActiveState">Actif</span>
+                            <span id="accountCloudDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span id="lblActiveState">Actif</span>
                         </span>
                     </div>
                 </div>
@@ -432,7 +432,6 @@
     <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="w-full max-w-lg bg-[#15194a] rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 border border-[#303796] shadow-2xl max-h-[90vh] overflow-y-auto modal-sheet-enter relative">
             
-            <!-- Grab Handle for Sheet Modal -->
             <div class="w-12 h-1.5 bg-gray-500/40 rounded-full mx-auto mb-3 sm:hidden"></div>
 
             <div class="flex items-center justify-between mb-4 border-b border-[#252b75] pb-3">
@@ -467,7 +466,7 @@
                     <p id="ocrStatus" class="text-[10px] text-gray-400 mt-1 hidden"></p>
                 </div>
 
-                <!-- 🔍 تكبير أزرار النوع والحالة لتكون واضحة ومريحة -->
+                <!-- تكبير أزرار النوع والحالة لتكون مريحة وواضحة -->
                 <div class="grid grid-cols-2 gap-3.5">
                     <div>
                         <label class="block text-gray-200 font-bold mb-1.5 text-xs" id="lblType">Type & taille</label>
@@ -498,7 +497,6 @@
                         </button>
                     </div>
 
-                    <!-- شريط التحميل الرسومي للصور -->
                     <div id="photoProgressBarContainer" class="hidden w-full bg-[#15194a] rounded-full h-2 overflow-hidden border border-[#252b75]">
                         <div id="photoProgressBar" class="bg-gradient-to-r from-[#00ffaa] to-[#ff2a6d] h-2 rounded-full transition-all duration-300 w-0"></div>
                     </div>
@@ -602,7 +600,7 @@
         let currentDamagePhotoBase64 = '';
         let isSaving = false;
 
-        // 🔄 دالة إعادة التحميل ومسح الكاش الحقيقي
+        // 🔄 دالة إعادة التحميل ومسح الكاش
         function forceRefreshApp() {
             showToast(currentLang === 'ar' ? "جاري التحديث..." : "Actualisation...");
             if ('caches' in window) {
@@ -615,12 +613,12 @@
             }, 300);
         }
 
-        // 📲 سحب للأسفل يعمل فعلياً 100%
+        // 📲 سحب للأسفل محكم ومضبوط
         let touchStartY = 0;
         let isPulling = false;
 
         window.addEventListener('touchstart', (e) => {
-            if (window.scrollY <= 5) {
+            if (window.scrollY <= 2) {
                 touchStartY = e.touches[0].clientY;
                 isPulling = true;
             }
@@ -631,16 +629,17 @@
             const currentY = e.touches[0].clientY;
             const diff = currentY - touchStartY;
 
-            if (diff > 10 && window.scrollY <= 5) {
+            // عتبة أمان عالية (45px) لتفادي الخروج أثناء التمرير الطبيعي
+            if (diff > 45 && window.scrollY <= 2) {
                 const indicator = document.getElementById('pullToRefreshIndicator');
                 const spinnerIcon = document.getElementById('pullSpinnerIcon');
                 indicator.classList.remove('opacity-0');
                 indicator.classList.add('opacity-100');
                 
-                const pullDistance = Math.min(diff * 0.4, 70);
+                const pullDistance = Math.min((diff - 45) * 0.35, 75);
                 indicator.style.transform = `translate(-50%, ${pullDistance}px)`;
 
-                if (pullDistance > 45) {
+                if (pullDistance > 55) {
                     spinnerIcon.className = "fa-solid fa-rotate animate-spin text-sm text-[#00ffaa]";
                 } else {
                     spinnerIcon.className = "fa-solid fa-arrow-down text-sm text-[#00ffaa]";
@@ -654,12 +653,13 @@
             const currentY = e.changedTouches[0].clientY;
             const diff = currentY - touchStartY;
 
-            if (diff > 75 && window.scrollY <= 5) {
+            // يتطلب سحباً واضحاً ومتعمداً (أكثر من 130px)
+            if (diff > 130 && window.scrollY <= 2) {
                 triggerHapticFeedback();
-                indicator.style.transform = `translate(-50%, 40px)`;
+                indicator.style.transform = `translate(-50%, 45px)`;
                 forceRefreshApp();
             } else {
-                indicator.style.transform = `translate(-50%, -64px)`;
+                indicator.style.transform = `translate(-50%, -80px)`;
                 indicator.classList.remove('opacity-100');
                 indicator.classList.add('opacity-0');
             }
@@ -809,7 +809,41 @@
             }
         }
 
+        // 📡 المراقبة السحابية الحقيقية ومزامنة البيانات
         function initFirebaseSync() {
+            // مراقبة اتصال سيرفر Firebase الحقيقي
+            db.ref('.info/connected').on('value', (snap) => {
+                const isConnected = snap.val() === true;
+                const badge = document.getElementById('connectionBadge');
+                const dot = document.getElementById('connectionDot');
+                const label = document.getElementById('lblCloudDirect');
+                const accountState = document.getElementById('accountCloudState');
+                const accountDot = document.getElementById('accountCloudDot');
+                const accountLabel = document.getElementById('lblActiveState');
+
+                if (isConnected) {
+                    badge.className = "text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a]/90 px-3 py-1 rounded-full border border-[#00ffaa]/40 transition-all duration-300";
+                    dot.className = "w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping";
+                    label.innerText = translations[currentLang].cloudDirect;
+
+                    if (accountState) {
+                        accountState.className = "inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 mt-1";
+                        if (accountDot) accountDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                        if (accountLabel) accountLabel.innerText = translations[currentLang].activeState;
+                    }
+                } else {
+                    badge.className = "text-[10px] text-amber-400 flex items-center gap-1.5 font-semibold bg-[#15194a]/90 px-3 py-1 rounded-full border border-amber-500/40 transition-all duration-300";
+                    dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400";
+                    label.innerText = currentLang === 'ar' ? "وضع عدم الاتصال" : "Mode Hors-ligne";
+
+                    if (accountState) {
+                        accountState.className = "inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 mt-1";
+                        if (accountDot) accountDot.className = "w-2 h-2 rounded-full bg-amber-400";
+                        if (accountLabel) accountLabel.innerText = currentLang === 'ar' ? "غير متصل" : "Hors-ligne";
+                    }
+                }
+            });
+
             db.ref('containers').on('value', (snap) => {
                 const val = snap.val();
                 if (val) {
@@ -1776,17 +1810,6 @@
                     .catch(err => console.log('SW Error:', err));
             });
         }
-
-        window.addEventListener('online', () => {
-            document.getElementById('lblCloudDirect').innerText = translations[currentLang].cloudDirect;
-            showToast(currentLang === 'ar' ? "عاد الاتصال بالإنترنت" : "Connexion rétablie");
-            initFirebaseSync();
-        });
-
-        window.addEventListener('offline', () => {
-            document.getElementById('lblCloudDirect').innerText = currentLang === 'ar' ? "وضع عدم الاتصال (Offline)" : "Mode Hors-ligne";
-            showToast(currentLang === 'ar' ? "أنت في وضع عدم الاتصال (Offline)" : "Mode Hors-ligne activé", true);
-        });
 
         setLanguage(currentLang);
     </script>
