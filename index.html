@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pointeur conteneurs - DP World</title>
+    <title>Pointeur conteneurs - DP World Djendjen</title>
+    
     <!-- Tailwind CSS, SheetJS & Tesseract OCR -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -11,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDKs (Compat version) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -26,15 +27,26 @@
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
-        .dpw-card { background-color: #15194a; border: 1px solid #252b75; }
-        .input-dpw { background-color: #1d2263; border: 1px solid #303796; color: #ffffff; }
+        .dpw-card { 
+            background-color: #15194a; 
+            border: 1px solid #252b75; 
+            transition: all 0.2s ease-in-out;
+        }
+        .input-dpw { 
+            background-color: #1d2263; 
+            border: 1px solid #303796; 
+            color: #ffffff; 
+            transition: border-color 0.2s;
+        }
         .input-dpw:focus { border-color: #00ffaa; outline: none; }
         .btn-dpw-gradient { background: linear-gradient(135deg, #ff2a6d 0%, #ff5e1e 100%); color: white; }
-        .btn-dpw-gradient:hover { opacity: 0.95; }
+        .btn-dpw-gradient:active { transform: scale(0.96); }
         .btn-dpw-green { background-color: #00ffaa; color: #0d1033; }
         .btn-dpw-green:hover { background-color: #00cc88; }
-        .btn-dpw-blue { background-color: #3b82f6; color: white; }
+        .btn-dpw-green:active { transform: scale(0.96); }
+        
         .badge-green { background-color: #064e3b; color: #34d399; border: 1px solid #047857; }
         .badge-red { background-color: #4c0519; color: #fb7185; border: 1px solid #9f1239; }
         
@@ -47,7 +59,7 @@
         .nav-item-active { color: #00ffaa; }
         .nav-item-inactive { color: #64748b; }
 
-        /* GLOWING PIPELINE TIMELINE STYLES */
+        /* GLOWING TIMELINE NODES */
         .glow-node-current {
             background-color: #00ffaa !important;
             color: #0d1033 !important;
@@ -65,19 +77,34 @@
             color: #64748b;
             border: 2px solid #303796;
         }
-        
         .glow-line-active {
             background: linear-gradient(90deg, #00ffaa, #ff2a6d);
             box-shadow: 0 0 6px #00ffaa;
         }
-        .glow-line-inactive {
-            background-color: #252b75;
+
+        /* CARD ACCENTS */
+        .card-damaged {
+            border: 1px solid rgba(244, 63, 94, 0.45) !important;
+            background: linear-gradient(180deg, #15194a 0%, rgba(76, 5, 25, 0.35) 100%) !important;
+        }
+
+        /* TOAST ANIMATION */
+        #toastContainer {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
         }
     </style>
 </head>
-<body class="bg-[#0d1033] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500 pb-20">
+<body class="bg-[#0d1033] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500 pb-24">
 
-    <!-- ================= AUTH MODAL (نافذة الحسابات السحابية بنفس النمط) ================= -->
+    <!-- ================= FLOATING TOAST NOTIFICATION ================= -->
+    <div id="toastContainer" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-4 max-w-sm w-[90%]">
+        <div id="toastContent" class="dpw-card px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-[#00ffaa]/40">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-[#00ffaa] text-base"></i>
+            <span id="toastMsg" class="text-xs font-bold text-white tracking-wide">Action réussie</span>
+        </div>
+    </div>
+
+    <!-- ================= AUTH MODAL (تسجيل الدخول السحابي) ================= -->
     <div id="authModalOverlay" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 mx-auto flex items-center justify-center">
@@ -120,7 +147,7 @@
         </div>
     </div>
 
-    <!-- Container Main Area -->
+    <!-- ================= MAIN APP CONTAINER ================= -->
     <div class="w-full p-4 sm:p-6 max-w-lg mx-auto relative z-10">
 
         <!-- BRAND HEADER SECTION -->
@@ -141,10 +168,7 @@
                 </div>
                 <div>
                     <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white" id="txtTitle">Pointeur Conteneurs</h1>
-                    <div class="flex items-center gap-2">
-                        <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP World Djendjen</p>
-                        <span id="userConnectedBadge" class="text-[9px] bg-[#1d2263] text-gray-300 px-1.5 py-0.5 rounded border border-[#303796] hidden"></span>
-                    </div>
+                    <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP World Djendjen</p>
                 </div>
             </div>
             
@@ -158,23 +182,28 @@
                     <i class="fa-solid fa-plus text-xs"></i>
                     <span id="btnPointerText">Pointer</span>
                 </button>
-                <button onclick="logoutFirebase()" class="bg-[#1d2263] hover:bg-rose-900/50 text-gray-400 hover:text-rose-300 p-2.5 rounded-xl text-xs border border-[#303796] transition" title="Déconnexion">
-                    <i class="fa-solid fa-power-off"></i>
-                </button>
             </div>
         </div>
 
         <!-- LANGUAGE SELECTOR BAR -->
-        <div class="flex items-center justify-end gap-1.5 mb-4 text-[10px] font-bold">
+        <div class="flex items-center justify-end gap-1.5 mb-3 text-[10px] font-bold">
             <span class="text-gray-400 mr-1"><i class="fa-solid fa-globe"></i> Language:</span>
             <button onclick="setLanguage('fr')" id="langBtn_fr" class="px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
             <button onclick="setLanguage('ar')" id="langBtn_ar" class="px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300">عربي</button>
             <button onclick="setLanguage('en')" id="langBtn_en" class="px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300">EN</button>
         </div>
 
-        <!-- TAB 1: ACCUEIL -->
-        <div id="tabAccueil" class="space-y-4">
-            <div class="flex items-center justify-between my-2 text-xs gap-2">
+        <!-- ================= TAB 1: ACCUEIL ================= -->
+        <div id="tabAccueil" class="space-y-3">
+            
+            <!-- Quick Search Bar -->
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-xs"></i>
+                <input type="text" id="liveSearchInput" onkeyup="filterContainers()" placeholder="Rechercher par N° ou emplacement..." class="w-full input-dpw pl-9 pr-3 py-2.5 rounded-xl text-xs font-medium outline-none">
+            </div>
+
+            <!-- Filters -->
+            <div class="flex items-center justify-between text-xs gap-2">
                 <select id="filterStage" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All" id="optAllStages">Tous les emplacements</option>
                     <option value="Navire" id="optNavire">🚢 En Navire</option>
@@ -188,18 +217,20 @@
                     <option value="Endommagé" id="optEndommage">Endommagé</option>
                 </select>
             </div>
+
+            <!-- Live Status & Count -->
             <div class="flex items-center justify-between px-1">
                 <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
-                <span class="text-[10px] text-[#00ffaa] flex items-center gap-1 font-semibold">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-pulse"></span> Cloud Synchronisé
+                <span class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a] px-2.5 py-1 rounded-full border border-[#252b75]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping"></span> Cloud Direct
                 </span>
             </div>
 
             <!-- Containers Dynamic List -->
-            <div id="containersList" class="space-y-3"></div>
+            <div id="containersList" class="space-y-3 pt-1"></div>
         </div>
 
-        <!-- TAB 2: SUIVI FLUX -->
+        <!-- ================= TAB 2: SUIVI FLUX ================= -->
         <div id="tabSuivi" class="hidden space-y-4">
             <div class="dpw-card p-4 rounded-2xl space-y-2">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
@@ -213,7 +244,7 @@
             <div id="trackingList" class="space-y-4"></div>
         </div>
 
-        <!-- TAB 3: CONFIGURATION DES MODÈLES & TEMPLATES EXCEL -->
+        <!-- ================= TAB 3: MODÈLES & TEMPLATES ================= -->
         <div id="tabSettings" class="hidden space-y-4">
             <div class="dpw-card p-4 rounded-2xl space-y-3">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
@@ -236,22 +267,73 @@
             </div>
         </div>
 
+        <!-- ================= TAB 4: COMPTE & PROFIL AGENT ================= -->
+        <div id="tabCompte" class="hidden space-y-4">
+            <div class="dpw-card p-5 rounded-2xl space-y-4 border border-[#252b75]">
+                <div class="flex items-center gap-3 border-b border-[#252b75] pb-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00ffaa] to-[#1d2263] flex items-center justify-center text-[#0d1033] font-black text-xl shadow-lg">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div>
+                        <h3 id="accountEmailDisplay" class="font-extrabold text-sm text-white">Agent Pointeur</h3>
+                        <p class="text-[11px] text-[#00ffaa] font-bold uppercase tracking-wider">DP World Djendjen Terminal</p>
+                    </div>
+                </div>
+
+                <!-- Account Metrics -->
+                <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796]">
+                        <p class="text-[10px] text-gray-400 font-bold mb-1">Mes Pointages</p>
+                        <h4 id="agentCountStat" class="text-lg font-black text-[#00ffaa]">0</h4>
+                    </div>
+                    <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796]">
+                        <p class="text-[10px] text-gray-400 font-bold mb-1">Serveur Cloud</p>
+                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Actif
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Logout Button -->
+                <div class="pt-2">
+                    <button onclick="logoutFirebase()" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 transition active:scale-95">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span id="txtLogoutBtn">Se déconnecter</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Terminal Info -->
+            <div class="dpw-card p-4 rounded-2xl text-[11px] text-gray-400 space-y-1.5 border border-[#252b75]">
+                <p class="text-white font-bold flex items-center gap-1.5"><i class="fa-solid fa-anchor text-[#00ffaa]"></i> Port de Djendjen - Jijel</p>
+                <p>Système de pointage et gestion des flux de conteneurs sous environnement sécurisé Firebase.</p>
+            </div>
+        </div>
+
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR -->
+    <!-- ================= BOTTOM 4-TAB NAVIGATION BAR ================= -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-lg mx-auto">
-        <div class="flex items-center justify-around py-2 px-3 text-center">
+        <div class="grid grid-cols-4 py-2 text-center">
+            <!-- 1. Accueil -->
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
                 <i class="fa-solid fa-house text-base"></i>
                 <span class="text-[10px] font-semibold" id="navAccueil">Accueil</span>
             </button>
+            <!-- 2. Suivi Flux -->
             <button id="navBtnSuivi" onclick="switchTab('suivi')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
                 <i class="fa-solid fa-route text-base"></i>
                 <span class="text-[10px] font-semibold" id="navSuivi">Suivi Flux</span>
             </button>
+            <!-- 3. Modèles -->
             <button id="navBtnSettings" onclick="switchTab('settings')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
                 <i class="fa-solid fa-sliders text-base"></i>
                 <span class="text-[10px] font-semibold" id="navSettings">Modèles</span>
+            </button>
+            <!-- 4. Compte (جديد) -->
+            <button id="navBtnCompte" onclick="switchTab('compte')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
+                <i class="fa-solid fa-user-gear text-base"></i>
+                <span class="text-[10px] font-semibold" id="navCompte">Compte</span>
             </button>
         </div>
         <div class="text-[9.5px] text-center text-gray-400 pb-2 font-medium flex items-center justify-center gap-1 tracking-wide">
@@ -263,7 +345,7 @@
     <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="hidden" onchange="processOCRImage(event)">
     <input type="file" id="templateFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleTemplateUpload(event)">
 
-    <!-- POPUP MODAL (Pointer un conteneur) -->
+    <!-- ================= POPUP MODAL (Pointer un conteneur) ================= -->
     <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
         <div class="w-full max-w-lg bg-[#15194a] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#252b75] shadow-2xl max-h-[90vh] overflow-y-auto">
             
@@ -296,8 +378,8 @@
                         <label class="block text-gray-300 font-medium mb-1" id="lblType">Type & taille</label>
                         <select id="inpType" required class="w-full input-dpw p-3 rounded-xl">
                             <option value="20' ST">20' ST</option>
-                            <option value="40' HC">40' HC</option>
-                            <option value="40' RF">40' RF</option>
+                            <option value="40' HC" selected>40' HC</option>
+                            <option value="40' RF">40' RF (Reefer)</option>
                             <option value="45' HC">45' HC</option>
                         </select>
                     </div>
@@ -337,9 +419,9 @@
         </div>
     </div>
 
-    <!-- Application Script & Firebase Integration -->
+    <!-- ================= APPLICATION SCRIPT ================= -->
     <script>
-        // --- 1. FIREBASE INITIALIZATION ---
+        // 1. FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyAJ2eLg1TJ419Hxhi542A104GiGhi3k5Ps",
             authDomain: "pointeur-167d6.firebaseapp.com",
@@ -357,7 +439,6 @@
 
         let currentUser = null;
         let authMode = 'login';
-
         let currentLang = localStorage.getItem('dpw_lang') || 'fr';
         let containers = [];
         let modelConfigs = {
@@ -368,20 +449,41 @@
         let modelTemplates = {};
         let currentUploadTemplateTarget = '';
 
-        // --- 2. AUTHENTICATION LOGIC ---
+        // 2. TOAST SYSTEM
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toastContainer');
+            const icon = document.getElementById('toastIcon');
+            const text = document.getElementById('toastMsg');
+
+            text.innerText = msg;
+            if(isError) {
+                icon.className = "fa-solid fa-circle-exclamation text-rose-400 text-base";
+                toast.firstElementChild.className = "dpw-card px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-rose-500/40 bg-slate-900/95";
+            } else {
+                icon.className = "fa-solid fa-circle-check text-[#00ffaa] text-base";
+                toast.firstElementChild.className = "dpw-card px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-[#00ffaa]/40 bg-slate-900/95";
+            }
+
+            toast.classList.remove('opacity-0', '-translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-4');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 2500);
+        }
+
+        // 3. AUTHENTICATION LOGIC
         auth.onAuthStateChanged((user) => {
             const authModal = document.getElementById('authModalOverlay');
-            const badge = document.getElementById('userConnectedBadge');
-            
             if (user) {
                 currentUser = user;
                 authModal.classList.add('hidden');
-                badge.innerText = user.email.split('@')[0];
-                badge.classList.remove('hidden');
+                document.getElementById('accountEmailDisplay').innerText = user.email;
                 initFirebaseSync();
+                showToast("Connecté avec succès au Cloud!");
             } else {
                 currentUser = null;
-                badge.classList.add('hidden');
                 authModal.classList.remove('hidden');
             }
         });
@@ -422,22 +524,22 @@
         }
 
         function logoutFirebase() {
-            if (confirm("Voulez-vous vous déconnecter ?")) {
+            if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
                 auth.signOut();
+                showToast("Déconnexion réussie");
             }
         }
 
-        // --- 3. CLOUD REALTIME SYNC ---
+        // 4. CLOUD REALTIME SYNC
         function initFirebaseSync() {
-            // Sync Containers
             db.ref('containers').on('value', (snap) => {
                 const val = snap.val();
                 containers = val ? Object.values(val) : [];
-                renderList();
+                filterContainers();
                 renderTrackingList();
+                updateAccountStats();
             });
 
-            // Sync Models
             db.ref('modelConfigs').on('value', (snap) => {
                 const val = snap.val();
                 if (val) modelConfigs = val;
@@ -445,7 +547,6 @@
                 renderModelsList();
             });
 
-            // Sync Templates
             db.ref('modelTemplates').on('value', (snap) => {
                 const val = snap.val();
                 if (val) modelTemplates = val;
@@ -453,6 +554,14 @@
             });
         }
 
+        function updateAccountStats() {
+            if(!currentUser) return;
+            const agentPrefix = currentUser.email.split('@')[0];
+            const myCount = containers.filter(c => c.agent === agentPrefix).length;
+            document.getElementById('agentCountStat').innerText = myCount;
+        }
+
+        // 5. TRANSLATIONS (FR / AR / EN)
         const translations = {
             fr: {
                 title: "Pointeur Conteneurs",
@@ -460,6 +569,7 @@
                 navAccueil: "Accueil",
                 navSuivi: "Suivi Flux",
                 navSettings: "Modèles",
+                navCompte: "Compte",
                 allStages: "Tous les emplacements",
                 allStatus: "Tous les états",
                 good: "Bon état",
@@ -478,7 +588,8 @@
                 sealLbl: "N° plomb",
                 notesLbl: "Remarques générales",
                 cancel: "Annuler",
-                save: "Enregistrer"
+                save: "Enregistrer",
+                logout: "Se déconnecter"
             },
             ar: {
                 title: "راقم الحاويات",
@@ -486,6 +597,7 @@
                 navAccueil: "الرئيسية",
                 navSuivi: "تتبع المسار",
                 navSettings: "النماذج",
+                navCompte: "حسابي",
                 allStages: "جميع المواقع",
                 allStatus: "جميع الحالات",
                 good: "حالة جيدة",
@@ -504,7 +616,8 @@
                 sealLbl: "رقم القفل (Plomb)",
                 notesLbl: "ملاحظات عامة",
                 cancel: "إلغاء",
-                save: "حفظ"
+                save: "حفظ",
+                logout: "تسجيل الخروج"
             },
             en: {
                 title: "Container Tally",
@@ -512,6 +625,7 @@
                 navAccueil: "Home",
                 navSuivi: "Track & Trace",
                 navSettings: "Models",
+                navCompte: "Account",
                 allStages: "All Locations",
                 allStatus: "All Statuses",
                 good: "Good condition",
@@ -530,7 +644,8 @@
                 sealLbl: "Seal No.",
                 notesLbl: "General Notes",
                 cancel: "Cancel",
-                save: "Save"
+                save: "Save",
+                logout: "Sign Out"
             }
         };
 
@@ -560,6 +675,7 @@
             document.getElementById('navAccueil').innerText = t.navAccueil;
             document.getElementById('navSuivi').innerText = t.navSuivi;
             document.getElementById('navSettings').innerText = t.navSettings;
+            document.getElementById('navCompte').innerText = t.navCompte;
             document.getElementById('optAllStages').innerText = t.allStages;
             document.getElementById('optAllStatus').innerText = t.allStatus;
             document.getElementById('optBonEtat').innerText = t.good;
@@ -581,10 +697,39 @@
             document.getElementById('lblNotes').innerText = t.notesLbl;
             document.getElementById('btnCancel').innerText = t.cancel;
             document.getElementById('btnSave').innerText = t.save;
+            document.getElementById('txtLogoutBtn').innerText = t.logout;
 
-            renderList();
+            filterContainers();
         }
 
+        // 6. 4-TAB NAVIGATION SYSTEM
+        function switchTab(tabName) {
+            const tabs = ['tabAccueil', 'tabSuivi', 'tabSettings', 'tabCompte'];
+            const btns = ['navBtnAccueil', 'navBtnSuivi', 'navBtnSettings', 'navBtnCompte'];
+
+            tabs.forEach(t => document.getElementById(t).classList.add('hidden'));
+            btns.forEach(b => document.getElementById(b).className = "flex flex-col items-center gap-1 nav-item-inactive transition");
+
+            if (tabName === 'accueil') {
+                document.getElementById('tabAccueil').classList.remove('hidden');
+                document.getElementById('navBtnAccueil').className = "flex flex-col items-center gap-1 nav-item-active transition";
+                filterContainers();
+            } else if (tabName === 'suivi') {
+                document.getElementById('tabSuivi').classList.remove('hidden');
+                document.getElementById('navBtnSuivi').className = "flex flex-col items-center gap-1 nav-item-active transition";
+                renderTrackingList();
+            } else if (tabName === 'settings') {
+                document.getElementById('tabSettings').classList.remove('hidden');
+                document.getElementById('navBtnSettings').className = "flex flex-col items-center gap-1 nav-item-active transition";
+                renderModelsList();
+            } else if (tabName === 'compte') {
+                document.getElementById('tabCompte').classList.remove('hidden');
+                document.getElementById('navBtnCompte').className = "flex flex-col items-center gap-1 nav-item-active transition";
+                updateAccountStats();
+            }
+        }
+
+        // 7. OCR PROCESSING
         function triggerCameraOCR() { document.getElementById('ocrCameraInput').click(); }
 
         function processOCRImage(event) {
@@ -620,38 +765,95 @@
                 });
         }
 
-        function switchTab(tabName) {
-            const accueilTab = document.getElementById('tabAccueil');
-            const suiviTab = document.getElementById('tabSuivi');
-            const settingsTab = document.getElementById('tabSettings');
-            
-            const btnAccueil = document.getElementById('navBtnAccueil');
-            const btnSuivi = document.getElementById('navBtnSuivi');
-            const btnSettings = document.getElementById('navBtnSettings');
+        // 8. RENDER CONTAINER LIST & GLOWING ACCENTS
+        function renderList(data = containers) {
+            const listEl = document.getElementById('containersList');
+            document.getElementById('containerCount').innerText = `${data.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
+            listEl.innerHTML = '';
 
-            accueilTab.classList.add('hidden');
-            suiviTab.classList.add('hidden');
-            settingsTab.classList.add('hidden');
-
-            btnAccueil.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
-            btnSuivi.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
-            btnSettings.className = "flex flex-col items-center gap-1 nav-item-inactive transition";
-
-            if (tabName === 'accueil') {
-                accueilTab.classList.remove('hidden');
-                btnAccueil.className = "flex flex-col items-center gap-1 nav-item-active transition";
-                renderList();
-            } else if (tabName === 'suivi') {
-                suiviTab.classList.remove('hidden');
-                btnSuivi.className = "flex flex-col items-center gap-1 nav-item-active transition";
-                renderTrackingList();
-            } else {
-                settingsTab.classList.remove('hidden');
-                btnSettings.className = "flex flex-col items-center gap-1 nav-item-active transition";
-                renderModelsList();
+            if (data.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-12 text-gray-500 font-medium text-xs">
+                        <i class="fa-solid fa-box-open text-3xl mb-2 block text-gray-600"></i>
+                        ${currentLang === 'ar' ? 'لا توجد حاويات مطابقة.' : 'Aucun conteneur trouvé.'}
+                    </div>
+                `;
+                return;
             }
+
+            data.forEach((item) => {
+                const isGood = item.status === 'Bon état';
+                const badgeClass = isGood ? 'badge-green' : 'badge-red';
+                const currentStage = item.stage || 'Stock';
+                const isDamaged = !isGood;
+                const isReefer = item.type && item.type.includes('RF');
+                
+                let stageBadgeClass = 'stage-stock';
+                if (currentStage === 'Navire') stageBadgeClass = 'stage-navire';
+                if (currentStage === 'Douane') stageBadgeClass = 'stage-douane';
+                if (currentStage === 'Embarqué') stageBadgeClass = 'stage-embarque';
+
+                let customFieldsHTML = '';
+                if (item.customData && Object.keys(item.customData).length > 0) {
+                    customFieldsHTML = `<div class="flex flex-wrap gap-2 pt-1 text-[11px] text-gray-300">`;
+                    for (const [key, val] of Object.entries(item.customData)) {
+                        if (val) customFieldsHTML += `<span class="bg-[#1d2263] px-2 py-0.5 rounded border border-[#303796]"><b>${key}:</b> ${val}</span>`;
+                    }
+                    customFieldsHTML += `</div>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = `dpw-card p-4 rounded-2xl space-y-2 text-xs mb-3 shadow-sm relative ${isDamaged ? 'card-damaged' : ''}`;
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
+                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] ${stageBadgeClass}">En ${currentStage}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
+                            <button onclick="deleteContainer('${item.firebaseKey}')" class="text-gray-500 hover:text-red-400 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 font-medium text-xs flex items-center gap-1.5">
+                        ${isReefer ? '<i class="fa-solid fa-snowflake text-cyan-400" title="Reefer (مبرد)"></i>' : ''}
+                        <span>${item.type} • ${item.loc} • Plomb: ${item.seal}</span>
+                    </p>
+                    ${customFieldsHTML}
+                    <div class="flex items-center justify-between text-gray-400 text-[11px] pt-1 border-t border-[#252b75]">
+                        <div class="flex items-center gap-2">
+                            <span>${item.time}</span>
+                            <span>•</span>
+                            <span>${item.date}</span>
+                        </div>
+                        <span class="text-[10px] text-gray-400 font-mono bg-[#1d2263] px-1.5 py-0.5 rounded border border-[#303796]">${item.agent || 'Pointeur'}</span>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
         }
 
+        // 9. FILTER & LIVE SEARCH
+        function filterContainers() {
+            const statusVal = document.getElementById('filterStatus').value;
+            const stageVal = document.getElementById('filterStage').value;
+            const searchVal = (document.getElementById('liveSearchInput')?.value || '').toLowerCase().trim();
+
+            let filtered = containers;
+            if (statusVal !== 'All') filtered = filtered.filter(c => c.status === statusVal);
+            if (stageVal !== 'All') filtered = filtered.filter(c => (c.stage || 'Stock') === stageVal);
+            if (searchVal) {
+                filtered = filtered.filter(c => 
+                    c.id.toLowerCase().includes(searchVal) || 
+                    (c.loc && c.loc.toLowerCase().includes(searchVal)) ||
+                    (c.seal && c.seal.toLowerCase().includes(searchVal))
+                );
+            }
+
+            renderList(filtered);
+        }
+
+        // 10. GLOWING TRACKING TIMELINE
         function renderTrackingList() {
             const listEl = document.getElementById('trackingList');
             listEl.innerHTML = '';
@@ -663,7 +865,7 @@
 
             const stagesOrder = ['Navire', 'Stock', 'Douane', 'Embarqué'];
 
-            containers.forEach((item, index) => {
+            containers.forEach((item) => {
                 const currentStage = item.stage || 'Navire';
                 const stageIndex = stagesOrder.indexOf(currentStage);
 
@@ -731,8 +933,10 @@
         async function updateContainerStage(fbKey, newStage) {
             if (!fbKey) return;
             await db.ref('containers/' + fbKey).update({ stage: newStage });
+            showToast(`Position mise à jour: ${newStage}`);
         }
 
+        // 11. DYNAMIC CUSTOM MODELS & FORM
         function populateModelSelect() {
             const selectEl = document.getElementById('inpModel');
             selectEl.innerHTML = '';
@@ -813,7 +1017,7 @@
                 const base64Data = e.target.result.split(',')[1];
                 modelTemplates[currentUploadTemplateTarget] = base64Data;
                 await db.ref('modelTemplates').set(modelTemplates);
-                alert(`✓ Template Excel officiel pour "${currentUploadTemplateTarget}" enregistré avec succès!`);
+                showToast(`Template Excel enregistré pour "${currentUploadTemplateTarget}"`);
             };
             reader.readAsDataURL(file);
         }
@@ -824,6 +1028,7 @@
                 modelConfigs[val] = [];
                 await db.ref('modelConfigs').set(modelConfigs);
                 document.getElementById('inpNewModel').value = '';
+                showToast(`Modèle "${val}" créé avec succès!`);
             }
         }
 
@@ -833,82 +1038,11 @@
                 delete modelTemplates[modelName];
                 await db.ref('modelConfigs').set(modelConfigs);
                 await db.ref('modelTemplates').set(modelTemplates);
+                showToast(`Modèle "${modelName}" supprimé`);
             }
         }
 
-        function renderList(data = containers) {
-            const listEl = document.getElementById('containersList');
-            document.getElementById('containerCount').innerText = `${data.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
-            listEl.innerHTML = '';
-
-            if (data.length === 0) {
-                listEl.innerHTML = `
-                    <div class="text-center py-12 text-gray-500 font-medium text-xs">
-                        <i class="fa-solid fa-box-open text-3xl mb-2 block text-gray-600"></i>
-                        ${currentLang === 'ar' ? 'لا توجد حاويات حتى الآن.' : 'Aucun conteneur pointé pour le moment.'}
-                    </div>
-                `;
-                return;
-            }
-
-            data.forEach((item) => {
-                const isGood = item.status === 'Bon état';
-                const badgeClass = isGood ? 'badge-green' : 'badge-red';
-                const currentStage = item.stage || 'Stock';
-                
-                let stageBadgeClass = 'stage-stock';
-                if (currentStage === 'Navire') stageBadgeClass = 'stage-navire';
-                if (currentStage === 'Douane') stageBadgeClass = 'stage-douane';
-                if (currentStage === 'Embarqué') stageBadgeClass = 'stage-embarque';
-
-                let customFieldsHTML = '';
-                if (item.customData && Object.keys(item.customData).length > 0) {
-                    customFieldsHTML = `<div class="flex flex-wrap gap-2 pt-1 text-[11px] text-gray-300">`;
-                    for (const [key, val] of Object.entries(item.customData)) {
-                        if (val) customFieldsHTML += `<span class="bg-[#1d2263] px-2 py-0.5 rounded border border-[#303796]"><b>${key}:</b> ${val}</span>`;
-                    }
-                    customFieldsHTML += `</div>`;
-                }
-
-                const card = document.createElement('div');
-                card.className = "dpw-card p-4 rounded-2xl space-y-2 text-xs mb-3 shadow-sm relative";
-                card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
-                            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] ${stageBadgeClass}">En ${currentStage}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${item.status}</span>
-                            <button onclick="deleteContainer('${item.firebaseKey}')" class="text-gray-500 hover:text-red-400 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                        </div>
-                    </div>
-                    <p class="text-gray-400 font-medium text-xs">${item.type} • ${item.loc} • Plomb: ${item.seal}</p>
-                    ${customFieldsHTML}
-                    <div class="flex items-center justify-between text-gray-400 text-[11px] pt-1 border-t border-[#252b75]">
-                        <div class="flex items-center gap-2">
-                            <span>${item.time}</span>
-                            <span>•</span>
-                            <span>${item.date}</span>
-                        </div>
-                        <span class="text-[10px] text-gray-500 font-mono">${item.agent || 'Pointeur'}</span>
-                    </div>
-                `;
-                listEl.appendChild(card);
-            });
-        }
-
-        function filterContainers() {
-            const statusVal = document.getElementById('filterStatus').value;
-            const stageVal = document.getElementById('filterStage').value;
-
-            let filtered = containers;
-            if (statusVal !== 'All') filtered = filtered.filter(c => c.status === statusVal);
-            if (stageVal !== 'All') filtered = filtered.filter(c => (c.stage || 'Stock') === stageVal);
-
-            renderList(filtered);
-        }
-
+        // 12. CRUD ACTIONS
         function openModal() { 
             populateModelSelect();
             document.getElementById('modalOverlay').classList.remove('hidden'); 
@@ -919,6 +1053,7 @@
             if (confirm("Voulez-vous vraiment supprimer ce conteneur du Cloud ?")) {
                 if (fbKey) {
                     await db.ref('containers/' + fbKey).remove();
+                    showToast("Conteneur supprimé du Cloud");
                 }
             }
         }
@@ -926,7 +1061,7 @@
         async function handleSave(e) {
             e.preventDefault();
             if (!currentUser) {
-                alert("Veuillez vous connecter.");
+                showToast("Veuillez vous connecter", true);
                 return;
             }
 
@@ -962,6 +1097,7 @@
 
             await newRef.set(newItem);
             closeModal();
+            showToast("✓ Conteneur enregistré au Cloud!");
             
             document.getElementById('inpId').value = '';
             document.getElementById('inpLoc').value = '';
@@ -970,11 +1106,12 @@
             document.getElementById('ocrStatus').classList.add('hidden');
         }
 
+        // 13. EXCEL EXPORT
         function exportToExcel() {
             const stockContainers = containers.filter(c => (c.stage || 'Stock') === 'Stock');
 
             if (stockContainers.length === 0) {
-                alert(currentLang === 'ar' ? "لا توجد حاويات في المخزون للتصدير." : "Aucun conteneur en Stock à exporter.");
+                showToast(currentLang === 'ar' ? "لا توجد حاويات في المخزون للتصدير." : "Aucun conteneur en Stock à exporter.", true);
                 return;
             }
 
@@ -1008,6 +1145,7 @@
 
             const fileName = `Pointeur_DPW_${new Date().toISOString().slice(0, 10)}.xlsx`;
             XLSX.writeFile(workbook, fileName);
+            showToast("Feuille Excel générée avec succès!");
         }
 
         setLanguage(currentLang);
