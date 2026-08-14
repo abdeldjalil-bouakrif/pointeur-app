@@ -162,7 +162,7 @@
     </div>
 
     <!-- AUTH MODAL -->
-    <div id="authModalOverlay" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div id="authModalOverlay" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 mx-auto flex items-center justify-center">
                 <svg class="w-full h-full filter drop-shadow-[0_2px_8px_rgba(0,255,170,0.3)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -303,7 +303,6 @@
             <div class="flex items-center justify-between px-1">
                 <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
                 
-                <!-- 📡 Realtime Connection Badge -->
                 <span id="connectionBadge" class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a]/90 px-3 py-1 rounded-full border border-[#252b75] transition-all duration-300">
                     <span id="connectionDot" class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping"></span> 
                     <span id="lblCloudDirect">Cloud Direct</span>
@@ -585,7 +584,6 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // 🛡️ تفعيل الاستمرارية المحلية لقاعدة بيانات Firebase
         try {
             db.setPersistence(true);
         } catch(e) {}
@@ -594,9 +592,8 @@
         let authMode = 'login';
         let currentLang = localStorage.getItem('dpw_lang') || 'fr';
         
-        // 💾 تحميل مباشر من ذاكرة الهاتف لعدم الاختفاء مطلقاً
         let containers = JSON.parse(localStorage.getItem('dpw_local_containers')) || [];
-        let offlineQueue = JSON.parse(localStorage.getItem('dpw_offline_queue')) || [];
+        let offlineQueue = JSON.parse(localStorage.getItem('dpw_local_queue')) || [];
 
         let modelConfigs = JSON.parse(localStorage.getItem('dpw_local_models')) || {
             'Débarquement': ['Navire', 'N° Manifeste', 'Température'],
@@ -746,6 +743,7 @@
             }, 2500);
         }
 
+        // 🛡️ تثبيت الجلسة وعدم إظهار نافذة تسجيل الدخول عشوائياً عند التحديث
         auth.onAuthStateChanged((user) => {
             const authModal = document.getElementById('authModalOverlay');
             if (user) {
@@ -815,7 +813,7 @@
             }
         }
 
-        // 🔄 محرك المزامنة التلقائية الصامتة بين الهاتف والسحابة
+        // 🔄 المزامنة الصامتة ودعم الهجين (Offline Queue + Cloud)
         async function syncOfflineQueue() {
             if (offlineQueue.length === 0) return;
 
@@ -824,13 +822,10 @@
                 try {
                     await db.ref('containers/' + item.firebaseKey).set(item);
                     offlineQueue = offlineQueue.filter(q => q.firebaseKey !== item.firebaseKey);
-                    localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
+                    localStorage.setItem('dpw_local_queue', JSON.stringify(offlineQueue));
                 } catch(e) {
                     break;
                 }
-            }
-            if (offlineQueue.length === 0) {
-                showToast(currentLang === 'ar' ? "✓ تمت مزامنة جميع الحاويات المسجلة أوفلاين مع السحابة" : "✓ Données hors-ligne synchronisées avec le Cloud");
             }
         }
 
@@ -855,7 +850,6 @@
                         if (accountLabel) accountLabel.innerText = translations[currentLang].activeState;
                     }
 
-                    // رفع أي حاويات سجلت أثناء انقطاع النت
                     syncOfflineQueue();
                 } else {
                     badge.className = "text-[10px] text-amber-400 flex items-center gap-1.5 font-semibold bg-[#15194a]/90 px-3 py-1 rounded-full border border-amber-500/40 transition-all duration-300";
@@ -870,13 +864,11 @@
                 }
             });
 
-            // مزامنة الحاويات بدمج آمن يضمن عدم حذف أي حاوية
             db.ref('containers').on('value', (snap) => {
                 const val = snap.val();
                 if (val) {
                     const cloudList = Object.values(val);
                     
-                    // دمج الحاويات المحلية والسحابية بدون تكرار
                     const map = new Map();
                     containers.forEach(c => map.set(c.firebaseKey, c));
                     cloudList.forEach(c => map.set(c.firebaseKey, c));
@@ -1482,9 +1474,8 @@
             try {
                 await db.ref('containers/' + fbKey).update({ stage: newStage });
             } catch(e) {
-                // حفظ للتحديث لاحقاً إذا انقطع النت
                 offlineQueue.push(containers[idx]);
-                localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
+                localStorage.setItem('dpw_local_queue', JSON.stringify(offlineQueue));
             }
             showToast(currentLang === 'ar' ? `تم تحديث المرحلة: ${newStage}` : `Position mise à jour: ${newStage}`);
         }
@@ -1671,7 +1662,7 @@
                 containers = containers.filter(c => c.firebaseKey !== fbKey);
                 localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
                 offlineQueue = offlineQueue.filter(q => q.firebaseKey !== fbKey);
-                localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
+                localStorage.setItem('dpw_local_queue', JSON.stringify(offlineQueue));
                 
                 filterContainers();
                 renderTrackingList();
@@ -1684,7 +1675,6 @@
             }
         }
 
-        // 🚀 الحفظ المزدوج الفوري (Dual Local + Cloud Save)
         async function handleSave(e) {
             e.preventDefault();
             if (isSaving) return;
@@ -1722,14 +1712,13 @@
                         containers[idx].customData = customData;
                         if (currentDamagePhotoBase64) containers[idx].damagePhoto = currentDamagePhotoBase64;
                         
-                        // حفظ فوري في ذاكرة الهاتف
                         localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
                         
                         try {
                             await db.ref('containers/' + editKey).update(containers[idx]);
                         } catch(e) {
                             offlineQueue.push(containers[idx]);
-                            localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
+                            localStorage.setItem('dpw_local_queue', JSON.stringify(offlineQueue));
                         }
                     }
                     showToast(currentLang === 'ar' ? "✓ تم تحديث بيانات الحاوية" : "✓ Conteneur mis à jour");
@@ -1753,16 +1742,14 @@
                         timestamp: Date.now()
                     };
 
-                    // حفظ فوري لا يختفي في الهاتف
                     containers.unshift(newItem);
                     localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
 
                     try {
                         await db.ref('containers/' + uniqueKey).set(newItem);
                     } catch(e) {
-                        // إذا كان الهاتف أوفلاين، تضاف لقائمة الرفع التلقائي
                         offlineQueue.push(newItem);
-                        localStorage.setItem('dpw_offline_queue', JSON.stringify(offlineQueue));
+                        localStorage.setItem('dpw_local_queue', JSON.stringify(offlineQueue));
                     }
                     
                     showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية (محلياً وسحابياً)!" : "✓ Conteneur enregistré (Local & Cloud)!");
@@ -1847,7 +1834,7 @@
                 containers = [];
                 offlineQueue = [];
                 localStorage.setItem('dpw_local_containers', JSON.stringify([]));
-                localStorage.setItem('dpw_offline_queue', JSON.stringify([]));
+                localStorage.setItem('dpw_local_queue', JSON.stringify([]));
                 filterContainers();
                 renderTrackingList();
                 updateAccountStats();
@@ -1864,7 +1851,6 @@
             });
         }
 
-        // تشغيل التهيئة وعرض البيانات المحفوظة محلياً فور فتح التطبيق
         populateModelSelect();
         filterContainers();
         renderTrackingList();
