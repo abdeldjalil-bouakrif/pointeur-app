@@ -181,11 +181,17 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <div class="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-[#15194a] p-1 rounded-xl border border-[#252b75] mr-2">
+                <!-- Desktop Language Buttons -->
+                <div class="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-[#15194a] p-1 rounded-xl border border-[#252b75] mr-1">
                     <button onclick="setLanguage('fr')" id="langBtn_fr_d" class="px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
                     <button onclick="setLanguage('ar')" id="langBtn_ar_d" class="px-2.5 py-1 rounded-lg text-gray-300">عربي</button>
                     <button onclick="setLanguage('en')" id="langBtn_en_d" class="px-2.5 py-1 rounded-lg text-gray-300">EN</button>
                 </div>
+
+                <!-- 🔄 زر إعادة التحميل والتحديث السحابي الفوري -->
+                <button onclick="forceRefreshApp()" class="bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] p-2.5 rounded-xl border border-[#303796] text-xs font-bold flex items-center justify-center shadow-md active:scale-95 transition" title="Recharger la page / تحديث">
+                    <i class="fa-solid fa-rotate text-sm"></i>
+                </button>
 
                 <button onclick="openExportModal()" class="btn-dpw-green px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Options d'exportation">
                     <i class="fa-solid fa-file-excel text-sm"></i>
@@ -431,16 +437,22 @@
                     </div>
                 </div>
 
-                <!-- 📸 DAMAGE PHOTO SECTION WITH COMPRESSION -->
+                <!-- 📸 DAMAGE PHOTO SECTION WITH PROGRESS BAR -->
                 <div id="damagePhotoSection" class="hidden p-3 bg-rose-950/40 border border-rose-500/30 rounded-2xl space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-[11px] font-bold text-rose-300 flex items-center gap-1.5">
-                            <i class="fa-solid fa-camera-retro"></i> Photo de l'avarie / الضرر
+                            <i class="fa-solid fa-camera-retro"></i> <span id="lblDamagePhotoTitle">Photo de l'avarie</span>
                         </span>
-                        <button type="button" onclick="document.getElementById('damagePhotoInput').click()" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                        <button type="button" onclick="document.getElementById('damagePhotoInput').click()" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg" id="btnTakeDamagePhoto">
                             Prendre photo
                         </button>
                     </div>
+
+                    <!-- شريط التحميل الرسومي للصور -->
+                    <div id="photoProgressBarContainer" class="hidden w-full bg-[#15194a] rounded-full h-2 overflow-hidden border border-[#252b75]">
+                        <div id="photoProgressBar" class="bg-gradient-to-r from-[#00ffaa] to-[#ff2a6d] h-2 rounded-full transition-all duration-300 w-0"></div>
+                    </div>
+
                     <div id="damagePhotoPreview" class="hidden relative rounded-xl overflow-hidden max-h-32 border border-rose-500/30">
                         <img id="damageImgTag" src="" class="w-full h-32 object-cover">
                         <button type="button" onclick="removeDamagePhoto()" class="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 text-xs">✕</button>
@@ -486,23 +498,23 @@
 
             <div class="space-y-3 text-xs">
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1">Filtrer par étape / مرحلة</label>
+                    <label class="block text-gray-300 font-medium mb-1" id="lblExportStage">Filtrer par étape</label>
                     <select id="exportFilterStage" class="w-full input-dpw p-2.5 rounded-xl">
-                        <option value="All">Tous les conteneurs (الكل)</option>
-                        <option value="Stock" selected>En Stockage uniquement (المخزون فقط)</option>
-                        <option value="Navire">En Navire</option>
-                        <option value="Douane">En Douane</option>
-                        <option value="Embarqué">Embarqué / Sortie</option>
+                        <option value="All" id="optExpAll">Tous les conteneurs</option>
+                        <option value="Stock" selected id="optExpStock">En Stockage uniquement</option>
+                        <option value="Navire" id="optExpNavire">En Navire</option>
+                        <option value="Douane" id="optExpDouane">En Douane</option>
+                        <option value="Embarqué" id="optExpOut">Embarqué / Sortie</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1">Filtrer par Modèle</label>
+                    <label class="block text-gray-300 font-medium mb-1" id="lblExportModel">Filtrer par Modèle</label>
                     <select id="exportFilterModel" class="w-full input-dpw p-2.5 rounded-xl">
                         <option value="All">Tous les modèles</option>
                     </select>
                 </div>
 
-                <button onclick="executeAdvancedExport()" class="w-full btn-dpw-green font-bold py-3 rounded-xl shadow-lg transition">
+                <button onclick="executeAdvancedExport()" class="w-full btn-dpw-green font-bold py-3 rounded-xl shadow-lg transition" id="btnDownloadReport">
                     Télécharger le rapport Excel
                 </button>
             </div>
@@ -539,6 +551,19 @@
         let currentUploadTemplateTarget = '';
         let currentDamagePhotoBase64 = '';
         let isSaving = false;
+
+        // 🔄 دالة إعادة التحميل والتحديث الفوري
+        function forceRefreshApp() {
+            showToast(currentLang === 'ar' ? "جاري التحديث وإعادة التحميل..." : "Actualisation en cours...");
+            if ('caches' in window) {
+                caches.keys().then((names) => {
+                    names.forEach((name) => caches.delete(name));
+                });
+            }
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 300);
+        }
 
         function triggerHapticFeedback() {
             if ("vibrate" in navigator) navigator.vibrate(60);
@@ -584,10 +609,10 @@
             badge.classList.remove('hidden');
             if (calculatedCheckDigit === actualCheckDigit) {
                 badge.className = "text-[10px] font-bold text-[#00ffaa]";
-                badge.innerText = "✓ ISO 6346 Valide";
+                badge.innerText = currentLang === 'ar' ? "✓ كود ISO صحيح" : "✓ ISO 6346 Valide";
             } else {
                 badge.className = "text-[10px] font-bold text-rose-400";
-                badge.innerText = `⚠ ISO Invalide (Attendu: ${calculatedCheckDigit})`;
+                badge.innerText = currentLang === 'ar' ? `⚠ رقم الفحص غير مطابق (المتوقع: ${calculatedCheckDigit})` : `⚠ ISO Invalide (Attendu: ${calculatedCheckDigit})`;
             }
         }
 
@@ -763,6 +788,17 @@
                 cloudServer: "Serveur Cloud",
                 activeState: "Actif",
                 terminalDesc: "Système de pointage et gestion des flux de conteneurs sous environnement sécurisé Firebase.",
+                damageTitle: "Photo de l'avarie",
+                btnTakeDamage: "Prendre photo",
+                kpiTotal: "Total",
+                kpiGood: "Bon État",
+                kpiDamaged: "Avarié",
+                kpiStock: "En Stock",
+                btnArchive: "Archiver la vacation actuelle",
+                exportTitle: "Options d'exportation Excel",
+                exportStage: "Filtrer par étape",
+                exportModel: "Filtrer par Modèle",
+                btnDownload: "Télécharger le rapport Excel",
                 stageNames: { Navire: 'En Navire', Stock: 'En Stock', Douane: 'En Douane', Embarqué: 'Embarqué / Sortie' }
             },
             ar: {
@@ -801,6 +837,17 @@
                 cloudServer: "الخادم السحابي",
                 activeState: "متصل ونشط",
                 terminalDesc: "نظام رصد ومتابعة تدفق الحاويات في محطة ميناء جن جن تحت بيئة سحابية آمنة.",
+                damageTitle: "صورة الضرر / العيب",
+                btnTakeDamage: "التقاط صورة",
+                kpiTotal: "الإجمالي",
+                kpiGood: "سليمة",
+                kpiDamaged: "متضررة",
+                kpiStock: "في الساحة",
+                btnArchive: "أرشفة الوردية الحالية",
+                exportTitle: "خيارات تصدير ملف الإكسل",
+                exportStage: "تصفية حسب المرحلة",
+                exportModel: "تصفية حسب النموذج",
+                btnDownload: "تنزيل تقرير الإكسل",
                 stageNames: { Navire: 'في السفينة', Stock: 'في الساحة', Douane: 'في الجمارك', Embarqué: 'تسليم وخروج' }
             },
             en: {
@@ -839,6 +886,17 @@
                 cloudServer: "Cloud Server",
                 activeState: "Active",
                 terminalDesc: "DP World Djendjen Terminal container flow monitoring under secure Firebase cloud.",
+                damageTitle: "Damage Photo",
+                btnTakeDamage: "Take Photo",
+                kpiTotal: "Total",
+                kpiGood: "Good",
+                kpiDamaged: "Damaged",
+                kpiStock: "In Stock",
+                btnArchive: "Archive Current Shift",
+                exportTitle: "Excel Export Options",
+                exportStage: "Filter by Stage",
+                exportModel: "Filter by Model",
+                btnDownload: "Download Excel Report",
                 stageNames: { Navire: 'On Vessel', Stock: 'In Yard', Douane: 'In Customs', Embarqué: 'Delivered / Out' }
             }
         };
@@ -904,6 +962,18 @@
             document.getElementById('lblActiveState').innerText = t.activeState;
             document.getElementById('lblTerminalDesc').innerText = t.terminalDesc;
 
+            document.getElementById('lblDamagePhotoTitle').innerText = t.damageTitle;
+            document.getElementById('btnTakeDamagePhoto').innerText = t.btnTakeDamage;
+            document.getElementById('kpiTotalLbl').innerText = t.kpiTotal;
+            document.getElementById('kpiGoodLbl').innerText = t.kpiGood;
+            document.getElementById('kpiDamagedLbl').innerText = t.kpiDamaged;
+            document.getElementById('kpiStockLbl').innerText = t.kpiStock;
+            document.getElementById('btnArchiveText').innerText = t.btnArchive;
+            document.getElementById('lblExportModalTitle').innerText = t.exportTitle;
+            document.getElementById('lblExportStage').innerText = t.exportStage;
+            document.getElementById('lblExportModel').innerText = t.exportModel;
+            document.getElementById('btnDownloadReport').innerText = t.btnDownload;
+
             filterContainers();
             renderTrackingList();
         }
@@ -937,7 +1007,7 @@
         function triggerCameraOCR() { document.getElementById('ocrCameraInput').click(); }
 
         function triggerBarcodeScan() {
-            showToast("Ouverture du lecteur de code-barres...");
+            showToast(currentLang === 'ar' ? "فتح الكاميرا لمسح الباركود..." : "Ouverture du lecteur de code-barres...");
             document.getElementById('ocrCameraInput').click();
         }
 
@@ -978,7 +1048,6 @@
                 });
         }
 
-        // 📸 FAST IMAGE COMPRESSION & RESIZING (تصغير وضغط فوري للصورة)
         function toggleDamageSection(status) {
             const section = document.getElementById('damagePhotoSection');
             if (status === 'Endommagé') {
@@ -992,10 +1061,15 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            showToast(currentLang === 'ar' ? "جاري ضغط الصورة..." : "Optimisation de la photo...");
+            const progressContainer = document.getElementById('photoProgressBarContainer');
+            const progressBar = document.getElementById('photoProgressBar');
+            
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '30%';
 
             const reader = new FileReader();
             reader.onload = function(e) {
+                progressBar.style.width = '60%';
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
@@ -1021,11 +1095,16 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // ضغط بجودة 0.65 ليكون الحجم خفيفاً جداً (~50KB)
                     currentDamagePhotoBase64 = canvas.toDataURL('image/jpeg', 0.65);
-                    document.getElementById('damageImgTag').src = currentDamagePhotoBase64;
-                    document.getElementById('damagePhotoPreview').classList.remove('hidden');
-                    showToast(currentLang === 'ar' ? "✓ تم تجهيز الصورة بنجاح" : "✓ Photo prête");
+                    
+                    progressBar.style.width = '100%';
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                        progressBar.style.width = '0%';
+                        document.getElementById('damageImgTag').src = currentDamagePhotoBase64;
+                        document.getElementById('damagePhotoPreview').classList.remove('hidden');
+                        showToast(currentLang === 'ar' ? "✓ تم تجهيز الصورة بنجاح" : "✓ Photo prête");
+                    }, 300);
                 };
                 img.src = e.target.result;
             };
@@ -1037,9 +1116,10 @@
             document.getElementById('damageImgTag').src = '';
             document.getElementById('damagePhotoPreview').classList.add('hidden');
             document.getElementById('damagePhotoInput').value = '';
+            document.getElementById('photoProgressBarContainer').classList.add('hidden');
+            document.getElementById('photoProgressBar').style.width = '0%';
         }
 
-        // RENDER CONTAINER LIST
         function renderList(data = containers) {
             const listEl = document.getElementById('containersList');
             document.getElementById('containerCount').innerText = `${data.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
@@ -1365,7 +1445,7 @@
 
         function openModal() { 
             document.getElementById('editContainerKey').value = '';
-            document.getElementById('lblModalTitle').innerText = currentLang === 'ar' ? "تسجيل حاوية جديدة" : "Pointer un conteneur";
+            document.getElementById('lblModalTitle').innerText = currentLang === 'ar' ? "تسجيل ورصد حاوية جديدة" : "Pointer un conteneur";
             document.getElementById('inpId').value = '';
             document.getElementById('inpLoc').value = '';
             document.getElementById('inpSeal').value = '';
@@ -1427,7 +1507,6 @@
             }
         }
 
-        // 🚀 SAFE & INSTANT SAVE (حفظ سريع بدون تجميد)
         async function handleSave(e) {
             e.preventDefault();
             if (isSaving) return;
@@ -1517,7 +1596,6 @@
             }
         }
 
-        // EXPORT MODAL LOGIC
         function openExportModal() {
             document.getElementById('exportModalOverlay').classList.remove('hidden');
         }
@@ -1534,7 +1612,7 @@
             if (modelFilter !== 'All') dataToExport = dataToExport.filter(c => c.model === modelFilter);
 
             if (dataToExport.length === 0) {
-                showToast("Aucun conteneur ne correspond à ces critères d'exportation.", true);
+                showToast(currentLang === 'ar' ? "لا توجد حاويات تطابق شروط التصدير" : "Aucun conteneur ne correspond à ces critères.", true);
                 return;
             }
 
@@ -1570,7 +1648,7 @@
             const fileName = `Pointeur_DPW_Rapport_${new Date().toISOString().slice(0, 10)}.xlsx`;
             XLSX.writeFile(workbook, fileName);
             closeExportModal();
-            showToast("✓ Rapport Excel téléchargé!");
+            showToast(currentLang === 'ar' ? "✓ تم تنزيل تقرير الإكسل!" : "✓ Rapport Excel téléchargé!");
         }
 
         async function archiveShiftData() {
@@ -1584,10 +1662,11 @@
                 filterContainers();
                 renderTrackingList();
                 updateAccountStats();
-                showToast("Vacation archivée avec succès!");
+                showToast(currentLang === 'ar' ? "تمت أرشفة الوردية بنجاح!" : "Vacation archivée avec succès!");
             }
         }
 
+        // PWA SERVICE WORKER
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
