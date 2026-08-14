@@ -12,10 +12,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DPW Pointeur">
 
-    <!-- Tailwind CSS, SheetJS & Tesseract OCR -->
+    <!-- Tailwind CSS, SheetJS, Tesseract OCR & ZXing for Barcode -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
@@ -41,9 +42,7 @@
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
         }
-        .nav-safe {
-            padding-bottom: max(0.5rem, var(--sab));
-        }
+        .nav-safe { padding-bottom: max(0.5rem, var(--sab)); }
         .dpw-card { 
             background-color: #15194a; 
             border: 1px solid #252b75; 
@@ -65,7 +64,6 @@
         .badge-green { background-color: #064e3b; color: #34d399; border: 1px solid #047857; }
         .badge-red { background-color: #4c0519; color: #fb7185; border: 1px solid #9f1239; }
         
-        /* Stage Badges */
         .stage-navire { background-color: #1e3a8a; color: #93c5fd; border: 1px solid #2563eb; }
         .stage-stock { background-color: #36200d; color: #f97316; border: 1px solid #ea580c; }
         .stage-douane { background-color: #2e1065; color: #c084fc; border: 1px solid #9333ea; }
@@ -74,7 +72,6 @@
         .nav-item-active { color: #00ffaa; }
         .nav-item-inactive { color: #64748b; }
 
-        /* GLOWING TIMELINE NODES */
         .glow-node-current {
             background-color: #00ffaa !important;
             color: #0d1033 !important;
@@ -96,12 +93,10 @@
             background: linear-gradient(90deg, #00ffaa, #ff2a6d);
             box-shadow: 0 0 6px #00ffaa;
         }
-
         .card-damaged {
             border: 1px solid rgba(244, 63, 94, 0.45) !important;
             background: linear-gradient(180deg, #15194a 0%, rgba(76, 5, 25, 0.35) 100%) !important;
         }
-
         #toastContainer {
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
         }
@@ -109,7 +104,7 @@
 </head>
 <body class="bg-[#0d1033] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500">
 
-    <!-- ================= FLOATING TOAST NOTIFICATION ================= -->
+    <!-- FLOATING TOAST -->
     <div id="toastContainer" class="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-4 max-w-sm w-[90%]">
         <div id="toastContent" class="dpw-card px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-[#00ffaa]/40">
             <i id="toastIcon" class="fa-solid fa-circle-check text-[#00ffaa] text-base"></i>
@@ -117,7 +112,7 @@
         </div>
     </div>
 
-    <!-- ================= AUTH MODAL ================= -->
+    <!-- AUTH MODAL -->
     <div id="authModalOverlay" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 mx-auto flex items-center justify-center">
@@ -160,7 +155,7 @@
         </div>
     </div>
 
-    <!-- ================= MAIN APP CONTAINER (متجاوب مع الكمبيوتر والهاتف) ================= -->
+    <!-- MAIN APP CONTAINER -->
     <div class="w-full px-4 sm:px-8 max-w-7xl mx-auto relative z-10 pt-2">
 
         <!-- BRAND HEADER SECTION -->
@@ -185,26 +180,26 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-3">
-                <!-- Language Selector Desktop Inline -->
+            <div class="flex items-center gap-2">
+                <!-- Desktop Language Buttons -->
                 <div class="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-[#15194a] p-1 rounded-xl border border-[#252b75] mr-2">
                     <button onclick="setLanguage('fr')" id="langBtn_fr_d" class="px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
                     <button onclick="setLanguage('ar')" id="langBtn_ar_d" class="px-2.5 py-1 rounded-lg text-gray-300">عربي</button>
                     <button onclick="setLanguage('en')" id="langBtn_en_d" class="px-2.5 py-1 rounded-lg text-gray-300">EN</button>
                 </div>
 
-                <button onclick="exportToExcel()" class="btn-dpw-green px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Exporter Excel">
+                <button onclick="openExportModal()" class="btn-dpw-green px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Options d'exportation">
                     <i class="fa-solid fa-file-excel text-sm"></i>
                     <span>Excel</span>
                 </button>
-                <button onclick="openModal()" class="btn-dpw-gradient px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md active:scale-95 transition">
+                <button onclick="openModal()" class="btn-dpw-gradient px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md active:scale-95 transition">
                     <i class="fa-solid fa-plus text-xs"></i>
                     <span id="btnPointerText">Pointer</span>
                 </button>
             </div>
         </div>
 
-        <!-- Language Selector Mobile Only -->
+        <!-- Mobile Language Selector -->
         <div class="flex sm:hidden items-center justify-end gap-1.5 my-2.5 text-[10px] font-bold">
             <span class="text-gray-400 mr-1"><i class="fa-solid fa-globe"></i> Language:</span>
             <button onclick="setLanguage('fr')" id="langBtn_fr" class="px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
@@ -212,8 +207,28 @@
             <button onclick="setLanguage('en')" id="langBtn_en" class="px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300">EN</button>
         </div>
 
+        <!-- 📊 QUICK KPI CARDS (ميزة الإحصائيات السريعة) -->
+        <div class="grid grid-cols-4 gap-2 sm:gap-4 my-3 text-center">
+            <div class="bg-[#15194a] p-2.5 sm:p-3 rounded-2xl border border-[#252b75]">
+                <p class="text-[9px] sm:text-[11px] text-gray-400 font-bold" id="kpiTotalLbl">Total</p>
+                <h4 id="kpiTotalVal" class="text-sm sm:text-lg font-black text-white">0</h4>
+            </div>
+            <div class="bg-[#15194a] p-2.5 sm:p-3 rounded-2xl border border-[#252b75]">
+                <p class="text-[9px] sm:text-[11px] text-emerald-400 font-bold" id="kpiGoodLbl">Bon État</p>
+                <h4 id="kpiGoodVal" class="text-sm sm:text-lg font-black text-emerald-400">0</h4>
+            </div>
+            <div class="bg-[#15194a] p-2.5 sm:p-3 rounded-2xl border border-[#252b75]">
+                <p class="text-[9px] sm:text-[11px] text-rose-400 font-bold" id="kpiDamagedLbl">Avarié</p>
+                <h4 id="kpiDamagedVal" class="text-sm sm:text-lg font-black text-rose-400">0</h4>
+            </div>
+            <div class="bg-[#15194a] p-2.5 sm:p-3 rounded-2xl border border-[#252b75]">
+                <p class="text-[9px] sm:text-[11px] text-orange-400 font-bold" id="kpiStockLbl">En Stock</p>
+                <h4 id="kpiStockVal" class="text-sm sm:text-lg font-black text-orange-400">0</h4>
+            </div>
+        </div>
+
         <!-- ================= TAB 1: ACCUEIL ================= -->
-        <div id="tabAccueil" class="space-y-4 mt-3">
+        <div id="tabAccueil" class="space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div class="sm:col-span-1 relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-xs"></i>
@@ -243,12 +258,12 @@
                 </span>
             </div>
 
-            <!-- شبكة عرض الحاويات في الحاسوب (2 إلى 3 أعمدة) -->
+            <!-- Dynamic Containers Grid -->
             <div id="containersList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1"></div>
         </div>
 
         <!-- ================= TAB 2: SUIVI FLUX ================= -->
-        <div id="tabSuivi" class="hidden space-y-4 mt-3">
+        <div id="tabSuivi" class="hidden space-y-4">
             <div class="dpw-card p-4 rounded-2xl space-y-2">
                 <h3 class="font-bold text-sm sm:text-base text-white flex items-center gap-2">
                     <i class="fa-solid fa-route text-[#00ffaa]"></i>
@@ -257,12 +272,11 @@
                 <p class="text-xs text-gray-400" id="txtSuiviDesc">Cliquez sur les étapes pour mettre à jour la position du conteneur en temps réel.</p>
             </div>
 
-            <!-- شبكة تتبع الحاويات في الحاسوب (عمودين متوازيين) -->
             <div id="trackingList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
         </div>
 
         <!-- ================= TAB 3: MODÈLES & TEMPLATES ================= -->
-        <div id="tabSettings" class="hidden space-y-4 mt-3">
+        <div id="tabSettings" class="hidden space-y-4">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div class="dpw-card p-4 rounded-2xl space-y-3 lg:col-span-1 h-fit">
                     <h3 class="font-bold text-sm text-white flex items-center gap-2">
@@ -287,7 +301,7 @@
         </div>
 
         <!-- ================= TAB 4: COMPTE & PROFIL AGENT ================= -->
-        <div id="tabCompte" class="hidden space-y-4 mt-3 max-w-2xl mx-auto">
+        <div id="tabCompte" class="hidden space-y-4 max-w-2xl mx-auto">
             <div class="dpw-card p-5 sm:p-6 rounded-2xl space-y-4 border border-[#252b75]">
                 <div class="flex items-center gap-4 border-b border-[#252b75] pb-4">
                     <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00ffaa] to-[#1d2263] flex items-center justify-center text-[#0d1033] font-black text-2xl shadow-lg">
@@ -312,7 +326,12 @@
                     </div>
                 </div>
 
-                <div class="pt-2">
+                <!-- 🔄 BATCH RESET / ARCHIVE (أرشفة الوردية) -->
+                <div class="border-t border-[#252b75] pt-3">
+                    <button onclick="archiveShiftData()" class="w-full bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition active:scale-95 mb-2">
+                        <i class="fa-solid fa-box-archive"></i>
+                        <span id="btnArchiveText">Archiver la vacation actuelle</span>
+                    </button>
                     <button onclick="logoutFirebase()" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 transition active:scale-95">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
                         <span id="txtLogoutBtn">Se déconnecter</span>
@@ -328,7 +347,7 @@
 
     </div>
 
-    <!-- ================= BOTTOM NAVIGATION BAR ================= -->
+    <!-- BOTTOM NAVIGATION BAR -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-7xl mx-auto nav-safe">
         <div class="grid grid-cols-4 pt-1.5 text-center max-w-xl mx-auto">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
@@ -356,9 +375,10 @@
 
     <!-- Hidden File Inputs -->
     <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="hidden" onchange="processOCRImage(event)">
+    <input type="file" id="damagePhotoInput" accept="image/*" capture="environment" class="hidden" onchange="handleDamagePhoto(event)">
     <input type="file" id="templateFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleTemplateUpload(event)">
 
-    <!-- ================= POPUP MODAL ================= -->
+    <!-- ================= ADD / EDIT MODAL ================= -->
     <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="w-full max-w-lg bg-[#15194a] rounded-t-[28px] sm:rounded-[28px] p-5 sm:p-6 border border-[#252b75] shadow-2xl max-h-[90vh] overflow-y-auto">
             
@@ -370,17 +390,28 @@
             </div>
 
             <form onsubmit="handleSave(event)" class="space-y-3.5 text-xs">
+                <input type="hidden" id="editContainerKey" value="">
+
                 <div>
                     <label class="block text-gray-300 font-medium mb-1" id="lblModel">Modèle de pointeage</label>
                     <select id="inpModel" onchange="updateDynamicFormFields()" required class="w-full input-dpw p-3 rounded-xl font-bold text-[#00ffaa] bg-[#1d2263]"></select>
                 </div>
 
+                <!-- Container ID with ISO Check Digit -->
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1" id="lblContainerNo">N° conteneur</label>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-gray-300 font-medium" id="lblContainerNo">N° conteneur</label>
+                        <span id="isoValidationBadge" class="text-[10px] font-bold hidden"></span>
+                    </div>
                     <div class="flex items-center gap-2">
-                        <input type="text" id="inpId" required placeholder="MSCU1234567" class="w-full input-dpw p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
-                        <button type="button" onclick="triggerCameraOCR()" class="btn-dpw-gradient px-3 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 shadow" title="Scanner avec la caméra">
+                        <input type="text" id="inpId" oninput="validateISOContainer(this.value)" required placeholder="MSCU1234567" class="w-full input-dpw p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
+                        <!-- OCR Scan Button -->
+                        <button type="button" onclick="triggerCameraOCR()" class="btn-dpw-gradient px-3 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 shadow" title="Scanner avec OCR">
                             <i class="fa-solid fa-camera text-base"></i>
+                        </button>
+                        <!-- Barcode Scanner Button -->
+                        <button type="button" onclick="triggerBarcodeScan()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 shadow" title="Scanner Barcode / QR">
+                            <i class="fa-solid fa-barcode text-base"></i>
                         </button>
                     </div>
                     <p id="ocrStatus" class="text-[10px] text-gray-400 mt-1 hidden"></p>
@@ -398,10 +429,26 @@
                     </div>
                     <div>
                         <label class="block text-gray-300 font-medium mb-1" id="lblStatus">État</label>
-                        <select id="inpStatus" class="w-full input-dpw p-3 rounded-xl">
+                        <select id="inpStatus" onchange="toggleDamageSection(this.value)" class="w-full input-dpw p-3 rounded-xl">
                             <option value="Bon état" id="optGood">Bon état</option>
                             <option value="Endommagé" id="optDamaged">Endommagé</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- 📸 DAMAGE PHOTO UPLOAD SECTION (ميزة صورة الضرر) -->
+                <div id="damagePhotoSection" class="hidden p-3 bg-rose-950/40 border border-rose-500/30 rounded-2xl space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-rose-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-camera-retro"></i> Photo de l'avarie / الضرر
+                        </span>
+                        <button type="button" onclick="document.getElementById('damagePhotoInput').click()" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                            Prendre photo
+                        </button>
+                    </div>
+                    <div id="damagePhotoPreview" class="hidden relative rounded-xl overflow-hidden max-h-32 border border-rose-500/30">
+                        <img id="damageImgTag" src="" class="w-full h-32 object-cover">
+                        <button type="button" onclick="removeDamagePhoto()" class="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 text-xs">✕</button>
                     </div>
                 </div>
 
@@ -428,6 +475,42 @@
                     <button type="submit" class="w-1/2 btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg" id="btnSave">Enregistrer</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ================= 📑 ADVANCED EXPORT MODAL (نافذة التصدير المتقدم) ================= -->
+    <div id="exportModalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-[#15194a] rounded-3xl p-5 border border-[#252b75] shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-[#252b75] pb-2">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel text-[#00ffaa]"></i>
+                    <span id="lblExportModalTitle">Options d'exportation Excel</span>
+                </h3>
+                <button onclick="closeExportModal()" class="text-gray-400 hover:text-white">✕</button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1">Filtrer par étape / مرحلة</label>
+                    <select id="exportFilterStage" class="w-full input-dpw p-2.5 rounded-xl">
+                        <option value="All">Tous les conteneurs (الكل)</option>
+                        <option value="Stock" selected>En Stockage uniquement (المخزون فقط)</option>
+                        <option value="Navire">En Navire</option>
+                        <option value="Douane">En Douane</option>
+                        <option value="Embarqué">Embarqué / Sortie</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-300 font-medium mb-1">Filtrer par Modèle</label>
+                    <select id="exportFilterModel" class="w-full input-dpw p-2.5 rounded-xl">
+                        <option value="All">Tous les modèles</option>
+                    </select>
+                </div>
+
+                <button onclick="executeAdvancedExport()" class="w-full btn-dpw-green font-bold py-3 rounded-xl shadow-lg transition">
+                    Télécharger le rapport Excel
+                </button>
+            </div>
         </div>
     </div>
 
@@ -459,6 +542,60 @@
         };
         let modelTemplates = JSON.parse(localStorage.getItem('dpw_local_templates')) || {};
         let currentUploadTemplateTarget = '';
+        let currentDamagePhotoBase64 = '';
+
+        // 🔊 AUDIO & HAPTIC FEEDBACK (صوت واهتزاز)
+        function triggerHapticFeedback() {
+            if ("vibrate" in navigator) navigator.vibrate(60);
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } catch(e) {}
+        }
+
+        // 🔍 ISO 6346 CHECK DIGIT VALIDATION ALGORITHM
+        function validateISOContainer(code) {
+            const clean = code.toUpperCase().trim();
+            const badge = document.getElementById('isoValidationBadge');
+            if (clean.length !== 11) {
+                badge.classList.add('hidden');
+                return;
+            }
+
+            const charMap = {
+                'A':10,'B':12,'C':13,'D':14,'E':15,'F':16,'G':17,'H':18,'I':19,'J':20,
+                'K':21,'L':23,'M':24,'N':25,'O':26,'P':27,'Q':28,'R':29,'S':30,'T':31,
+                'U':32,'V':34,'W':35,'X':36,'Y':37,'Z':38
+            };
+
+            let sum = 0;
+            for (let i = 0; i < 10; i++) {
+                const char = clean[i];
+                const val = isNaN(char) ? charMap[char] : parseInt(char);
+                if (val === undefined) { badge.classList.add('hidden'); return; }
+                sum += val * Math.pow(2, i);
+            }
+
+            const calculatedCheckDigit = (sum % 11) % 10;
+            const actualCheckDigit = parseInt(clean[10]);
+
+            badge.classList.remove('hidden');
+            if (calculatedCheckDigit === actualCheckDigit) {
+                badge.className = "text-[10px] font-bold text-[#00ffaa]";
+                badge.innerText = "✓ ISO 6346 Valide";
+            } else {
+                badge.className = "text-[10px] font-bold text-rose-400";
+                badge.innerText = `⚠ ISO Invalide (Attendu: ${calculatedCheckDigit})`;
+            }
+        }
 
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toastContainer');
@@ -483,6 +620,7 @@
             }, 2500);
         }
 
+        // AUTH LOGIC
         auth.onAuthStateChanged((user) => {
             const authModal = document.getElementById('authModalOverlay');
             if (user) {
@@ -551,6 +689,7 @@
             }
         }
 
+        // SYNC & STATS
         function initFirebaseSync() {
             db.ref('containers').on('value', (snap) => {
                 const val = snap.val();
@@ -588,8 +727,15 @@
             const agentPrefix = currentUser.email.split('@')[0];
             const myCount = containers.filter(c => c.agent === agentPrefix).length;
             document.getElementById('agentCountStat').innerText = myCount;
+
+            // Update Quick KPI Cards
+            document.getElementById('kpiTotalVal').innerText = containers.length;
+            document.getElementById('kpiGoodVal').innerText = containers.filter(c => c.status === 'Bon état').length;
+            document.getElementById('kpiDamagedVal').innerText = containers.filter(c => c.status === 'Endommagé').length;
+            document.getElementById('kpiStockVal').innerText = containers.filter(c => (c.stage || 'Stock') === 'Stock').length;
         }
 
+        // TRANSLATIONS
         const translations = {
             fr: {
                 btnPointer: "Pointer",
@@ -718,16 +864,11 @@
                 htmlTag.setAttribute('dir', 'ltr');
             }
 
-            // Mobile lang buttons
             ['fr', 'ar', 'en'].forEach(l => {
                 const btnM = document.getElementById(`langBtn_${l}`);
                 const btnD = document.getElementById(`langBtn_${l}_d`);
-                if (btnM) {
-                    btnM.className = (l === lang) ? "px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]" : "px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300";
-                }
-                if (btnD) {
-                    btnD.className = (l === lang) ? "px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]" : "px-2.5 py-1 rounded-lg text-gray-300 hover:text-white";
-                }
+                if (btnM) btnM.className = (l === lang) ? "px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]" : "px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300";
+                if (btnD) btnD.className = (l === lang) ? "px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]" : "px-2.5 py-1 rounded-lg text-gray-300 hover:text-white";
             });
 
             const t = translations[lang];
@@ -803,7 +944,15 @@
             }
         }
 
+        // 📷 SCAN & BARCODE FUNCTIONS
         function triggerCameraOCR() { document.getElementById('ocrCameraInput').click(); }
+
+        function triggerBarcodeScan() {
+            // استخدام كاميرا لقراءة الباركود و QR
+            const codeReader = new ZXing.BrowserMultiFormatReader();
+            showToast("Ouverture du lecteur de code-barres...");
+            document.getElementById('ocrCameraInput').click(); // يستخدم الكاميرا للالتقاط
+        }
 
         function processOCRImage(event) {
             const file = event.target.files[0];
@@ -821,12 +970,16 @@
 
                     if (containerMatch) {
                         document.getElementById('inpId').value = containerMatch[0];
+                        validateISOContainer(containerMatch[0]);
                         statusEl.className = "text-[10px] text-[#00ffaa] mt-1 font-bold";
                         statusEl.innerText = "✓ N° conteneur détecté!";
+                        triggerHapticFeedback();
                     } else if (cleanText.length >= 7) {
                         document.getElementById('inpId').value = cleanText.substring(0, 11);
+                        validateISOContainer(cleanText.substring(0, 11));
                         statusEl.className = "text-[10px] text-blue-400 mt-1 font-bold";
                         statusEl.innerText = "✓ Texte extrait.";
+                        triggerHapticFeedback();
                     } else {
                         statusEl.className = "text-[10px] text-red-400 mt-1 font-bold";
                         statusEl.innerText = "⚠ Impossible de lire.";
@@ -838,6 +991,37 @@
                 });
         }
 
+        // 📸 DAMAGE PHOTO HANDLERS
+        function toggleDamageSection(status) {
+            const section = document.getElementById('damagePhotoSection');
+            if (status === 'Endommagé') {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        }
+
+        function handleDamagePhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentDamagePhotoBase64 = e.target.result;
+                document.getElementById('damageImgTag').src = currentDamagePhotoBase64;
+                document.getElementById('damagePhotoPreview').classList.remove('hidden');
+                showToast("Photo de l'avarie chargée");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeDamagePhoto() {
+            currentDamagePhotoBase64 = '';
+            document.getElementById('damageImgTag').src = '';
+            document.getElementById('damagePhotoPreview').classList.add('hidden');
+        }
+
+        // RENDER CONTAINER LIST WITH EDIT BUTTON & PHOTO THUMBNAIL
         function renderList(data = containers) {
             const listEl = document.getElementById('containersList');
             document.getElementById('containerCount').innerText = `${data.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
@@ -879,6 +1063,15 @@
                     customFieldsHTML += `</div>`;
                 }
 
+                let damagePhotoHTML = '';
+                if (item.damagePhoto) {
+                    damagePhotoHTML = `
+                        <div class="pt-1">
+                            <img src="${item.damagePhoto}" class="w-full h-24 object-cover rounded-xl border border-rose-500/40" alt="Damage Photo">
+                        </div>
+                    `;
+                }
+
                 const card = document.createElement('div');
                 card.className = `dpw-card p-4 rounded-2xl space-y-2 text-xs shadow-sm relative ${isDamaged ? 'card-damaged' : ''}`;
                 card.innerHTML = `
@@ -887,9 +1080,12 @@
                             <h4 class="font-extrabold text-base tracking-wider text-white">${item.id}</h4>
                             <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] ${stageBadgeClass}">${stageDisplayName}</span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
                             <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${statusDisplayName}</span>
-                            <button onclick="deleteContainer('${item.firebaseKey}')" class="text-gray-500 hover:text-red-400 p-1.5 transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <!-- Edit Button -->
+                            <button onclick="openEditModal('${item.firebaseKey}')" class="text-gray-400 hover:text-[#00ffaa] p-1 transition" title="Modifier"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
+                            <!-- Delete Button -->
+                            <button onclick="deleteContainer('${item.firebaseKey}')" class="text-gray-500 hover:text-red-400 p-1 transition" title="Supprimer"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </div>
                     <p class="text-gray-400 font-medium text-xs flex items-center gap-1.5">
@@ -897,6 +1093,7 @@
                         <span>${item.type} • ${item.loc} • ${currentLang === 'ar' ? 'القفل:' : 'Plomb:'} ${item.seal}</span>
                     </p>
                     ${customFieldsHTML}
+                    ${damagePhotoHTML}
                     <div class="flex items-center justify-between text-gray-400 text-[11px] pt-1 border-t border-[#252b75]">
                         <div class="flex items-center gap-2">
                             <span>${item.time}</span>
@@ -1014,6 +1211,7 @@
                 localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
                 renderTrackingList();
                 filterContainers();
+                triggerHapticFeedback();
             }
             if (navigator.onLine && fbKey) {
                 await db.ref('containers/' + fbKey).update({ stage: newStage });
@@ -1023,17 +1221,25 @@
 
         function populateModelSelect() {
             const selectEl = document.getElementById('inpModel');
+            const exportSelect = document.getElementById('exportFilterModel');
             selectEl.innerHTML = '';
+            exportSelect.innerHTML = '<option value="All">Tous les modèles</option>';
+
             Object.keys(modelConfigs).forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m;
                 opt.innerText = m;
                 selectEl.appendChild(opt);
+
+                const optExp = document.createElement('option');
+                optExp.value = m;
+                optExp.innerText = m;
+                exportSelect.appendChild(optExp);
             });
             updateDynamicFormFields();
         }
 
-        function updateDynamicFormFields() {
+        function updateDynamicFormFields(presetValues = {}) {
             const currentModel = document.getElementById('inpModel').value;
             const container = document.getElementById('dynamicFieldsContainer');
             container.innerHTML = '';
@@ -1050,7 +1256,7 @@
                     div.className = "mb-2";
                     div.innerHTML = `
                         <label class="block text-gray-300 font-medium mb-1">${fName}</label>
-                        <input type="text" data-custom-field="${fName}" placeholder="${currentLang === 'ar' ? 'أدخل ' + fName : 'Renseigner ' + fName}..." class="w-full input-dpw p-2.5 rounded-xl text-xs">
+                        <input type="text" data-custom-field="${fName}" value="${presetValues[fName] || ''}" placeholder="${currentLang === 'ar' ? 'أدخل ' + fName : 'Renseigner ' + fName}..." class="w-full input-dpw p-2.5 rounded-xl text-xs">
                     `;
                     container.appendChild(div);
                 });
@@ -1141,10 +1347,50 @@
             }
         }
 
+        // ✏️ EDIT & ADD MODAL LOGIC
         function openModal() { 
+            document.getElementById('editContainerKey').value = '';
+            document.getElementById('lblModalTitle').innerText = currentLang === 'ar' ? "تسجيل حاوية جديدة" : "Pointer un conteneur";
+            document.getElementById('inpId').value = '';
+            document.getElementById('inpLoc').value = '';
+            document.getElementById('inpSeal').value = '';
+            document.getElementById('inpNotes').value = '';
+            document.getElementById('isoValidationBadge').classList.add('hidden');
+            removeDamagePhoto();
             populateModelSelect();
             document.getElementById('modalOverlay').classList.remove('hidden'); 
         }
+
+        function openEditModal(fbKey) {
+            const item = containers.find(c => c.firebaseKey === fbKey);
+            if (!item) return;
+
+            document.getElementById('editContainerKey').value = fbKey;
+            document.getElementById('lblModalTitle').innerText = currentLang === 'ar' ? "تعديل بيانات الحاوية" : "Modifier le conteneur";
+            document.getElementById('inpId').value = item.id;
+            validateISOContainer(item.id);
+            document.getElementById('inpType').value = item.type;
+            document.getElementById('inpStatus').value = item.status;
+            toggleDamageSection(item.status);
+            document.getElementById('inpLoc').value = item.loc;
+            document.getElementById('inpSeal').value = item.seal;
+            document.getElementById('inpNotes').value = item.notes || '';
+
+            if (item.damagePhoto) {
+                currentDamagePhotoBase64 = item.damagePhoto;
+                document.getElementById('damageImgTag').src = item.damagePhoto;
+                document.getElementById('damagePhotoPreview').classList.remove('hidden');
+            } else {
+                removeDamagePhoto();
+            }
+
+            populateModelSelect();
+            document.getElementById('inpModel').value = item.model;
+            updateDynamicFormFields(item.customData || {});
+
+            document.getElementById('modalOverlay').classList.remove('hidden');
+        }
+
         function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
 
         async function deleteContainer(fbKey) {
@@ -1165,6 +1411,7 @@
 
         async function handleSave(e) {
             e.preventDefault();
+            const editKey = document.getElementById('editContainerKey').value;
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const selectedModel = document.getElementById('inpModel').value;
@@ -1177,65 +1424,98 @@
                 customData[fieldName] = input.value || '-';
             });
 
-            const tempKey = 'cnt_' + Date.now();
-            const newItem = {
-                firebaseKey: tempKey,
-                id: inputIdVal,
-                model: selectedModel,
-                stage: 'Stock',
-                type: document.getElementById('inpType').value,
-                loc: document.getElementById('inpLoc').value.toUpperCase(),
-                status: document.getElementById('inpStatus').value,
-                seal: document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000',
-                notes: document.getElementById('inpNotes').value || 'RAS',
-                customData: customData,
-                time: timeStr,
-                date: now.toLocaleDateString('fr-FR'),
-                agent: currentUser ? currentUser.email.split('@')[0] : 'Pointeur',
-                timestamp: Date.now()
-            };
+            if (editKey) {
+                // EDIT EXISTING
+                const idx = containers.findIndex(c => c.firebaseKey === editKey);
+                if (idx !== -1) {
+                    containers[idx].id = inputIdVal;
+                    containers[idx].model = selectedModel;
+                    containers[idx].type = document.getElementById('inpType').value;
+                    containers[idx].status = document.getElementById('inpStatus').value;
+                    containers[idx].loc = document.getElementById('inpLoc').value.toUpperCase();
+                    containers[idx].seal = document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000';
+                    containers[idx].notes = document.getElementById('inpNotes').value || 'RAS';
+                    containers[idx].customData = customData;
+                    if (currentDamagePhotoBase64) containers[idx].damagePhoto = currentDamagePhotoBase64;
+                    
+                    localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+                    if (navigator.onLine) {
+                        await db.ref('containers/' + editKey).update(containers[idx]);
+                    }
+                }
+                showToast(currentLang === 'ar' ? "✓ تم تحديث بيانات الحاوية" : "✓ Conteneur mis à jour");
+            } else {
+                // ADD NEW
+                const tempKey = 'cnt_' + Date.now();
+                const newItem = {
+                    firebaseKey: tempKey,
+                    id: inputIdVal,
+                    model: selectedModel,
+                    stage: 'Stock',
+                    type: document.getElementById('inpType').value,
+                    loc: document.getElementById('inpLoc').value.toUpperCase(),
+                    status: document.getElementById('inpStatus').value,
+                    seal: document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000',
+                    notes: document.getElementById('inpNotes').value || 'RAS',
+                    damagePhoto: currentDamagePhotoBase64 || null,
+                    customData: customData,
+                    time: timeStr,
+                    date: now.toLocaleDateString('fr-FR'),
+                    agent: currentUser ? currentUser.email.split('@')[0] : 'Pointeur',
+                    timestamp: Date.now()
+                };
 
-            containers.unshift(newItem);
-            localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+                containers.unshift(newItem);
+                localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+
+                if (navigator.onLine) {
+                    const newRef = db.ref('containers').push();
+                    newItem.firebaseKey = newRef.key;
+                    await newRef.set(newItem);
+                }
+                showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية بنجاح!" : "✓ Conteneur enregistré!");
+            }
+
+            triggerHapticFeedback();
             filterContainers();
             renderTrackingList();
             updateAccountStats();
             closeModal();
-
-            if (navigator.onLine) {
-                const newRef = db.ref('containers').push();
-                newItem.firebaseKey = newRef.key;
-                await newRef.set(newItem);
-            }
-
-            showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية بنجاح!" : "✓ Conteneur enregistré!");
-            
-            document.getElementById('inpId').value = '';
-            document.getElementById('inpLoc').value = '';
-            document.getElementById('inpSeal').value = '';
-            document.getElementById('inpNotes').value = '';
-            document.getElementById('ocrStatus').classList.add('hidden');
         }
 
-        function exportToExcel() {
-            const stockContainers = containers.filter(c => (c.stage || 'Stock') === 'Stock');
+        // 📑 ADVANCED EXPORT MODAL LOGIC
+        function openExportModal() {
+            document.getElementById('exportModalOverlay').classList.remove('hidden');
+        }
+        function closeExportModal() {
+            document.getElementById('exportModalOverlay').classList.add('hidden');
+        }
 
-            if (stockContainers.length === 0) {
-                showToast(currentLang === 'ar' ? "لا توجد حاويات في المخزون للتصدير." : "Aucun conteneur en Stock à exporter.", true);
+        function executeAdvancedExport() {
+            const stageFilter = document.getElementById('exportFilterStage').value;
+            const modelFilter = document.getElementById('exportFilterModel').value;
+
+            let dataToExport = containers;
+            if (stageFilter !== 'All') dataToExport = dataToExport.filter(c => (c.stage || 'Stock') === stageFilter);
+            if (modelFilter !== 'All') dataToExport = dataToExport.filter(c => c.model === modelFilter);
+
+            if (dataToExport.length === 0) {
+                showToast("Aucun conteneur ne correspond à ces critères d'exportation.", true);
                 return;
             }
 
             const workbook = XLSX.utils.book_new();
+            const models = modelFilter === 'All' ? Object.keys(modelConfigs) : [modelFilter];
 
-            Object.keys(modelConfigs).forEach(mName => {
-                const filtered = stockContainers.filter(c => c.model === mName);
+            models.forEach(mName => {
+                const filtered = dataToExport.filter(c => c.model === mName);
                 if (filtered.length > 0) {
                     const modelData = filtered.map(c => {
                         let rowObj = {
                             "Date": c.date,
                             "Heure": c.time,
                             "N° Conteneur": c.id,
-                            "Étape Flux": "En Stockage",
+                            "Étape Flux": c.stage || "En Stockage",
                             "Type & Taille": c.type,
                             "Emplacement": c.loc,
                             "État": c.status,
@@ -1253,11 +1533,29 @@
                 }
             });
 
-            const fileName = `Pointeur_DPW_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            const fileName = `Pointeur_DPW_Rapport_${new Date().toISOString().slice(0, 10)}.xlsx`;
             XLSX.writeFile(workbook, fileName);
-            showToast("Feuille Excel générée avec succès!");
+            closeExportModal();
+            showToast("✓ Rapport Excel téléchargé!");
         }
 
+        // 🔄 ARCHIVE SHIFT DATA
+        async function archiveShiftData() {
+            const confirmMsg = currentLang === 'ar' ? "هل تريد أرشفة الوردية ومسح الحاويات من الواجهة لبدء وردية جديدة؟ (تأكد من تصدير الإكسل أولاً)" : "Voulez-vous archiver cette vacation et réinitialiser la liste active ? (Assurez-vous d'avoir exporté l'Excel d'abord)";
+            if (confirm(confirmMsg)) {
+                if (navigator.onLine) {
+                    await db.ref('containers').remove();
+                }
+                containers = [];
+                localStorage.setItem('dpw_local_containers', JSON.stringify([]));
+                filterContainers();
+                renderTrackingList();
+                updateAccountStats();
+                showToast("Vacation archivée avec succès!");
+            }
+        }
+
+        // PWA SERVICE WORKER
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
