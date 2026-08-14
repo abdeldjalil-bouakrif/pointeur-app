@@ -41,6 +41,7 @@
             position: relative;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: contain;
         }
         .nav-safe { padding-bottom: max(0.5rem, var(--sab)); }
         .dpw-card { 
@@ -100,9 +101,21 @@
         #toastContainer {
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
         }
+
+        /* مؤشر السحب للأسفل (Pull to Refresh Spinner) */
+        #pullToRefreshIndicator {
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease;
+        }
     </style>
 </head>
 <body class="bg-[#0d1033] min-h-screen flex flex-col justify-between antialiased selection:bg-pink-500">
+
+    <!-- 🔄 PULL TO REFRESH ANIMATED SPINNER (مؤشر السحب للأسفل) -->
+    <div id="pullToRefreshIndicator" class="fixed top-2 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-12 flex items-center justify-center">
+        <div class="w-10 h-10 rounded-full bg-[#15194a] border-2 border-[#00ffaa] shadow-[0_0_15px_rgba(0,255,170,0.5)] flex items-center justify-center text-[#00ffaa]">
+            <i id="pullSpinnerIcon" class="fa-solid fa-arrow-down text-sm transition-transform duration-200"></i>
+        </div>
+    </div>
 
     <!-- FLOATING TOAST -->
     <div id="toastContainer" class="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-4 max-w-sm w-[90%]">
@@ -187,11 +200,6 @@
                     <button onclick="setLanguage('ar')" id="langBtn_ar_d" class="px-2.5 py-1 rounded-lg text-gray-300">عربي</button>
                     <button onclick="setLanguage('en')" id="langBtn_en_d" class="px-2.5 py-1 rounded-lg text-gray-300">EN</button>
                 </div>
-
-                <!-- 🔄 زر إعادة التحميل والتحديث السحابي الفوري -->
-                <button onclick="forceRefreshApp()" class="bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] p-2.5 rounded-xl border border-[#303796] text-xs font-bold flex items-center justify-center shadow-md active:scale-95 transition" title="Recharger la page / تحديث">
-                    <i class="fa-solid fa-rotate text-sm"></i>
-                </button>
 
                 <button onclick="openExportModal()" class="btn-dpw-green px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Options d'exportation">
                     <i class="fa-solid fa-file-excel text-sm"></i>
@@ -552,9 +560,9 @@
         let currentDamagePhotoBase64 = '';
         let isSaving = false;
 
-        // 🔄 دالة إعادة التحميل والتحديث الفوري
+        // 🔄 دالة إعادة التحميل ومسح الكاش
         function forceRefreshApp() {
-            showToast(currentLang === 'ar' ? "جاري التحديث وإعادة التحميل..." : "Actualisation en cours...");
+            showToast(currentLang === 'ar' ? "جاري التحديث..." : "Actualisation...");
             if ('caches' in window) {
                 caches.keys().then((names) => {
                     names.forEach((name) => caches.delete(name));
@@ -564,6 +572,59 @@
                 window.location.reload(true);
             }, 300);
         }
+
+        // 📲 ميزة السحب للأسفل لإعادة التحميل (Pull to Refresh)
+        let touchStartY = 0;
+        let touchCurrentY = 0;
+        let isPulling = false;
+
+        window.addEventListener('touchstart', (e) => {
+            if (window.scrollY === 0) {
+                touchStartY = e.touches[0].clientY;
+                isPulling = true;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isPulling || window.scrollY > 0) return;
+            touchCurrentY = e.touches[0].clientY;
+            const diff = touchCurrentY - touchStartY;
+
+            if (diff > 15) {
+                const indicator = document.getElementById('pullToRefreshIndicator');
+                const spinnerIcon = document.getElementById('pullSpinnerIcon');
+                indicator.classList.remove('opacity-0');
+                indicator.classList.add('opacity-100');
+                
+                const pullDistance = Math.min(diff * 0.45, 75);
+                indicator.style.transform = `translate(-50%, ${pullDistance}px)`;
+
+                if (pullDistance > 50) {
+                    spinnerIcon.className = "fa-solid fa-rotate animate-spin text-sm text-[#00ffaa]";
+                } else {
+                    spinnerIcon.className = "fa-solid fa-arrow-down text-sm text-[#00ffaa]";
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (!isPulling) return;
+            const diff = touchCurrentY - touchStartY;
+            const indicator = document.getElementById('pullToRefreshIndicator');
+
+            if (diff > 90 && window.scrollY === 0) {
+                triggerHapticFeedback();
+                indicator.style.transform = `translate(-50%, 45px)`;
+                forceRefreshApp();
+            } else {
+                indicator.style.transform = `translate(-50%, -48px)`;
+                indicator.classList.remove('opacity-100');
+                indicator.classList.add('opacity-0');
+            }
+            isPulling = false;
+            touchStartY = 0;
+            touchCurrentY = 0;
+        }, { passive: true });
 
         function triggerHapticFeedback() {
             if ("vibrate" in navigator) navigator.vibrate(60);
