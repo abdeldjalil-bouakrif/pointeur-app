@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DPW Pointeur">
 
-    <!-- Tailwind CSS, SheetJS, Tesseract OCR & ZXing for Barcode -->
+    <!-- Tailwind CSS, SheetJS, Tesseract OCR & ZXing -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
@@ -181,7 +181,6 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- Desktop Language Buttons -->
                 <div class="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-[#15194a] p-1 rounded-xl border border-[#252b75] mr-2">
                     <button onclick="setLanguage('fr')" id="langBtn_fr_d" class="px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
                     <button onclick="setLanguage('ar')" id="langBtn_ar_d" class="px-2.5 py-1 rounded-lg text-gray-300">عربي</button>
@@ -207,7 +206,7 @@
             <button onclick="setLanguage('en')" id="langBtn_en" class="px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300">EN</button>
         </div>
 
-        <!-- 📊 QUICK KPI CARDS (ميزة الإحصائيات السريعة) -->
+        <!-- QUICK KPI CARDS -->
         <div class="grid grid-cols-4 gap-2 sm:gap-4 my-3 text-center">
             <div class="bg-[#15194a] p-2.5 sm:p-3 rounded-2xl border border-[#252b75]">
                 <p class="text-[9px] sm:text-[11px] text-gray-400 font-bold" id="kpiTotalLbl">Total</p>
@@ -326,7 +325,6 @@
                     </div>
                 </div>
 
-                <!-- 🔄 BATCH RESET / ARCHIVE (أرشفة الوردية) -->
                 <div class="border-t border-[#252b75] pt-3">
                     <button onclick="archiveShiftData()" class="w-full bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-white border border-amber-500/30 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition active:scale-95 mb-2">
                         <i class="fa-solid fa-box-archive"></i>
@@ -397,7 +395,6 @@
                     <select id="inpModel" onchange="updateDynamicFormFields()" required class="w-full input-dpw p-3 rounded-xl font-bold text-[#00ffaa] bg-[#1d2263]"></select>
                 </div>
 
-                <!-- Container ID with ISO Check Digit -->
                 <div>
                     <div class="flex justify-between items-center mb-1">
                         <label class="block text-gray-300 font-medium" id="lblContainerNo">N° conteneur</label>
@@ -405,11 +402,9 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <input type="text" id="inpId" oninput="validateISOContainer(this.value)" required placeholder="MSCU1234567" class="w-full input-dpw p-3 rounded-xl uppercase font-bold tracking-wider text-sm">
-                        <!-- OCR Scan Button -->
                         <button type="button" onclick="triggerCameraOCR()" class="btn-dpw-gradient px-3 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 shadow" title="Scanner avec OCR">
                             <i class="fa-solid fa-camera text-base"></i>
                         </button>
-                        <!-- Barcode Scanner Button -->
                         <button type="button" onclick="triggerBarcodeScan()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 shadow" title="Scanner Barcode / QR">
                             <i class="fa-solid fa-barcode text-base"></i>
                         </button>
@@ -436,7 +431,7 @@
                     </div>
                 </div>
 
-                <!-- 📸 DAMAGE PHOTO UPLOAD SECTION (ميزة صورة الضرر) -->
+                <!-- 📸 DAMAGE PHOTO SECTION WITH COMPRESSION -->
                 <div id="damagePhotoSection" class="hidden p-3 bg-rose-950/40 border border-rose-500/30 rounded-2xl space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-[11px] font-bold text-rose-300 flex items-center gap-1.5">
@@ -472,13 +467,13 @@
 
                 <div class="flex items-center gap-3 pt-2">
                     <button type="button" onclick="closeModal()" class="w-1/2 bg-[#252b75] hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-xs" id="btnCancel">Annuler</button>
-                    <button type="submit" class="w-1/2 btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg" id="btnSave">Enregistrer</button>
+                    <button type="submit" id="btnSaveSubmit" class="w-1/2 btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg" id="btnSave">Enregistrer</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ================= 📑 ADVANCED EXPORT MODAL (نافذة التصدير المتقدم) ================= -->
+    <!-- ADVANCED EXPORT MODAL -->
     <div id="exportModalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-[#15194a] rounded-3xl p-5 border border-[#252b75] shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-[#252b75] pb-2">
@@ -543,8 +538,8 @@
         let modelTemplates = JSON.parse(localStorage.getItem('dpw_local_templates')) || {};
         let currentUploadTemplateTarget = '';
         let currentDamagePhotoBase64 = '';
+        let isSaving = false;
 
-        // 🔊 AUDIO & HAPTIC FEEDBACK (صوت واهتزاز)
         function triggerHapticFeedback() {
             if ("vibrate" in navigator) navigator.vibrate(60);
             try {
@@ -561,7 +556,6 @@
             } catch(e) {}
         }
 
-        // 🔍 ISO 6346 CHECK DIGIT VALIDATION ALGORITHM
         function validateISOContainer(code) {
             const clean = code.toUpperCase().trim();
             const badge = document.getElementById('isoValidationBadge');
@@ -620,7 +614,6 @@
             }, 2500);
         }
 
-        // AUTH LOGIC
         auth.onAuthStateChanged((user) => {
             const authModal = document.getElementById('authModalOverlay');
             if (user) {
@@ -689,7 +682,6 @@
             }
         }
 
-        // SYNC & STATS
         function initFirebaseSync() {
             db.ref('containers').on('value', (snap) => {
                 const val = snap.val();
@@ -728,14 +720,12 @@
             const myCount = containers.filter(c => c.agent === agentPrefix).length;
             document.getElementById('agentCountStat').innerText = myCount;
 
-            // Update Quick KPI Cards
             document.getElementById('kpiTotalVal').innerText = containers.length;
             document.getElementById('kpiGoodVal').innerText = containers.filter(c => c.status === 'Bon état').length;
             document.getElementById('kpiDamagedVal').innerText = containers.filter(c => c.status === 'Endommagé').length;
             document.getElementById('kpiStockVal').innerText = containers.filter(c => (c.stage || 'Stock') === 'Stock').length;
         }
 
-        // TRANSLATIONS
         const translations = {
             fr: {
                 btnPointer: "Pointer",
@@ -944,14 +934,11 @@
             }
         }
 
-        // 📷 SCAN & BARCODE FUNCTIONS
         function triggerCameraOCR() { document.getElementById('ocrCameraInput').click(); }
 
         function triggerBarcodeScan() {
-            // استخدام كاميرا لقراءة الباركود و QR
-            const codeReader = new ZXing.BrowserMultiFormatReader();
             showToast("Ouverture du lecteur de code-barres...");
-            document.getElementById('ocrCameraInput').click(); // يستخدم الكاميرا للالتقاط
+            document.getElementById('ocrCameraInput').click();
         }
 
         function processOCRImage(event) {
@@ -991,7 +978,7 @@
                 });
         }
 
-        // 📸 DAMAGE PHOTO HANDLERS
+        // 📸 FAST IMAGE COMPRESSION & RESIZING (تصغير وضغط فوري للصورة)
         function toggleDamageSection(status) {
             const section = document.getElementById('damagePhotoSection');
             if (status === 'Endommagé') {
@@ -1005,12 +992,42 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            showToast(currentLang === 'ar' ? "جاري ضغط الصورة..." : "Optimisation de la photo...");
+
             const reader = new FileReader();
             reader.onload = function(e) {
-                currentDamagePhotoBase64 = e.target.result;
-                document.getElementById('damageImgTag').src = currentDamagePhotoBase64;
-                document.getElementById('damagePhotoPreview').classList.remove('hidden');
-                showToast("Photo de l'avarie chargée");
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 640;
+                    const MAX_HEIGHT = 480;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // ضغط بجودة 0.65 ليكون الحجم خفيفاً جداً (~50KB)
+                    currentDamagePhotoBase64 = canvas.toDataURL('image/jpeg', 0.65);
+                    document.getElementById('damageImgTag').src = currentDamagePhotoBase64;
+                    document.getElementById('damagePhotoPreview').classList.remove('hidden');
+                    showToast(currentLang === 'ar' ? "✓ تم تجهيز الصورة بنجاح" : "✓ Photo prête");
+                };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
@@ -1019,9 +1036,10 @@
             currentDamagePhotoBase64 = '';
             document.getElementById('damageImgTag').src = '';
             document.getElementById('damagePhotoPreview').classList.add('hidden');
+            document.getElementById('damagePhotoInput').value = '';
         }
 
-        // RENDER CONTAINER LIST WITH EDIT BUTTON & PHOTO THUMBNAIL
+        // RENDER CONTAINER LIST
         function renderList(data = containers) {
             const listEl = document.getElementById('containersList');
             document.getElementById('containerCount').innerText = `${data.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
@@ -1067,7 +1085,7 @@
                 if (item.damagePhoto) {
                     damagePhotoHTML = `
                         <div class="pt-1">
-                            <img src="${item.damagePhoto}" class="w-full h-24 object-cover rounded-xl border border-rose-500/40" alt="Damage Photo">
+                            <img src="${item.damagePhoto}" class="w-full h-24 object-cover rounded-xl border border-rose-500/40 cursor-pointer" onclick="window.open('${item.damagePhoto}')" alt="Damage Photo">
                         </div>
                     `;
                 }
@@ -1082,9 +1100,7 @@
                         </div>
                         <div class="flex items-center gap-1.5">
                             <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${statusDisplayName}</span>
-                            <!-- Edit Button -->
                             <button onclick="openEditModal('${item.firebaseKey}')" class="text-gray-400 hover:text-[#00ffaa] p-1 transition" title="Modifier"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                            <!-- Delete Button -->
                             <button onclick="deleteContainer('${item.firebaseKey}')" class="text-gray-500 hover:text-red-400 p-1 transition" title="Supprimer"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     </div>
@@ -1347,7 +1363,6 @@
             }
         }
 
-        // ✏️ EDIT & ADD MODAL LOGIC
         function openModal() { 
             document.getElementById('editContainerKey').value = '';
             document.getElementById('lblModalTitle').innerText = currentLang === 'ar' ? "تسجيل حاوية جديدة" : "Pointer un conteneur";
@@ -1391,7 +1406,10 @@
             document.getElementById('modalOverlay').classList.remove('hidden');
         }
 
-        function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
+        function closeModal() { 
+            document.getElementById('modalOverlay').classList.add('hidden'); 
+            isSaving = false;
+        }
 
         async function deleteContainer(fbKey) {
             const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً حذف الحاوية؟" : "Voulez-vous vraiment supprimer ce conteneur ?";
@@ -1409,81 +1427,97 @@
             }
         }
 
+        // 🚀 SAFE & INSTANT SAVE (حفظ سريع بدون تجميد)
         async function handleSave(e) {
             e.preventDefault();
-            const editKey = document.getElementById('editContainerKey').value;
-            const now = new Date();
-            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            const selectedModel = document.getElementById('inpModel').value;
-            const inputIdVal = document.getElementById('inpId').value.toUpperCase().trim();
+            if (isSaving) return;
+            isSaving = true;
 
-            const customData = {};
-            const customInputs = document.querySelectorAll('[data-custom-field]');
-            customInputs.forEach(input => {
-                const fieldName = input.getAttribute('data-custom-field');
-                customData[fieldName] = input.value || '-';
-            });
+            const saveBtn = document.getElementById('btnSaveSubmit');
+            const originalBtnText = saveBtn.innerText;
+            saveBtn.innerText = currentLang === 'ar' ? "جاري الحفظ..." : "Enregistrement...";
+            saveBtn.disabled = true;
 
-            if (editKey) {
-                // EDIT EXISTING
-                const idx = containers.findIndex(c => c.firebaseKey === editKey);
-                if (idx !== -1) {
-                    containers[idx].id = inputIdVal;
-                    containers[idx].model = selectedModel;
-                    containers[idx].type = document.getElementById('inpType').value;
-                    containers[idx].status = document.getElementById('inpStatus').value;
-                    containers[idx].loc = document.getElementById('inpLoc').value.toUpperCase();
-                    containers[idx].seal = document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000';
-                    containers[idx].notes = document.getElementById('inpNotes').value || 'RAS';
-                    containers[idx].customData = customData;
-                    if (currentDamagePhotoBase64) containers[idx].damagePhoto = currentDamagePhotoBase64;
-                    
-                    localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
-                    if (navigator.onLine) {
-                        await db.ref('containers/' + editKey).update(containers[idx]);
+            try {
+                const editKey = document.getElementById('editContainerKey').value;
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                const selectedModel = document.getElementById('inpModel').value;
+                const inputIdVal = document.getElementById('inpId').value.toUpperCase().trim();
+
+                const customData = {};
+                const customInputs = document.querySelectorAll('[data-custom-field]');
+                customInputs.forEach(input => {
+                    const fieldName = input.getAttribute('data-custom-field');
+                    customData[fieldName] = input.value || '-';
+                });
+
+                if (editKey) {
+                    const idx = containers.findIndex(c => c.firebaseKey === editKey);
+                    if (idx !== -1) {
+                        containers[idx].id = inputIdVal;
+                        containers[idx].model = selectedModel;
+                        containers[idx].type = document.getElementById('inpType').value;
+                        containers[idx].status = document.getElementById('inpStatus').value;
+                        containers[idx].loc = document.getElementById('inpLoc').value.toUpperCase();
+                        containers[idx].seal = document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000';
+                        containers[idx].notes = document.getElementById('inpNotes').value || 'RAS';
+                        containers[idx].customData = customData;
+                        if (currentDamagePhotoBase64) containers[idx].damagePhoto = currentDamagePhotoBase64;
+                        
+                        localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+                        if (navigator.onLine) {
+                            await db.ref('containers/' + editKey).update(containers[idx]);
+                        }
                     }
-                }
-                showToast(currentLang === 'ar' ? "✓ تم تحديث بيانات الحاوية" : "✓ Conteneur mis à jour");
-            } else {
-                // ADD NEW
-                const tempKey = 'cnt_' + Date.now();
-                const newItem = {
-                    firebaseKey: tempKey,
-                    id: inputIdVal,
-                    model: selectedModel,
-                    stage: 'Stock',
-                    type: document.getElementById('inpType').value,
-                    loc: document.getElementById('inpLoc').value.toUpperCase(),
-                    status: document.getElementById('inpStatus').value,
-                    seal: document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000',
-                    notes: document.getElementById('inpNotes').value || 'RAS',
-                    damagePhoto: currentDamagePhotoBase64 || null,
-                    customData: customData,
-                    time: timeStr,
-                    date: now.toLocaleDateString('fr-FR'),
-                    agent: currentUser ? currentUser.email.split('@')[0] : 'Pointeur',
-                    timestamp: Date.now()
-                };
+                    showToast(currentLang === 'ar' ? "✓ تم تحديث بيانات الحاوية" : "✓ Conteneur mis à jour");
+                } else {
+                    const tempKey = 'cnt_' + Date.now();
+                    const newItem = {
+                        firebaseKey: tempKey,
+                        id: inputIdVal,
+                        model: selectedModel,
+                        stage: 'Stock',
+                        type: document.getElementById('inpType').value,
+                        loc: document.getElementById('inpLoc').value.toUpperCase(),
+                        status: document.getElementById('inpStatus').value,
+                        seal: document.getElementById('inpSeal').value.toUpperCase() || 'SL-00000',
+                        notes: document.getElementById('inpNotes').value || 'RAS',
+                        damagePhoto: currentDamagePhotoBase64 || null,
+                        customData: customData,
+                        time: timeStr,
+                        date: now.toLocaleDateString('fr-FR'),
+                        agent: currentUser ? currentUser.email.split('@')[0] : 'Pointeur',
+                        timestamp: Date.now()
+                    };
 
-                containers.unshift(newItem);
-                localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+                    containers.unshift(newItem);
+                    localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
 
-                if (navigator.onLine) {
-                    const newRef = db.ref('containers').push();
-                    newItem.firebaseKey = newRef.key;
-                    await newRef.set(newItem);
+                    if (navigator.onLine) {
+                        const newRef = db.ref('containers').push();
+                        newItem.firebaseKey = newRef.key;
+                        await newRef.set(newItem);
+                    }
+                    showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية بنجاح!" : "✓ Conteneur enregistré!");
                 }
-                showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية بنجاح!" : "✓ Conteneur enregistré!");
+
+                triggerHapticFeedback();
+                filterContainers();
+                renderTrackingList();
+                updateAccountStats();
+                closeModal();
+            } catch(err) {
+                console.error("Save error:", err);
+                showToast("Erreur lors de l'enregistrement", true);
+            } finally {
+                saveBtn.innerText = originalBtnText;
+                saveBtn.disabled = false;
+                isSaving = false;
             }
-
-            triggerHapticFeedback();
-            filterContainers();
-            renderTrackingList();
-            updateAccountStats();
-            closeModal();
         }
 
-        // 📑 ADVANCED EXPORT MODAL LOGIC
+        // EXPORT MODAL LOGIC
         function openExportModal() {
             document.getElementById('exportModalOverlay').classList.remove('hidden');
         }
@@ -1539,7 +1573,6 @@
             showToast("✓ Rapport Excel téléchargé!");
         }
 
-        // 🔄 ARCHIVE SHIFT DATA
         async function archiveShiftData() {
             const confirmMsg = currentLang === 'ar' ? "هل تريد أرشفة الوردية ومسح الحاويات من الواجهة لبدء وردية جديدة؟ (تأكد من تصدير الإكسل أولاً)" : "Voulez-vous archiver cette vacation et réinitialiser la liste active ? (Assurez-vous d'avoir exporté l'Excel d'abord)";
             if (confirm(confirmMsg)) {
@@ -1555,7 +1588,6 @@
             }
         }
 
-        // PWA SERVICE WORKER
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
