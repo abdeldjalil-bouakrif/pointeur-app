@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pointeur Conteneurs - DP World Djendjen</title>
     
+    <!-- PWA & Mobile Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d1033">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DPW Pointeur">
+
     <!-- Tailwind CSS, SheetJS & Tesseract OCR -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -122,7 +129,7 @@
             </div>
             <div>
                 <h3 class="font-extrabold text-base text-white">DP WORLD DJENDJEN</h3>
-                <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase" id="lblAuthCloudSub">Cloud Authentication</p>
+                <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">Cloud Authentication</p>
             </div>
 
             <div class="flex border-b border-[#252b75] text-xs font-bold">
@@ -132,11 +139,11 @@
 
             <form onsubmit="handleAuthAction(event)" class="space-y-3 text-xs text-left">
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1" id="lblAuthEmail">Email</label>
+                    <label class="block text-gray-300 font-medium mb-1">Email</label>
                     <input type="email" id="authEmail" required placeholder="pointeur@dpw.dz" class="w-full input-dpw p-3 rounded-xl">
                 </div>
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1" id="lblAuthPass">Mot de passe</label>
+                    <label class="block text-gray-300 font-medium mb-1">Mot de passe</label>
                     <input type="password" id="authPassword" required placeholder="••••••••" class="w-full input-dpw p-3 rounded-xl">
                 </div>
                 <button type="submit" id="authSubmitBtn" class="w-full btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg active:scale-95 transition">
@@ -150,7 +157,7 @@
     <!-- ================= MAIN APP CONTAINER ================= -->
     <div class="w-full p-4 sm:p-6 max-w-lg mx-auto relative z-10">
 
-        <!-- BRAND HEADER SECTION (هوية بصرية أصلية وثابتة) -->
+        <!-- BRAND HEADER SECTION -->
         <div class="flex items-center justify-between mt-2 mb-3 pb-3 border-b border-[#252b75]">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 flex items-center justify-center shrink-0">
@@ -167,14 +174,12 @@
                     </svg>
                 </div>
                 <div>
-                    <!-- الهوية الأصلية ثابتة -->
                     <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white">Pointeur Conteneurs</h1>
                     <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP WORLD DJENDJEN</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- EXCEL BUTTON -->
                 <button onclick="exportToExcel()" class="btn-dpw-green px-3 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Exporter Excel">
                     <i class="fa-solid fa-file-excel text-sm"></i>
                     <span>Excel</span>
@@ -196,14 +201,11 @@
 
         <!-- ================= TAB 1: ACCUEIL ================= -->
         <div id="tabAccueil" class="space-y-3">
-            
-            <!-- Quick Search Bar (يترجم حسب اللغة) -->
             <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-xs"></i>
                 <input type="text" id="liveSearchInput" onkeyup="filterContainers()" placeholder="Rechercher par N° ou emplacement..." class="w-full input-dpw pl-9 pr-3 py-2.5 rounded-xl text-xs font-medium outline-none">
             </div>
 
-            <!-- Filters (تترجم حسب اللغة) -->
             <div class="flex items-center justify-between text-xs gap-2">
                 <select id="filterStage" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
                     <option value="All" id="optAllStages">Tous les emplacements</option>
@@ -219,15 +221,13 @@
                 </select>
             </div>
 
-            <!-- Live Status & Count -->
             <div class="flex items-center justify-between px-1">
                 <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
-                <span class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a] px-2.5 py-1 rounded-full border border-[#252b75]">
+                <span id="connectionBadge" class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a] px-2.5 py-1 rounded-full border border-[#252b75]">
                     <span class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping"></span> <span id="lblCloudDirect">Cloud Direct</span>
                 </span>
             </div>
 
-            <!-- Containers Dynamic List -->
             <div id="containersList" class="space-y-3 pt-1"></div>
         </div>
 
@@ -241,7 +241,6 @@
                 <p class="text-xs text-gray-400" id="txtSuiviDesc">Cliquez sur les étapes pour mettre à jour la position du conteneur en temps réel.</p>
             </div>
 
-            <!-- Glowing Interactive Pipeline List -->
             <div id="trackingList" class="space-y-4"></div>
         </div>
 
@@ -281,7 +280,6 @@
                     </div>
                 </div>
 
-                <!-- Account Metrics -->
                 <div class="grid grid-cols-2 gap-3 text-center">
                     <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796]">
                         <p class="text-[10px] text-gray-400 font-bold mb-1" id="lblMyCounts">Mes Pointages</p>
@@ -289,13 +287,12 @@
                     </div>
                     <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796]">
                         <p class="text-[10px] text-gray-400 font-bold mb-1" id="lblCloudServer">Serveur Cloud</p>
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                        <span id="accountCloudState" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
                             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span id="lblActiveState">Actif</span>
                         </span>
                     </div>
                 </div>
 
-                <!-- Logout Button -->
                 <div class="pt-2">
                     <button onclick="logoutFirebase()" class="w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 transition active:scale-95">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -304,7 +301,6 @@
                 </div>
             </div>
 
-            <!-- Terminal Info -->
             <div class="dpw-card p-4 rounded-2xl text-[11px] text-gray-400 space-y-1.5 border border-[#252b75]">
                 <p class="text-white font-bold flex items-center gap-1.5"><i class="fa-solid fa-anchor text-[#00ffaa]"></i> Port de Djendjen - Jijel</p>
                 <p id="lblTerminalDesc">Système de pointage et gestion des flux de conteneurs sous environnement sécurisé Firebase.</p>
@@ -316,29 +312,24 @@
     <!-- ================= BOTTOM NAVIGATION BAR ================= -->
     <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-lg mx-auto">
         <div class="grid grid-cols-4 py-2 text-center">
-            <!-- 1. Accueil -->
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
                 <i class="fa-solid fa-house text-base"></i>
                 <span class="text-[10px] font-semibold" id="navAccueil">Accueil</span>
             </button>
-            <!-- 2. Suivi Flux -->
             <button id="navBtnSuivi" onclick="switchTab('suivi')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
                 <i class="fa-solid fa-route text-base"></i>
                 <span class="text-[10px] font-semibold" id="navSuivi">Suivi Flux</span>
             </button>
-            <!-- 3. Modèles -->
             <button id="navBtnSettings" onclick="switchTab('settings')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
                 <i class="fa-solid fa-sliders text-base"></i>
                 <span class="text-[10px] font-semibold" id="navSettings">Modèles</span>
             </button>
-            <!-- 4. Compte -->
             <button id="navBtnCompte" onclick="switchTab('compte')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
                 <i class="fa-solid fa-user-gear text-base"></i>
                 <span class="text-[10px] font-semibold" id="navCompte">Compte</span>
             </button>
         </div>
         
-        <!-- تعديل العلامة المائية الرسمية المطلوبة بدقة -->
         <div class="text-[9.5px] text-center text-gray-400 pb-2 font-medium flex items-center justify-center gap-1 tracking-wide">
             <span>© 2026 DP World Djendjen Terminal. Powered by djalil</span>
         </div>
@@ -348,7 +339,7 @@
     <input type="file" id="ocrCameraInput" accept="image/*" capture="environment" class="hidden" onchange="processOCRImage(event)">
     <input type="file" id="templateFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleTemplateUpload(event)">
 
-    <!-- ================= POPUP MODAL (Pointer un conteneur) ================= -->
+    <!-- ================= POPUP MODAL ================= -->
     <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
         <div class="w-full max-w-lg bg-[#15194a] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#252b75] shadow-2xl max-h-[90vh] overflow-y-auto">
             
@@ -406,7 +397,6 @@
                     </div>
                 </div>
 
-                <!-- DYNAMIC CUSTOM FIELDS -->
                 <div id="dynamicFieldsContainer" class="space-y-3 pt-2 border-t border-[#252b75]"></div>
 
                 <div>
@@ -443,13 +433,13 @@
         let currentUser = null;
         let authMode = 'login';
         let currentLang = localStorage.getItem('dpw_lang') || 'fr';
-        let containers = [];
-        let modelConfigs = {
+        let containers = JSON.parse(localStorage.getItem('dpw_local_containers')) || [];
+        let modelConfigs = JSON.parse(localStorage.getItem('dpw_local_models')) || {
             'Débarquement': ['Navire', 'N° Manifeste', 'Température'],
             'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
             'Embarquement': ['Destination', 'Poids (Tonnes)']
         };
-        let modelTemplates = {};
+        let modelTemplates = JSON.parse(localStorage.getItem('dpw_local_templates')) || {};
         let currentUploadTemplateTarget = '';
 
         // 2. TOAST SYSTEM
@@ -476,18 +466,28 @@
             }, 2500);
         }
 
-        // 3. AUTHENTICATION LOGIC
+        // 3. AUTHENTICATION LOGIC & OFFLINE RESILIENCE
         auth.onAuthStateChanged((user) => {
             const authModal = document.getElementById('authModalOverlay');
             if (user) {
                 currentUser = user;
+                localStorage.setItem('dpw_last_agent', user.email);
                 authModal.classList.add('hidden');
                 document.getElementById('accountEmailDisplay').innerText = user.email;
                 initFirebaseSync();
-                showToast(currentLang === 'ar' ? "تم الاتصال بالسحابة بنجاح!" : "Connecté avec succès au Cloud!");
             } else {
-                currentUser = null;
-                authModal.classList.remove('hidden');
+                const savedAgent = localStorage.getItem('dpw_last_agent');
+                if (!navigator.onLine && savedAgent) {
+                    currentUser = { email: savedAgent };
+                    authModal.classList.add('hidden');
+                    document.getElementById('accountEmailDisplay').innerText = savedAgent;
+                    filterContainers();
+                    renderTrackingList();
+                    updateAccountStats();
+                } else {
+                    currentUser = null;
+                    authModal.classList.remove('hidden');
+                }
             }
         });
 
@@ -529,16 +529,20 @@
         function logoutFirebase() {
             const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً تسجيل الخروج؟" : "Voulez-vous vraiment vous déconnecter ?";
             if (confirm(confirmMsg)) {
+                localStorage.removeItem('dpw_last_agent');
                 auth.signOut();
                 showToast(currentLang === 'ar' ? "تم تسجيل الخروج" : "Déconnexion réussie");
             }
         }
 
-        // 4. CLOUD REALTIME SYNC
+        // 4. CLOUD REALTIME SYNC & LOCAL CACHE
         function initFirebaseSync() {
             db.ref('containers').on('value', (snap) => {
                 const val = snap.val();
-                containers = val ? Object.values(val) : [];
+                if (val) {
+                    containers = Object.values(val);
+                    localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+                }
                 filterContainers();
                 renderTrackingList();
                 updateAccountStats();
@@ -546,14 +550,20 @@
 
             db.ref('modelConfigs').on('value', (snap) => {
                 const val = snap.val();
-                if (val) modelConfigs = val;
+                if (val) {
+                    modelConfigs = val;
+                    localStorage.setItem('dpw_local_models', JSON.stringify(modelConfigs));
+                }
                 populateModelSelect();
                 renderModelsList();
             });
 
             db.ref('modelTemplates').on('value', (snap) => {
                 const val = snap.val();
-                if (val) modelTemplates = val;
+                if (val) {
+                    modelTemplates = val;
+                    localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
+                }
                 renderModelsList();
             });
         }
@@ -565,7 +575,7 @@
             document.getElementById('agentCountStat').innerText = myCount;
         }
 
-        // 5. TRANSLATIONS (المضمون الداخلي فقط بدون المساس بالهوية البصرية)
+        // 5. TRANSLATIONS
         const translations = {
             fr: {
                 btnPointer: "Pointer",
@@ -704,7 +714,6 @@
             });
 
             const t = translations[lang];
-            // المضمون الداخلي المترجم
             document.getElementById('btnPointerText').innerText = t.btnPointer;
             document.getElementById('liveSearchInput').placeholder = t.searchPlaceholder;
             document.getElementById('lblCloudDirect').innerText = t.cloudDirect;
@@ -946,7 +955,6 @@
                         </span>
                     </div>
 
-                    <!-- TIMELINE PATH -->
                     <div class="relative flex items-center justify-between pt-2 px-1">
                         <div class="absolute left-5 right-5 top-1/2 -translate-y-1/2 h-1 glow-line-active z-0"></div>
 
@@ -988,8 +996,16 @@
         }
 
         async function updateContainerStage(fbKey, newStage) {
-            if (!fbKey) return;
-            await db.ref('containers/' + fbKey).update({ stage: newStage });
+            const idx = containers.findIndex(c => c.firebaseKey === fbKey);
+            if (idx !== -1) {
+                containers[idx].stage = newStage;
+                localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+                renderTrackingList();
+                filterContainers();
+            }
+            if (navigator.onLine && fbKey) {
+                await db.ref('containers/' + fbKey).update({ stage: newStage });
+            }
             showToast(currentLang === 'ar' ? `تم تحديث المرحلة: ${newStage}` : `Position mise à jour: ${newStage}`);
         }
 
@@ -1073,7 +1089,10 @@
             reader.onload = async function(e) {
                 const base64Data = e.target.result.split(',')[1];
                 modelTemplates[currentUploadTemplateTarget] = base64Data;
-                await db.ref('modelTemplates').set(modelTemplates);
+                localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
+                if (navigator.onLine) {
+                    await db.ref('modelTemplates').set(modelTemplates);
+                }
                 showToast(currentLang === 'ar' ? `تم رفع قالب إكسل لـ "${currentUploadTemplateTarget}"` : `Template Excel enregistré pour "${currentUploadTemplateTarget}"`);
             };
             reader.readAsDataURL(file);
@@ -1083,8 +1102,13 @@
             const val = document.getElementById('inpNewModel').value.trim();
             if (val && !modelConfigs[val]) {
                 modelConfigs[val] = [];
-                await db.ref('modelConfigs').set(modelConfigs);
+                localStorage.setItem('dpw_local_models', JSON.stringify(modelConfigs));
+                if (navigator.onLine) {
+                    await db.ref('modelConfigs').set(modelConfigs);
+                }
                 document.getElementById('inpNewModel').value = '';
+                renderModelsList();
+                populateModelSelect();
                 showToast(currentLang === 'ar' ? `تم إنشاء النموذج "${val}"!` : `Modèle "${val}" créé avec succès!`);
             }
         }
@@ -1094,13 +1118,19 @@
             if (confirm(confirmMsg)) {
                 delete modelConfigs[modelName];
                 delete modelTemplates[modelName];
-                await db.ref('modelConfigs').set(modelConfigs);
-                await db.ref('modelTemplates').set(modelTemplates);
+                localStorage.setItem('dpw_local_models', JSON.stringify(modelConfigs));
+                localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
+                if (navigator.onLine) {
+                    await db.ref('modelConfigs').set(modelConfigs);
+                    await db.ref('modelTemplates').set(modelTemplates);
+                }
+                renderModelsList();
+                populateModelSelect();
                 showToast(currentLang === 'ar' ? `تم حذف النموذج "${modelName}"` : `Modèle "${modelName}" supprimé`);
             }
         }
 
-        // 12. CRUD ACTIONS
+        // 12. CRUD ACTIONS (Online & Offline Support)
         function openModal() { 
             populateModelSelect();
             document.getElementById('modalOverlay').classList.remove('hidden'); 
@@ -1108,22 +1138,23 @@
         function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
 
         async function deleteContainer(fbKey) {
-            const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً حذف الحاوية من السحابة؟" : "Voulez-vous vraiment supprimer ce conteneur du Cloud ?";
+            const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً حذف الحاوية؟" : "Voulez-vous vraiment supprimer ce conteneur ?";
             if (confirm(confirmMsg)) {
-                if (fbKey) {
+                containers = containers.filter(c => c.firebaseKey !== fbKey);
+                localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+                filterContainers();
+                renderTrackingList();
+                updateAccountStats();
+
+                if (navigator.onLine && fbKey) {
                     await db.ref('containers/' + fbKey).remove();
-                    showToast(currentLang === 'ar' ? "تم حذف الحاوية من السحابة" : "Conteneur supprimé du Cloud");
                 }
+                showToast(currentLang === 'ar' ? "تم حذف الحاوية بنجاح" : "Conteneur supprimé");
             }
         }
 
         async function handleSave(e) {
             e.preventDefault();
-            if (!currentUser) {
-                showToast(currentLang === 'ar' ? "يرجى تسجيل الدخول أولاً" : "Veuillez vous connecter", true);
-                return;
-            }
-
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const selectedModel = document.getElementById('inpModel').value;
@@ -1136,9 +1167,9 @@
                 customData[fieldName] = input.value || '-';
             });
 
-            const newRef = db.ref('containers').push();
+            const tempKey = 'cnt_' + Date.now();
             const newItem = {
-                firebaseKey: newRef.key,
+                firebaseKey: tempKey,
                 id: inputIdVal,
                 model: selectedModel,
                 stage: 'Stock',
@@ -1150,13 +1181,24 @@
                 customData: customData,
                 time: timeStr,
                 date: now.toLocaleDateString('fr-FR'),
-                agent: currentUser.email.split('@')[0],
+                agent: currentUser ? currentUser.email.split('@')[0] : 'Pointeur',
                 timestamp: Date.now()
             };
 
-            await newRef.set(newItem);
+            containers.unshift(newItem);
+            localStorage.setItem('dpw_local_containers', JSON.stringify(containers));
+            filterContainers();
+            renderTrackingList();
+            updateAccountStats();
             closeModal();
-            showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية في السحابة بنجاح!" : "✓ Conteneur enregistré au Cloud!");
+
+            if (navigator.onLine) {
+                const newRef = db.ref('containers').push();
+                newItem.firebaseKey = newRef.key;
+                await newRef.set(newItem);
+            }
+
+            showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية بنجاح!" : "✓ Conteneur enregistré!");
             
             document.getElementById('inpId').value = '';
             document.getElementById('inpLoc').value = '';
@@ -1204,8 +1246,28 @@
 
             const fileName = `Pointeur_DPW_${new Date().toISOString().slice(0, 10)}.xlsx`;
             XLSX.writeFile(workbook, fileName);
-            showToast(currentLang === 'ar' ? "تم تصدير ملف إكسل بنجاح!" : "Feuille Excel générée avec succès!");
+            showToast("Feuille Excel générée avec succès!");
         }
+
+        // 14. PWA SERVICE WORKER REGISTRATION & NETWORK DETECTOR
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('✓ Service Worker PWA actif'))
+                    .catch(err => console.log('SW Error:', err));
+            });
+        }
+
+        window.addEventListener('online', () => {
+            document.getElementById('lblCloudDirect').innerText = translations[currentLang].cloudDirect;
+            showToast(currentLang === 'ar' ? "عاد الاتصال بالإنترنت" : "Connexion rétablie");
+            initFirebaseSync();
+        });
+
+        window.addEventListener('offline', () => {
+            document.getElementById('lblCloudDirect').innerText = currentLang === 'ar' ? "وضع عدم الاتصال (Offline)" : "Mode Hors-ligne";
+            showToast(currentLang === 'ar' ? "أنت في وضع عدم الاتصال (Offline)" : "Mode Hors-ligne activé", true);
+        });
 
         setLanguage(currentLang);
     </script>
