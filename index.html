@@ -1,21 +1,16 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DP WORLD DJENDJEN - Pointeur Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pointeur Conteneurs - DP WORLD DJENDJEN</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
   <!-- SheetJS for Excel Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- Tesseract.js for OCR Camera Scanning -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -23,234 +18,236 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;900&display=swap');
+    
     body {
-      font-family: 'Cairo', sans-serif;
+      font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif;
+      background-color: #070b19;
+      color: #ffffff;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .dpw-glow {
+      box-shadow: 0 0 20px rgba(0, 242, 174, 0.45);
+    }
+    
+    .timeline-line {
+      background: linear-gradient(90deg, #00f2ae 0%, #00f2ae 66%, rgba(244, 63, 94, 0.6) 66%, rgba(255, 255, 255, 0.1) 100%);
+    }
+
+    .card-bg {
+      background-color: #101730;
+      border: 1px solid #1c264a;
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen">
+<body class="min-h-screen flex flex-col justify-between pb-24">
 
-  <!-- ================= نافذة تسجيل الدخول البسيطة ================= -->
-  <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-    <div class="bg-slate-800 border border-slate-700 w-full max-w-sm p-6 rounded-2xl shadow-2xl">
-      <div class="flex items-center justify-center gap-3 mb-4">
-        <!-- شعار DP World -->
-        <svg class="h-10 w-10 text-cyan-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 7L12 2L21 7V17L12 22L3 17V7Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M12 22V12" stroke="currentColor" stroke-width="2"/>
-          <path d="M12 12L21 7" stroke="currentColor" stroke-width="2"/>
-          <path d="M12 12L3 7" stroke="currentColor" stroke-width="2"/>
+  <!-- ================= AUTH MODAL (نافذة الدخول السحابية) ================= -->
+  <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#070b19]/95 backdrop-blur-md p-4">
+    <div class="card-bg w-full max-w-xs p-5 rounded-3xl shadow-2xl text-center">
+      <div class="w-12 h-12 mx-auto mb-3">
+        <!-- Official DP World Icon -->
+        <svg viewBox="0 0 100 100" class="w-full h-full">
+          <path d="M10 50 Q 50 10, 90 50 Q 50 90, 10 50" fill="none" stroke="#00f2ae" stroke-width="8" />
+          <path d="M20 50 Q 50 25, 80 50 Q 50 75, 20 50" fill="none" stroke="#ff4b55" stroke-width="8" />
+          <circle cx="50" cy="50" r="10" fill="#00d2ff"/>
         </svg>
-        <div class="text-right">
-          <h2 class="font-extrabold text-lg text-white">DP WORLD</h2>
-          <span class="text-xs text-cyan-400 font-bold tracking-widest">DJENDJEN</span>
-        </div>
+      </div>
+      <h3 class="font-extrabold text-base text-white">DP WORLD DJENDJEN</h3>
+      <p class="text-[11px] text-slate-400 mb-4">Connexion au Cloud Pointeur</p>
+
+      <div class="flex border-b border-slate-700/60 mb-3 text-xs font-bold">
+        <button id="btn-tab-login" onclick="switchAuth('login')" class="flex-1 py-1.5 text-[#00f2ae] border-b-2 border-[#00f2ae]">Connexion</button>
+        <button id="btn-tab-reg" onclick="switchAuth('reg')" class="flex-1 py-1.5 text-slate-400">Créer compte</button>
       </div>
 
-      <div class="flex border-b border-slate-700 mb-4 text-xs font-bold">
-        <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2 text-cyan-400 border-b-2 border-cyan-400">تسجيل الدخول</button>
-        <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2 text-slate-400">إنشاء حساب</button>
-      </div>
-
-      <form onsubmit="handleAuth(event)" class="space-y-3">
-        <input type="email" id="auth-email" placeholder="البريد الإلكتروني" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400">
-        <input type="password" id="auth-password" placeholder="كلمة المرور" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400">
-        <button type="submit" id="auth-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 rounded-xl text-xs transition shadow-md">
-          دخول
+      <form onsubmit="handleAuthSubmit(event)" class="space-y-2.5 text-xs text-left">
+        <input type="email" id="user-email" placeholder="Email (ex: djalil@dpw.dz)" required class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-[#00f2ae]">
+        <input type="password" id="user-pass" placeholder="Mot de passe" required class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-[#00f2ae]">
+        <button type="submit" id="auth-main-btn" class="w-full bg-[#00f2ae] hover:bg-[#00d296] text-[#070b19] font-black py-2.5 rounded-xl shadow-lg transition">
+          Se connecter
         </button>
-        <p id="auth-error" class="text-[11px] text-rose-400 text-center"></p>
+        <p id="auth-msg" class="text-[10px] text-rose-400 text-center"></p>
       </form>
     </div>
   </div>
 
-  <!-- ================= شريط الهوية البصرية العلوي ================= -->
-  <header class="bg-slate-800 border-b border-slate-700 px-4 py-3 sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
+  <!-- ================= TOP HEADER ================= -->
+  <header class="px-5 pt-4">
+    <div class="flex items-center justify-between mb-4">
+      <!-- Logo & Titles -->
       <div class="flex items-center gap-3">
-        <!-- DP World Logo SVG -->
-        <svg class="h-9 w-9 text-cyan-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 7L12 2L21 7V17L12 22L3 17V7Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M12 22V12" stroke="currentColor" stroke-width="2"/>
-          <path d="M12 12L21 7" stroke="currentColor" stroke-width="2"/>
-          <path d="M12 12L3 7" stroke="currentColor" stroke-width="2"/>
-        </svg>
+        <!-- DP World Multi-color Flow Shape -->
+        <div class="w-10 h-10 flex-shrink-0">
+          <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+            <path d="M10 50 Q 50 10, 90 50 Q 50 90, 10 50" fill="none" stroke="#00f2ae" stroke-width="9" stroke-linecap="round"/>
+            <path d="M20 50 Q 50 25, 80 50 Q 50 75, 20 50" fill="none" stroke="#ff4b55" stroke-width="9" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="8" fill="#00d2ff"/>
+          </svg>
+        </div>
         <div>
-          <div class="flex items-center gap-2">
-            <span class="text-lg font-black text-white tracking-wider">DP WORLD</span>
-            <span class="bg-cyan-500/20 text-cyan-400 text-[10px] font-extrabold px-2 py-0.5 rounded border border-cyan-500/30">DJENDJEN</span>
-          </div>
-          <p class="text-[10px] text-slate-400">Terminal Pointeur Tracker • ميناء جن جن</p>
+          <h1 class="text-lg font-extrabold tracking-tight text-white leading-tight">Pointeur<br>Conteneurs</h1>
+          <p class="text-[11px] font-bold text-[#00f2ae] tracking-wider">DP WORLD DJENDJEN</p>
         </div>
       </div>
 
+      <!-- Header Action Buttons (Excel & Pointer) -->
       <div class="flex items-center gap-2">
-        <div class="hidden sm:flex flex-col text-left mr-2">
-          <span id="user-badge" class="text-xs font-bold text-slate-200"></span>
-          <span class="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> سحابي مباشر
-          </span>
-        </div>
-        <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow transition">
-          <i class="fa-solid fa-file-excel"></i> إكسل
+        <button onclick="exportExcel()" class="bg-[#00f2ae] hover:bg-[#00d296] text-[#070b19] font-extrabold text-xs px-3.5 py-2.5 rounded-2xl flex items-center gap-1.5 shadow-lg shadow-[#00f2ae]/20 transition">
+          <i class="fa-solid fa-file-excel text-sm"></i> Excel
         </button>
-        <button onclick="auth.signOut()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <button onclick="openAddModal()" class="bg-gradient-to-r from-[#ff4b55] to-[#ff7347] text-white font-extrabold text-xs px-3.5 py-2.5 rounded-2xl flex items-center gap-1.5 shadow-lg shadow-[#ff4b55]/30 transition">
+          <span class="text-sm font-black">+</span> Pointer
         </button>
       </div>
+    </div>
+
+    <!-- Language Selector -->
+    <div class="flex items-center justify-center gap-2 text-xs font-semibold py-1">
+      <span class="text-slate-400 flex items-center gap-1"><i class="fa-solid fa-globe"></i> Language:</span>
+      <button class="bg-[#00f2ae] text-[#070b19] font-black px-2.5 py-0.5 rounded-md text-[11px]">FR</button>
+      <button class="text-slate-400 hover:text-white px-2 py-0.5 text-[11px]">عربي</button>
+      <button class="text-slate-400 hover:text-white px-2 py-0.5 text-[11px]">EN</button>
     </div>
   </header>
 
-  <!-- ================= المحتوى الرئيسي ================= -->
-  <main class="max-w-7xl mx-auto px-4 py-5 space-y-5">
+  <!-- ================= MAIN FLOW VIEW ================= -->
+  <main class="px-4 space-y-4 mt-2">
+    
+    <!-- Top Info Card -->
+    <div class="card-bg p-4 rounded-3xl">
+      <div class="flex items-center gap-2 text-[#00f2ae] font-bold text-sm mb-1">
+        <i class="fa-solid fa-route text-base"></i>
+        <span>Suivi Flux (Import & Export)</span>
+      </div>
+      <p class="text-[11px] text-slate-400 leading-relaxed">
+        Cliquez sur les étapes pour mettre à jour la position du conteneur en temps réel.
+      </p>
+    </div>
 
-    <!-- عدادات الإحصائيات -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="bg-slate-800 border border-slate-700 p-3.5 rounded-2xl flex items-center justify-between">
-        <div>
-          <p class="text-[11px] text-slate-400 font-bold">إجمالي الحاويات</p>
-          <h3 id="stat-total" class="text-xl font-black text-white">0</h3>
+    <!-- Live Active Containers Cards (Rendered from Firebase) -->
+    <div id="containers-list" class="space-y-4">
+      <!-- Example Active Card matching your exact screenshot -->
+      <div class="card-bg p-5 rounded-3xl relative overflow-hidden">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-white tracking-wide">حاوية نبيلة</h2>
+            <p class="text-[11px] text-slate-400">20' ST • Emplacement: <span class="text-slate-200 font-semibold">ابتفو</span></p>
+          </div>
+          <span class="bg-[#2c1b4d] text-[#b388ff] text-[11px] font-bold px-3 py-1 rounded-full border border-[#b388ff]/30">
+            En Douane
+          </span>
         </div>
-        <i class="fa-solid fa-cubes text-slate-600 text-xl"></i>
-      </div>
-      <div class="bg-slate-800 border border-slate-700 p-3.5 rounded-2xl flex items-center justify-between">
-        <div>
-          <p class="text-[11px] text-cyan-400 font-bold">في الساحة (Stock)</p>
-          <h3 id="stat-stock" class="text-xl font-black text-cyan-400">0</h3>
+
+        <!-- 4 Step Glowing Timeline -->
+        <div class="relative pt-2 pb-1">
+          <!-- Horizontal Line -->
+          <div class="timeline-line absolute top-6 left-6 right-6 h-[3px] -translate-y-1/2 z-0"></div>
+
+          <div class="relative z-10 flex justify-between text-center">
+            <!-- Navire (Done) -->
+            <div class="flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full bg-[#00f2ae] text-[#070b19] flex items-center justify-center text-xs font-bold shadow-md">
+                <i class="fa-solid fa-ship"></i>
+              </div>
+              <span class="text-[10px] text-slate-400 font-bold mt-1.5">Navire</span>
+            </div>
+
+            <!-- Stock (Done) -->
+            <div class="flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full bg-[#00f2ae] text-[#070b19] flex items-center justify-center text-xs font-bold shadow-md">
+                <i class="fa-solid fa-boxes-stacked"></i>
+              </div>
+              <span class="text-[10px] text-slate-400 font-bold mt-1.5">Stock</span>
+            </div>
+
+            <!-- Douane (Active Glow) -->
+            <div class="flex flex-col items-center">
+              <div class="w-9 h-9 -mt-0.5 rounded-full bg-[#070b19] border-2 border-[#00f2ae] text-[#00f2ae] flex items-center justify-center text-xs font-bold dpw-glow">
+                <i class="fa-solid fa-building-columns"></i>
+              </div>
+              <span class="text-[10px] text-[#00f2ae] font-bold mt-1.5">Douane</span>
+            </div>
+
+            <!-- Sortie (Upcoming) -->
+            <div class="flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full bg-[#1b254b] text-slate-500 flex items-center justify-center text-xs">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <span class="text-[10px] text-slate-500 font-bold mt-1.5">Sortie</span>
+            </div>
+          </div>
         </div>
-        <i class="fa-solid fa-warehouse text-cyan-600/40 text-xl"></i>
-      </div>
-      <div class="bg-slate-800 border border-slate-700 p-3.5 rounded-2xl flex items-center justify-between">
-        <div>
-          <p class="text-[11px] text-amber-400 font-bold">الجمارك (Douane)</p>
-          <h3 id="stat-douane" class="text-xl font-black text-amber-400">0</h3>
-        </div>
-        <i class="fa-solid fa-shield-halved text-amber-600/40 text-xl"></i>
-      </div>
-      <div class="bg-slate-800 border border-slate-700 p-3.5 rounded-2xl flex items-center justify-between">
-        <div>
-          <p class="text-[11px] text-rose-400 font-bold">متضررة (Endommagé)</p>
-          <h3 id="stat-damaged" class="text-xl font-black text-rose-400">0</h3>
-        </div>
-        <i class="fa-solid fa-triangle-exclamation text-rose-600/40 text-xl"></i>
       </div>
     </div>
 
-    <!-- نموذج الرصد والجدول -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      
-      <!-- إدخال / تصوير حاوية -->
-      <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl shadow-lg space-y-3">
-        <div class="flex items-center justify-between border-b border-slate-700 pb-2">
-          <h2 class="font-bold text-sm text-white flex items-center gap-2">
-            <i class="fa-solid fa-pen-to-square text-cyan-400"></i> رصد حاوية جديدة
-          </h2>
-          <button type="button" onclick="document.getElementById('ocr-file').click()" class="bg-cyan-600/20 hover:bg-cyan-600 text-cyan-400 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
-            <i class="fa-solid fa-camera"></i> تصوير الحاوية
-          </button>
-          <input type="file" id="ocr-file" accept="image/*" capture="environment" class="hidden" onchange="readOCR(this)">
-        </div>
-
-        <form id="cnt-form" onsubmit="saveContainer(event)" class="space-y-3 text-xs">
-          <div>
-            <label class="block font-bold text-slate-300 mb-1">رقم الحاوية (N° Conteneur)</label>
-            <input type="text" id="cnt-num" required placeholder="MSKU 123456-7" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono uppercase focus:border-cyan-400 outline-none">
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block font-bold text-slate-300 mb-1">النوع</label>
-              <select id="cnt-type" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-white outline-none">
-                <option value="40' HC" selected>40' HC</option>
-                <option value="20' GP">20' GP</option>
-                <option value="40' GP">40' GP</option>
-                <option value="45' HC">45' HC</option>
-                <option value="20' RF">20' RF (مبرد)</option>
-                <option value="40' RF">40' RF (مبرد)</option>
-              </select>
-            </div>
-            <div>
-              <label class="block font-bold text-slate-300 mb-1">الموقع (Bay/Row/Tier)</label>
-              <input type="text" id="cnt-loc" placeholder="A-02-01" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white uppercase outline-none">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block font-bold text-slate-300 mb-1">رقم الرصاص (Plomb)</label>
-              <input type="text" id="cnt-seal" placeholder="DZ98213" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white outline-none">
-            </div>
-            <div>
-              <label class="block font-bold text-slate-300 mb-1">المرحلة</label>
-              <select id="cnt-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-white outline-none">
-                <option value="Stock" selected>في الساحة (Stock)</option>
-                <option value="Navire">تفريغ من السفينة (Quai)</option>
-                <option value="Douane">معاينة جمركية (Visite)</option>
-                <option value="Sortie">خروج وتسليم (Livraison)</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-300 mb-1">الحالة المادية</label>
-            <div class="flex gap-2">
-              <label class="flex-1 flex items-center justify-center gap-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl cursor-pointer">
-                <input type="radio" name="cnt-cond" value="Bon" checked class="text-cyan-500"> سليم (Bon)
-              </label>
-              <label class="flex-1 flex items-center justify-center gap-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl cursor-pointer text-rose-400">
-                <input type="radio" name="cnt-cond" value="Endommagé" class="text-rose-500"> متضرر
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-300 mb-1">ملاحظات</label>
-            <input type="text" id="cnt-notes" placeholder="ملاحظة حول الوردية أو الباب..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none">
-          </div>
-
-          <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-cyan-600/30 transition text-xs flex items-center justify-center gap-2">
-            <i class="fa-solid fa-cloud-arrow-up"></i> حفظ في السيرفر السحابي
-          </button>
-        </form>
-      </div>
-
-      <!-- جدول الحاويات المرصودة -->
-      <div class="lg:col-span-2 bg-slate-800 border border-slate-700 p-4 rounded-2xl shadow-lg flex flex-col">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3 border-b border-slate-700 pb-2">
-          <h2 class="font-bold text-sm text-white flex items-center gap-2">
-            <i class="fa-solid fa-table-list text-cyan-400"></i> سجل المزامنة السحابية المباشرة
-          </h2>
-          <input type="text" id="search-box" onkeyup="filterTable()" placeholder="بحث برقم الحاوية أو الموقع..." class="w-full sm:w-56 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1 text-xs text-white outline-none">
-        </div>
-
-        <div class="flex-1 overflow-x-auto">
-          <table class="w-full text-right text-xs">
-            <thead class="bg-slate-900/60 text-slate-400 font-bold">
-              <tr>
-                <th class="p-2.5">رقم الحاوية</th>
-                <th class="p-2.5">النوع</th>
-                <th class="p-2.5">الموقع</th>
-                <th class="p-2.5">المرحلة</th>
-                <th class="p-2.5">الحالة</th>
-                <th class="p-2.5">الراقم</th>
-                <th class="p-2.5 text-center">حذف</th>
-              </tr>
-            </thead>
-            <tbody id="table-body" class="divide-y divide-slate-700/60">
-              <tr>
-                <td colspan="7" class="text-center py-6 text-slate-500">جاري الاتصال بالسحابة...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
   </main>
 
-  <!-- ================= السكربت والربط بالسيرفر ================= -->
+  <!-- ================= ADD MODAL (Pointer) ================= -->
+  <div id="add-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+    <div class="card-bg w-full max-w-sm p-5 rounded-3xl space-y-3">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+          <i class="fa-solid fa-plus text-[#00f2ae]"></i> Nouveau Conteneur
+        </h3>
+        <button onclick="closeAddModal()" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <form onsubmit="saveNewContainer(event)" class="space-y-2.5 text-xs text-right">
+        <input type="text" id="add-num" placeholder="اسم / رقم الحاوية (ex: MSCU1234567)" required class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-[#00f2ae]">
+        <div class="grid grid-cols-2 gap-2">
+          <select id="add-type" class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-2 py-2 text-white outline-none">
+            <option value="20' ST">20' ST</option>
+            <option value="40' HC" selected>40' HC</option>
+            <option value="40' ST">40' ST</option>
+            <option value="Reefer">Reefer</option>
+          </select>
+          <input type="text" id="add-loc" placeholder="Emplacement (الموقع)" class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none">
+        </div>
+        <select id="add-step" class="w-full bg-[#070b19] border border-slate-700 rounded-xl px-2 py-2 text-white outline-none">
+          <option value="Navire">1. Navire (تفريغ)</option>
+          <option value="Stock">2. Stock (في الساحة)</option>
+          <option value="Douane" selected>3. Douane (جمارك)</option>
+          <option value="Sortie">4. Sortie (خروج)</option>
+        </select>
+        <button type="submit" class="w-full bg-[#ff4b55] hover:bg-[#ff3843] text-white font-bold py-2.5 rounded-xl shadow-lg transition">
+          Enregistrer au Cloud
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER COPYRIGHT ================= -->
+  <footer class="text-center py-4 text-[11px] text-slate-500">
+    © 2026 DP World Djendjen Terminal. By djalil
+  </footer>
+
+  <!-- ================= BOTTOM NAVIGATION BAR ================= -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-[#070b19]/95 border-t border-slate-800/80 backdrop-blur-md px-6 py-2.5 z-40">
+    <div class="max-w-md mx-auto flex items-center justify-around text-center">
+      <!-- Accueil -->
+      <button class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300">
+        <i class="fa-solid fa-house text-base"></i>
+        <span class="text-[10px] font-semibold">Accueil</span>
+      </button>
+
+      <!-- Suivi Flux (Active) -->
+      <button class="flex flex-col items-center gap-1 text-[#00f2ae]">
+        <i class="fa-solid fa-route text-base"></i>
+        <span class="text-[10px] font-bold">Suivi Flux</span>
+      </button>
+
+      <!-- Modèles -->
+      <button class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300">
+        <i class="fa-solid fa-sliders text-base"></i>
+        <span class="text-[10px] font-semibold">Modèles</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= FIREBASE LOGIC ================= -->
   <script>
-    // بيانات Firebase الخاصة بمشروعك
     const firebaseConfig = {
       apiKey: "AIzaSyAJ2eLg1TJ419Hxhi542A104GiGhi3k5Ps",
       authDomain: "pointeur-167d6.firebaseapp.com",
@@ -266,178 +263,177 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    let userLogged = null;
-    let authType = 'login';
-    let containerList = [];
+    let authMode = 'login';
+    let currentContainers = [];
 
-    // مراقبة تسجيل الدخول
+    // Auth Observer
     auth.onAuthStateChanged((user) => {
       const modal = document.getElementById('auth-modal');
-      const badge = document.getElementById('user-badge');
       if (user) {
-        userLogged = user;
         modal.classList.add('hidden');
-        badge.innerText = user.email.split('@')[0];
-        loadCloudData();
+        loadFirebaseData();
       } else {
-        userLogged = null;
         modal.classList.remove('hidden');
       }
     });
 
-    function switchTab(type) {
-      authType = type;
-      const btn = document.getElementById('auth-btn');
-      const tLog = document.getElementById('tab-login');
-      const tReg = document.getElementById('tab-register');
+    function switchAuth(mode) {
+      authMode = mode;
+      const bLog = document.getElementById('btn-tab-login');
+      const bReg = document.getElementById('btn-tab-reg');
+      const btn = document.getElementById('auth-main-btn');
 
-      if (type === 'login') {
-        btn.innerText = "دخول";
-        tLog.className = "flex-1 py-2 text-cyan-400 border-b-2 border-cyan-400";
-        tReg.className = "flex-1 py-2 text-slate-400";
+      if(mode === 'login') {
+        btn.innerText = "Se connecter";
+        bLog.className = "flex-1 py-1.5 text-[#00f2ae] border-b-2 border-[#00f2ae]";
+        bReg.className = "flex-1 py-1.5 text-slate-400";
       } else {
-        btn.innerText = "إنشاء وتفعيل الحساب";
-        tReg.className = "flex-1 py-2 text-cyan-400 border-b-2 border-cyan-400";
-        tLog.className = "flex-1 py-2 text-slate-400";
+        btn.innerText = "Créer compte";
+        bReg.className = "flex-1 py-1.5 text-[#00f2ae] border-b-2 border-[#00f2ae]";
+        bLog.className = "flex-1 py-1.5 text-slate-400";
       }
     }
 
-    async function handleAuth(e) {
+    async function handleAuthSubmit(e) {
       e.preventDefault();
-      const email = document.getElementById('auth-email').value;
-      const pass = document.getElementById('auth-password').value;
-      const err = document.getElementById('auth-error');
-      err.innerText = "";
+      const em = document.getElementById('user-email').value;
+      const ps = document.getElementById('user-pass').value;
+      const msg = document.getElementById('auth-msg');
+      msg.innerText = "";
 
       try {
-        if (authType === 'login') {
-          await auth.signInWithEmailAndPassword(email, pass);
+        if(authMode === 'login') {
+          await auth.signInWithEmailAndPassword(em, ps);
         } else {
-          await auth.createUserWithEmailAndPassword(email, pass);
+          await auth.createUserWithEmailAndPassword(em, ps);
         }
-      } catch (error) {
-        err.innerText = error.message;
+      } catch(err) {
+        msg.innerText = err.message;
       }
     }
 
-    // حفظ حاوية في السيرفر السحابي
-    async function saveContainer(e) {
-      e.preventDefault();
-      if (!userLogged) return;
+    function openAddModal() {
+      document.getElementById('add-modal').classList.remove('hidden');
+      document.getElementById('add-modal').classList.add('flex');
+    }
 
-      const num = document.getElementById('cnt-num').value.trim().toUpperCase();
-      const type = document.getElementById('cnt-type').value;
-      const loc = document.getElementById('cnt-loc').value.trim().toUpperCase();
-      const seal = document.getElementById('cnt-seal').value.trim();
-      const status = document.getElementById('cnt-status').value;
-      const cond = document.querySelector('input[name="cnt-cond"]:checked').value;
-      const notes = document.getElementById('cnt-notes').value.trim();
+    function closeAddModal() {
+      document.getElementById('add-modal').classList.add('hidden');
+      document.getElementById('add-modal').classList.remove('flex');
+    }
+
+    async function saveNewContainer(e) {
+      e.preventDefault();
+      const num = document.getElementById('add-num').value.trim();
+      const type = document.getElementById('add-type').value;
+      const loc = document.getElementById('add-loc').value.trim();
+      const step = document.getElementById('add-step').value;
 
       const newRef = db.ref('containers').push();
       await newRef.set({
         id: newRef.key,
-        number: num,
+        name: num,
         type: type,
-        location: loc,
-        seal: seal,
-        status: status,
-        condition: cond,
-        notes: notes,
-        createdBy: userLogged.email.split('@')[0],
+        location: loc || "N/A",
+        step: step,
         timestamp: Date.now()
       });
 
-      document.getElementById('cnt-form').reset();
+      closeAddModal();
+      document.getElementById('add-num').value = "";
+      document.getElementById('add-loc').value = "";
     }
 
-    // استرجاع البيانات ومزامنتها لحظياً
-    function loadCloudData() {
+    function loadFirebaseData() {
       db.ref('containers').on('value', (snap) => {
         const val = snap.val();
-        containerList = val ? Object.values(val).reverse() : [];
-        render(containerList);
-        updateCounters(containerList);
+        currentContainers = val ? Object.values(val).reverse() : [];
+        renderFlowCards(currentContainers);
       });
     }
 
-    function render(data) {
-      const tbody = document.getElementById('table-body');
-      if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-500">لا توجد حاويات مسجلة في السيرفر.</td></tr>`;
+    async function updateContainerStep(id, newStep) {
+      await db.ref('containers/' + id).update({ step: newStep });
+    }
+
+    function renderFlowCards(list) {
+      const container = document.getElementById('containers-list');
+      if(list.length === 0) {
+        container.innerHTML = `<div class="text-center text-slate-500 text-xs py-8">Aucun conteneur pointé. Cliquez sur <b>+ Pointer</b> pour commencer.</div>`;
         return;
       }
 
-      tbody.innerHTML = data.map(c => `
-        <tr class="hover:bg-slate-700/40 transition">
-          <td class="p-2.5 font-mono font-bold text-white">${c.number}</td>
-          <td class="p-2.5 text-slate-300">${c.type}</td>
-          <td class="p-2.5 font-mono text-cyan-400">${c.location || '---'}</td>
-          <td class="p-2.5">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              c.status === 'Stock' ? 'bg-cyan-500/20 text-cyan-300' :
-              c.status === 'Navire' ? 'bg-indigo-500/20 text-indigo-300' :
-              c.status === 'Douane' ? 'bg-amber-500/20 text-amber-300' :
-              'bg-emerald-500/20 text-emerald-300'
-            }">${c.status}</span>
-          </td>
-          <td class="p-2.5">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${c.condition === 'Endommagé' ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'}">${c.condition}</span>
-          </td>
-          <td class="p-2.5 text-slate-400">${c.createdBy}</td>
-          <td class="p-2.5 text-center">
-            <button onclick="db.ref('containers/${c.id}').remove()" class="text-rose-400 hover:text-rose-300">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          </td>
-        </tr>
-      `).join('');
+      const steps = ['Navire', 'Stock', 'Douane', 'Sortie'];
+      const icons = {
+        'Navire': 'fa-ship',
+        'Stock': 'fa-boxes-stacked',
+        'Douane': 'fa-building-columns',
+        'Sortie': 'fa-check'
+      };
+
+      container.innerHTML = list.map(c => {
+        const currentIdx = steps.indexOf(c.step);
+        
+        return `
+          <div class="card-bg p-5 rounded-3xl relative overflow-hidden">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-base font-bold text-white">${c.name}</h2>
+                <p class="text-[11px] text-slate-400">${c.type} • Emplacement: <span class="text-slate-200 font-semibold">${c.location}</span></p>
+              </div>
+              <span class="bg-[#2c1b4d] text-[#b388ff] text-[11px] font-bold px-3 py-1 rounded-full border border-[#b388ff]/30">
+                ${c.step === 'Douane' ? 'En Douane' : c.step}
+              </span>
+            </div>
+
+            <div class="relative pt-2 pb-1">
+              <div class="timeline-line absolute top-6 left-6 right-6 h-[3px] -translate-y-1/2 z-0"></div>
+              <div class="relative z-10 flex justify-between text-center">
+                ${steps.map((st, i) => {
+                  const isDone = i < currentIdx;
+                  const isActive = i === currentIdx;
+                  
+                  let circleClass = "bg-[#1b254b] text-slate-500";
+                  let textClass = "text-slate-500";
+                  
+                  if(isDone) {
+                    circleClass = "bg-[#00f2ae] text-[#070b19]";
+                    textClass = "text-slate-400";
+                  } else if(isActive) {
+                    circleClass = "bg-[#070b19] border-2 border-[#00f2ae] text-[#00f2ae] dpw-glow";
+                    textClass = "text-[#00f2ae]";
+                  }
+
+                  return `
+                    <div onclick="updateContainerStep('${c.id}', '${st}')" class="flex flex-col items-center cursor-pointer">
+                      <div class="w-8 h-8 rounded-full ${circleClass} flex items-center justify-center text-xs font-bold transition">
+                        <i class="fa-solid ${icons[st]}"></i>
+                      </div>
+                      <span class="text-[10px] font-bold mt-1.5 ${textClass}">${st}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
-    function updateCounters(list) {
-      document.getElementById('stat-total').innerText = list.length;
-      document.getElementById('stat-stock').innerText = list.filter(c => c.status === 'Stock').length;
-      document.getElementById('stat-douane').innerText = list.filter(c => c.status === 'Douane').length;
-      document.getElementById('stat-damaged').innerText = list.filter(c => c.condition === 'Endommagé').length;
-    }
-
-    function filterTable() {
-      const q = document.getElementById('search-box').value.toLowerCase();
-      const res = containerList.filter(c => c.number.toLowerCase().includes(q) || (c.location && c.location.toLowerCase().includes(q)));
-      render(res);
-    }
-
-    async function readOCR(input) {
-      if (input.files && input.files[0]) {
-        const inp = document.getElementById('cnt-num');
-        inp.value = "جاري التعرف على الرقم...";
-        try {
-          const { data: { text } } = await Tesseract.recognize(input.files[0], 'eng');
-          inp.value = text.replace(/[^A-Z0-9]/gi, '').substring(0, 11).toUpperCase();
-        } catch(e) {
-          inp.value = "";
-          alert("يرجى كتابة الرقم يدوياً.");
-        }
-      }
-    }
-
-    function exportToExcel() {
-      if (containerList.length === 0) return alert("لا توجد بيانات.");
-      const rows = containerList.map((c, i) => ({
+    function exportExcel() {
+      if(currentContainers.length === 0) return alert("Pas de données.");
+      const rows = currentContainers.map((c, i) => ({
         "N°": i + 1,
-        "N° Conteneur": c.number,
+        "Conteneur / Nom": c.name,
         "Type": c.type,
-        "Emplacement": c.location || "N/A",
-        "Plomb": c.seal || "N/A",
-        "Statut": c.status,
-        "État": c.condition,
-        "Pointeur": c.createdBy,
-        "Date": new Date(c.timestamp).toLocaleString("fr-FR"),
-        "Remarques": c.notes || ""
+        "Emplacement": c.location,
+        "Étape / Statut": c.step,
+        "Date": new Date(c.timestamp).toLocaleString("fr-FR")
       }));
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "DPW_Pointage");
-      XLSX.writeFile(wb, `DPWorld_Djendjen_${new Date().toISOString().slice(0,10)}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, "DPW_Suivi");
+      XLSX.writeFile(wb, `DPWorld_Djendjen_Flux.xlsx`);
     }
   </script>
 </body>
