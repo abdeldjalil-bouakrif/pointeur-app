@@ -35,14 +35,11 @@
             color: #ffffff; 
             margin: 0;
             padding-top: var(--sat);
-            padding-bottom: calc(var(--sab) + 70px);
+            padding-bottom: calc(var(--sab) + 75px);
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
-        }
-        .header-safe {
-            padding-top: max(0.75rem, var(--sat));
         }
         .nav-safe {
             padding-bottom: max(0.5rem, var(--sab));
@@ -163,10 +160,10 @@
         </div>
     </div>
 
-    <!-- ================= MAIN APP CONTAINER ================= -->
-    <div class="w-full px-4 sm:px-6 max-w-lg mx-auto relative z-10 pt-2">
+    <!-- ================= MAIN APP CONTAINER (متجاوب مع الكمبيوتر والهاتف) ================= -->
+    <div class="w-full px-4 sm:px-8 max-w-7xl mx-auto relative z-10 pt-2">
 
-        <!-- BRAND HEADER SECTION (محمي من النوتش بالكامل) -->
+        <!-- BRAND HEADER SECTION -->
         <div class="flex items-center justify-between pb-3 border-b border-[#252b75]">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 flex items-center justify-center shrink-0">
@@ -183,25 +180,32 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white">Pointeur Conteneurs</h1>
-                    <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">DP WORLD DJENDJEN</p>
+                    <h1 class="font-extrabold text-lg sm:text-xl leading-tight tracking-wide text-white">Pointeur Conteneurs</h1>
+                    <p class="text-[11px] sm:text-xs text-[#00ffaa] font-bold tracking-wider uppercase">DP WORLD DJENDJEN</p>
                 </div>
             </div>
             
-            <div class="flex items-center gap-2">
-                <button onclick="exportToExcel()" class="btn-dpw-green px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Exporter Excel">
+            <div class="flex items-center gap-3">
+                <!-- Language Selector Desktop Inline -->
+                <div class="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-[#15194a] p-1 rounded-xl border border-[#252b75] mr-2">
+                    <button onclick="setLanguage('fr')" id="langBtn_fr_d" class="px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
+                    <button onclick="setLanguage('ar')" id="langBtn_ar_d" class="px-2.5 py-1 rounded-lg text-gray-300">عربي</button>
+                    <button onclick="setLanguage('en')" id="langBtn_en_d" class="px-2.5 py-1 rounded-lg text-gray-300">EN</button>
+                </div>
+
+                <button onclick="exportToExcel()" class="btn-dpw-green px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Exporter Excel">
                     <i class="fa-solid fa-file-excel text-sm"></i>
                     <span>Excel</span>
                 </button>
-                <button onclick="openModal()" class="btn-dpw-gradient px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md active:scale-95 transition">
+                <button onclick="openModal()" class="btn-dpw-gradient px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md active:scale-95 transition">
                     <i class="fa-solid fa-plus text-xs"></i>
                     <span id="btnPointerText">Pointer</span>
                 </button>
             </div>
         </div>
 
-        <!-- LANGUAGE SELECTOR BAR -->
-        <div class="flex items-center justify-end gap-1.5 my-2.5 text-[10px] font-bold">
+        <!-- Language Selector Mobile Only -->
+        <div class="flex sm:hidden items-center justify-end gap-1.5 my-2.5 text-[10px] font-bold">
             <span class="text-gray-400 mr-1"><i class="fa-solid fa-globe"></i> Language:</span>
             <button onclick="setLanguage('fr')" id="langBtn_fr" class="px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
             <button onclick="setLanguage('ar')" id="langBtn_ar" class="px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300">عربي</button>
@@ -209,94 +213,100 @@
         </div>
 
         <!-- ================= TAB 1: ACCUEIL ================= -->
-        <div id="tabAccueil" class="space-y-3">
-            <div class="relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-xs"></i>
-                <input type="text" id="liveSearchInput" onkeyup="filterContainers()" placeholder="Rechercher par N° ou emplacement..." class="w-full input-dpw pl-9 pr-3 py-2.5 rounded-xl text-xs font-medium outline-none">
-            </div>
+        <div id="tabAccueil" class="space-y-4 mt-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="sm:col-span-1 relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-xs"></i>
+                    <input type="text" id="liveSearchInput" onkeyup="filterContainers()" placeholder="Rechercher par N° ou emplacement..." class="w-full input-dpw pl-9 pr-3 py-2.5 rounded-xl text-xs font-medium outline-none">
+                </div>
 
-            <div class="flex items-center justify-between text-xs gap-2">
-                <select id="filterStage" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
-                    <option value="All" id="optAllStages">Tous les emplacements</option>
-                    <option value="Navire" id="optNavire">🚢 En Navire</option>
-                    <option value="Stock" id="optStock">📦 En Stockage</option>
-                    <option value="Douane" id="optDouane">🏛️ En Douane</option>
-                    <option value="Embarqué" id="optEmbarque">⚓ Embarqué / Livré</option>
-                </select>
-                <select id="filterStatus" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
-                    <option value="All" id="optAllStatus">Tous les états</option>
-                    <option value="Bon état" id="optBonEtat">Bon état</option>
-                    <option value="Endommagé" id="optEndommage">Endommagé</option>
-                </select>
+                <div class="sm:col-span-2 flex items-center justify-between text-xs gap-3">
+                    <select id="filterStage" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
+                        <option value="All" id="optAllStages">Tous les emplacements</option>
+                        <option value="Navire" id="optNavire">🚢 En Navire</option>
+                        <option value="Stock" id="optStock">📦 En Stockage</option>
+                        <option value="Douane" id="optDouane">🏛️ En Douane</option>
+                        <option value="Embarqué" id="optEmbarque">⚓ Embarqué / Livré</option>
+                    </select>
+                    <select id="filterStatus" onchange="filterContainers()" class="input-dpw px-3 py-2.5 rounded-xl font-medium outline-none w-1/2">
+                        <option value="All" id="optAllStatus">Tous les états</option>
+                        <option value="Bon état" id="optBonEtat">Bon état</option>
+                        <option value="Endommagé" id="optEndommage">Endommagé</option>
+                    </select>
+                </div>
             </div>
 
             <div class="flex items-center justify-between px-1">
                 <span id="containerCount" class="text-gray-400 font-semibold text-xs">0 conteneur</span>
-                <span id="connectionBadge" class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a] px-2.5 py-1 rounded-full border border-[#252b75]">
+                <span id="connectionBadge" class="text-[10px] text-[#00ffaa] flex items-center gap-1.5 font-semibold bg-[#15194a] px-3 py-1 rounded-full border border-[#252b75]">
                     <span class="w-1.5 h-1.5 rounded-full bg-[#00ffaa] animate-ping"></span> <span id="lblCloudDirect">Cloud Direct</span>
                 </span>
             </div>
 
-            <div id="containersList" class="space-y-3 pt-1"></div>
+            <!-- شبكة عرض الحاويات في الحاسوب (2 إلى 3 أعمدة) -->
+            <div id="containersList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1"></div>
         </div>
 
         <!-- ================= TAB 2: SUIVI FLUX ================= -->
-        <div id="tabSuivi" class="hidden space-y-4">
+        <div id="tabSuivi" class="hidden space-y-4 mt-3">
             <div class="dpw-card p-4 rounded-2xl space-y-2">
-                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                <h3 class="font-bold text-sm sm:text-base text-white flex items-center gap-2">
                     <i class="fa-solid fa-route text-[#00ffaa]"></i>
                     <span id="txtSuiviTitle">Suivi Flux (Import & Export)</span>
                 </h3>
                 <p class="text-xs text-gray-400" id="txtSuiviDesc">Cliquez sur les étapes pour mettre à jour la position du conteneur en temps réel.</p>
             </div>
 
-            <div id="trackingList" class="space-y-4"></div>
+            <!-- شبكة تتبع الحاويات في الحاسوب (عمودين متوازيين) -->
+            <div id="trackingList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
         </div>
 
         <!-- ================= TAB 3: MODÈLES & TEMPLATES ================= -->
-        <div id="tabSettings" class="hidden space-y-4">
-            <div class="dpw-card p-4 rounded-2xl space-y-3">
-                <h3 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i class="fa-solid fa-file-invoice text-[#00ffaa]"></i>
-                    <span id="txtModelsTitle">Modèles & Templates Excel</span>
-                </h3>
-                <p class="text-xs text-gray-400" id="txtModelsDesc">Ajoutez des modèles et chargez le fichier Excel officiel de l'entreprise.</p>
-                
-                <div class="flex items-center gap-2 pt-1">
-                    <input type="text" id="inpNewModel" placeholder="Nom du modèle (ex: Visite Douane)" class="input-dpw p-2.5 rounded-xl text-xs flex-1">
-                    <button onclick="addNewModel()" class="btn-dpw-gradient px-4 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition" id="btnCreateModel">
-                        Créer
-                    </button>
+        <div id="tabSettings" class="hidden space-y-4 mt-3">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="dpw-card p-4 rounded-2xl space-y-3 lg:col-span-1 h-fit">
+                    <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice text-[#00ffaa]"></i>
+                        <span id="txtModelsTitle">Modèles & Templates Excel</span>
+                    </h3>
+                    <p class="text-xs text-gray-400" id="txtModelsDesc">Ajoutez des modèles et chargez le fichier Excel officiel de l'entreprise.</p>
+                    
+                    <div class="flex items-center gap-2 pt-1">
+                        <input type="text" id="inpNewModel" placeholder="Nom du modèle (ex: Visite Douane)" class="input-dpw p-2.5 rounded-xl text-xs flex-1">
+                        <button onclick="addNewModel()" class="btn-dpw-gradient px-4 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition" id="btnCreateModel">
+                            Créer
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="dpw-card p-4 rounded-2xl space-y-4">
-                <h4 class="font-semibold text-xs text-gray-300" id="txtConfiguredModels">Modèles configurés & Templates</h4>
-                <div id="modelsList" class="space-y-3"></div>
+                <div class="dpw-card p-4 rounded-2xl space-y-4 lg:col-span-2">
+                    <h4 class="font-semibold text-xs text-gray-300" id="txtConfiguredModels">Modèles configurés & Templates</h4>
+                    <div id="modelsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                </div>
             </div>
         </div>
 
         <!-- ================= TAB 4: COMPTE & PROFIL AGENT ================= -->
-        <div id="tabCompte" class="hidden space-y-4">
-            <div class="dpw-card p-5 rounded-2xl space-y-4 border border-[#252b75]">
-                <div class="flex items-center gap-3 border-b border-[#252b75] pb-4">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00ffaa] to-[#1d2263] flex items-center justify-center text-[#0d1033] font-black text-xl shadow-lg">
+        <div id="tabCompte" class="hidden space-y-4 mt-3 max-w-2xl mx-auto">
+            <div class="dpw-card p-5 sm:p-6 rounded-2xl space-y-4 border border-[#252b75]">
+                <div class="flex items-center gap-4 border-b border-[#252b75] pb-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00ffaa] to-[#1d2263] flex items-center justify-center text-[#0d1033] font-black text-2xl shadow-lg">
                         <i class="fa-solid fa-user-shield"></i>
                     </div>
                     <div>
-                        <h3 id="accountEmailDisplay" class="font-extrabold text-sm text-white">Agent Pointeur</h3>
-                        <p class="text-[11px] text-[#00ffaa] font-bold uppercase tracking-wider">DP WORLD DJENDJEN TERMINAL</p>
+                        <h3 id="accountEmailDisplay" class="font-extrabold text-base text-white">Agent Pointeur</h3>
+                        <p class="text-xs text-[#00ffaa] font-bold uppercase tracking-wider">DP WORLD DJENDJEN TERMINAL</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 text-center">
-                    <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796]">
-                        <p class="text-[10px] text-gray-400 font-bold mb-1" id="lblMyCounts">Mes Pointages</p>
-                        <h4 id="agentCountStat" class="text-lg font-black text-[#00ffaa]">0</h4>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="bg-[#1d2263] p-4 rounded-xl border border-[#303796]">
+                        <p class="text-xs text-gray-400 font-bold mb-1" id="lblMyCounts">Mes Pointages</p>
+                        <h4 id="agentCountStat" class="text-2xl font-black text-[#00ffaa]">0</h4>
                     </div>
-                    <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796]">
-                        <p class="text-[10px] text-gray-400 font-bold mb-1" id="lblCloudServer">Serveur Cloud</p>
-                        <span id="accountCloudState" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                    <div class="bg-[#1d2263] p-4 rounded-xl border border-[#303796]">
+                        <p class="text-xs text-gray-400 font-bold mb-1" id="lblCloudServer">Serveur Cloud</p>
+                        <span id="accountCloudState" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 mt-1">
                             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span id="lblActiveState">Actif</span>
                         </span>
                     </div>
@@ -310,7 +320,7 @@
                 </div>
             </div>
 
-            <div class="dpw-card p-4 rounded-2xl text-[11px] text-gray-400 space-y-1.5 border border-[#252b75]">
+            <div class="dpw-card p-4 rounded-2xl text-xs text-gray-400 space-y-1.5 border border-[#252b75]">
                 <p class="text-white font-bold flex items-center gap-1.5"><i class="fa-solid fa-anchor text-[#00ffaa]"></i> Port de Djendjen - Jijel</p>
                 <p id="lblTerminalDesc">Système de pointage et gestion des flux de conteneurs sous environnement sécurisé Firebase.</p>
             </div>
@@ -319,27 +329,27 @@
     </div>
 
     <!-- ================= BOTTOM NAVIGATION BAR ================= -->
-    <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-lg mx-auto nav-safe">
-        <div class="grid grid-cols-4 pt-1.5 text-center">
+    <div class="fixed bottom-0 left-0 right-0 bg-[#15194a]/95 backdrop-blur-md border-t border-[#252b75] z-40 max-w-7xl mx-auto nav-safe">
+        <div class="grid grid-cols-4 pt-1.5 text-center max-w-xl mx-auto">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 nav-item-active transition">
                 <i class="fa-solid fa-house text-base"></i>
-                <span class="text-[10px] font-semibold" id="navAccueil">Accueil</span>
+                <span class="text-[10px] sm:text-xs font-semibold" id="navAccueil">Accueil</span>
             </button>
             <button id="navBtnSuivi" onclick="switchTab('suivi')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
                 <i class="fa-solid fa-route text-base"></i>
-                <span class="text-[10px] font-semibold" id="navSuivi">Suivi Flux</span>
+                <span class="text-[10px] sm:text-xs font-semibold" id="navSuivi">Suivi Flux</span>
             </button>
             <button id="navBtnSettings" onclick="switchTab('settings')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
                 <i class="fa-solid fa-sliders text-base"></i>
-                <span class="text-[10px] font-semibold" id="navSettings">Modèles</span>
+                <span class="text-[10px] sm:text-xs font-semibold" id="navSettings">Modèles</span>
             </button>
             <button id="navBtnCompte" onclick="switchTab('compte')" class="flex flex-col items-center gap-1 nav-item-inactive transition">
                 <i class="fa-solid fa-user-gear text-base"></i>
-                <span class="text-[10px] font-semibold" id="navCompte">Compte</span>
+                <span class="text-[10px] sm:text-xs font-semibold" id="navCompte">Compte</span>
             </button>
         </div>
         
-        <div class="text-[9px] text-center text-gray-400 py-1 font-medium flex items-center justify-center gap-1 tracking-wide">
+        <div class="text-[9.5px] text-center text-gray-400 py-1 font-medium flex items-center justify-center gap-1 tracking-wide">
             <span>© 2026 DP World Djendjen Terminal. Powered by djalil</span>
         </div>
     </div>
@@ -349,8 +359,8 @@
     <input type="file" id="templateFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleTemplateUpload(event)">
 
     <!-- ================= POPUP MODAL ================= -->
-    <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-        <div class="w-full max-w-lg bg-[#15194a] rounded-t-[28px] sm:rounded-[28px] p-5 border border-[#252b75] shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full max-w-lg bg-[#15194a] rounded-t-[28px] sm:rounded-[28px] p-5 sm:p-6 border border-[#252b75] shadow-2xl max-h-[90vh] overflow-y-auto">
             
             <div class="flex items-center justify-between mb-4 border-b border-[#252b75] pb-3">
                 <h3 class="font-bold text-base text-center w-full" id="lblModalTitle">Pointer un conteneur</h3>
@@ -708,12 +718,15 @@
                 htmlTag.setAttribute('dir', 'ltr');
             }
 
+            // Mobile lang buttons
             ['fr', 'ar', 'en'].forEach(l => {
-                const btn = document.getElementById(`langBtn_${l}`);
-                if (l === lang) {
-                    btn.className = "px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]";
-                } else {
-                    btn.className = "px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300";
+                const btnM = document.getElementById(`langBtn_${l}`);
+                const btnD = document.getElementById(`langBtn_${l}_d`);
+                if (btnM) {
+                    btnM.className = (l === lang) ? "px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]" : "px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300";
+                }
+                if (btnD) {
+                    btnD.className = (l === lang) ? "px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]" : "px-2.5 py-1 rounded-lg text-gray-300 hover:text-white";
                 }
             });
 
@@ -832,7 +845,7 @@
 
             if (data.length === 0) {
                 listEl.innerHTML = `
-                    <div class="text-center py-12 text-gray-500 font-medium text-xs">
+                    <div class="col-span-full text-center py-12 text-gray-500 font-medium text-xs">
                         <i class="fa-solid fa-box-open text-3xl mb-2 block text-gray-600"></i>
                         ${currentLang === 'ar' ? 'لا توجد حاويات مطابقة.' : 'Aucun conteneur trouvé.'}
                     </div>
@@ -859,7 +872,7 @@
 
                 let customFieldsHTML = '';
                 if (item.customData && Object.keys(item.customData).length > 0) {
-                    customFieldsHTML = `<div class="flex flex-wrap gap-2 pt-1 text-[11px] text-gray-300">`;
+                    customFieldsHTML = `<div class="flex flex-wrap gap-1.5 pt-1 text-[11px] text-gray-300">`;
                     for (const [key, val] of Object.entries(item.customData)) {
                         if (val) customFieldsHTML += `<span class="bg-[#1d2263] px-2 py-0.5 rounded border border-[#303796]"><b>${key}:</b> ${val}</span>`;
                     }
@@ -867,7 +880,7 @@
                 }
 
                 const card = document.createElement('div');
-                card.className = `dpw-card p-4 rounded-2xl space-y-2 text-xs mb-3 shadow-sm relative ${isDamaged ? 'card-damaged' : ''}`;
+                card.className = `dpw-card p-4 rounded-2xl space-y-2 text-xs shadow-sm relative ${isDamaged ? 'card-damaged' : ''}`;
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
@@ -921,7 +934,7 @@
             listEl.innerHTML = '';
 
             if (containers.length === 0) {
-                listEl.innerHTML = `<div class="text-center py-12 text-gray-500 font-medium text-xs">${currentLang === 'ar' ? 'لا توجد حاويات لتتبعها.' : 'Aucun conteneur à suivre.'}</div>`;
+                listEl.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 font-medium text-xs">${currentLang === 'ar' ? 'لا توجد حاويات لتتبعها.' : 'Aucun conteneur à suivre.'}</div>`;
                 return;
             }
 
