@@ -12,9 +12,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DPW Pointeur">
 
-    <!-- Tailwind CSS, SheetJS, Tesseract OCR & ZXing -->
+    <!-- Tailwind CSS, ExcelJS Engine, FileSaver, Tesseract OCR & ZXing -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -162,7 +163,7 @@
     </div>
 
     <!-- 📊 GLOBAL UPLOAD PROGRESS BAR OVERLAY -->
-    <div id="uploadProgressOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex flex-col items-center justify-center p-6">
+    <div id="uploadProgressOverlay" class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm z-[60] flex flex-col items-center justify-center p-6">
         <div class="w-full max-w-xs dpw-card p-5 rounded-2xl space-y-3 text-center border border-[#00ffaa]/50 shadow-2xl">
             <i class="fa-solid fa-file-excel text-3xl text-[#00ffaa] animate-bounce"></i>
             <h4 class="font-extrabold text-sm text-white" id="uploadProgressTitle">Chargement du fichier Excel...</h4>
@@ -338,7 +339,7 @@
             <div id="trackingList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
         </div>
 
-        <!-- ================= TAB 3: MODÈLES & TEMPLATES (DYNAMIC ENGINE) ================= -->
+        <!-- ================= TAB 3: MODÈLES & TEMPLATES ================= -->
         <div id="tabSettings" class="hidden space-y-4">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div class="dpw-card p-4 rounded-2xl space-y-3 lg:col-span-1 h-fit">
@@ -409,7 +410,7 @@
 
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR (FLOATING DOCK STYLE) -->
+    <!-- BOTTOM NAVIGATION BAR -->
     <div class="fixed bottom-3 left-4 right-4 bg-[#121642]/90 backdrop-blur-xl border border-[#2d3587] rounded-3xl shadow-2xl z-40 max-w-lg mx-auto">
         <div class="grid grid-cols-4 py-2 px-1 text-center">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 py-1.5 nav-pill-active transition-all duration-200">
@@ -496,7 +497,7 @@
                     </div>
                 </div>
 
-                <!-- 📸 DAMAGE PHOTO SECTION WITH PROGRESS BAR -->
+                <!-- 📸 DAMAGE PHOTO SECTION -->
                 <div id="damagePhotoSection" class="hidden p-3.5 bg-rose-950/40 border border-rose-500/40 rounded-2xl space-y-2.5">
                     <div class="flex items-center justify-between">
                         <span class="text-[11.5px] font-bold text-rose-300 flex items-center gap-1.5">
@@ -570,9 +571,7 @@
                     <p class="text-[11px] font-bold text-[#00ffaa] uppercase tracking-wider">Correspondance des Colonnes (Column Mapping)</p>
                     <p class="text-[10px] text-gray-400">Précisez la lettre de la colonne Excel (A, B, C...) pour chaque champ :</p>
                     
-                    <div class="grid grid-cols-2 gap-2.5 max-h-60 overflow-y-auto p-1" id="mappingFieldsContainer">
-                        <!-- Filled dynamically -->
-                    </div>
+                    <div class="grid grid-cols-2 gap-2.5 max-h-60 overflow-y-auto p-1" id="mappingFieldsContainer"></div>
                 </div>
 
                 <div class="flex items-center gap-2 pt-2">
@@ -614,7 +613,7 @@
 
                 <div class="p-2.5 bg-[#1d2263] rounded-xl border border-[#303796] text-[10px] text-gray-300 space-y-1">
                     <p class="font-bold text-[#00ffaa] flex items-center gap-1.5"><i class="fa-solid fa-wand-magic-sparkles"></i> Mode de génération :</p>
-                    <p id="exportModeHint">Remplissage automatique sur قالب الشركة si configuré, sinon export standard.</p>
+                    <p id="exportModeHint">Remplissage direct sur template officiel (ExcelJS) ou export standard.</p>
                 </div>
 
                 <button onclick="executeAdvancedExport()" class="w-full btn-dpw-green font-extrabold py-3 rounded-xl transition" id="btnDownloadReport">
@@ -674,7 +673,7 @@
             }, 300);
         }
 
-        // 📲 Pull to refresh
+        // Pull to refresh
         let touchStartY = 0;
         let isPulling = false;
 
@@ -975,7 +974,7 @@
             document.getElementById('kpiStockVal').innerText = containers.filter(c => (c.stage || 'Stock') === 'Stock').length;
         }
 
-        // ================= 🎯 TEMPLATE INJECTION & MAPPING LOGIC =================
+        // ================= 🎯 TEMPLATE INJECTION & MAPPING (EXCELJS NATIVE) =================
         function triggerUploadTemplate(modelName) {
             currentUploadTemplateTarget = modelName;
             document.getElementById('templateFileInput').value = '';
@@ -992,8 +991,8 @@
             const progressTitle = document.getElementById('uploadProgressTitle');
 
             progressOverlay.classList.remove('hidden');
-            progressBar.style.width = '10%';
-            progressPercent.innerText = '10%';
+            progressBar.style.width = '15%';
+            progressPercent.innerText = '15%';
             progressTitle.innerText = currentLang === 'ar' ? `جاري قراءة قالب (${currentUploadTemplateTarget})...` : `Lecture du template (${currentUploadTemplateTarget})...`;
 
             const reader = new FileReader();
@@ -1010,17 +1009,19 @@
                 try {
                     progressBar.style.width = '75%';
                     progressPercent.innerText = '75%';
-                    progressTitle.innerText = currentLang === 'ar' ? "معالجة بنية ملف الإكسل..." : "Traitement binaire du fichier...";
+                    progressTitle.innerText = currentLang === 'ar' ? "فحص وتأكيد بنية الملف عبر ExcelJS..." : "Validation du classeur ExcelJS...";
 
                     const arrayBuffer = e.target.result;
                     
-                    // اختبار صحة ملف الإكسل عبر SheetJS
-                    const testWb = XLSX.read(arrayBuffer, { type: 'array' });
-                    if (!testWb || !testWb.SheetNames || testWb.SheetNames.length === 0) {
-                        throw new Error("Format Excel invalide");
+                    // التحقق من صحة القالب وفتحه عبر مكتبة ExcelJS
+                    const testWb = new ExcelJS.Workbook();
+                    await testWb.xlsx.load(arrayBuffer);
+                    
+                    if (testWb.worksheets.length === 0) {
+                        throw new Error("Aucune feuille trouvée dans le classeur.");
                     }
 
-                    // تحويل آمن كلياً ومجزأ (Chunked) لتفادي انهيار الذاكرة
+                    // تشفير آمن مجزأ للحفظ في الذاكرة والسحابة
                     const bytes = new Uint8Array(arrayBuffer);
                     let binary = '';
                     const chunkSize = 8192;
@@ -1032,7 +1033,7 @@
 
                     progressBar.style.width = '90%';
                     progressPercent.innerText = '90%';
-                    progressTitle.innerText = currentLang === 'ar' ? "حفظ القالب في الخادم السحابي..." : "Synchronisation Cloud...";
+                    progressTitle.innerText = currentLang === 'ar' ? "حفظ القالب ومزامنة السحابة..." : "Enregistrement du template...";
 
                     modelTemplates[currentUploadTemplateTarget] = base64Data;
                     localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
@@ -1049,16 +1050,16 @@
                     setTimeout(() => {
                         progressOverlay.classList.add('hidden');
                         progressBar.style.width = '0%';
-                        showToast(currentLang === 'ar' ? `✓ تم رفع قالب "${currentUploadTemplateTarget}" بنجاح!` : `✓ Template "${currentUploadTemplateTarget}" chargé avec succès!`);
+                        showToast(currentLang === 'ar' ? `✓ تم حفظ قالب "${currentUploadTemplateTarget}" بنجاح!` : `✓ Template "${currentUploadTemplateTarget}" validé et prêt!`);
                         renderModelsList();
                         openMappingModal(currentUploadTemplateTarget);
                     }, 400);
 
                 } catch(err) {
-                    console.error("Error processing Excel file:", err);
+                    console.error("ExcelJS validation error:", err);
                     progressOverlay.classList.add('hidden');
                     progressBar.style.width = '0%';
-                    showToast(currentLang === 'ar' ? "خطأ: الملف ليس ملف إكسل سليم" : "Erreur: Fichier Excel corrompu ou illisible", true);
+                    showToast(currentLang === 'ar' ? "خطأ: الملف غير متوافق أو تالف" : "Erreur: Fichier Excel corrompu ou illisible", true);
                 }
             };
 
@@ -1071,7 +1072,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // 🗑️ زر حذف قالب الإكسل المرفوع مع إعدادات المطابقة
         async function deleteTemplate(modelName) {
             const confirmMsg = currentLang === 'ar' 
                 ? `هل تريد بالتأكيد حذف ملف قالب الإكسل للنموذج "${modelName}"؟` 
@@ -1240,8 +1240,8 @@
             });
         }
 
-        // ================= 🚀 EXECUTE ADVANCED EXPORT WITH DIRECT INJECTION =================
-        function executeAdvancedExport() {
+        // ================= 🚀 ADVANCED EXPORT VIA EXCELJS (DIRECT INJECTION) =================
+        async function executeAdvancedExport() {
             const stageFilter = document.getElementById('exportFilterStage').value;
             const modelFilter = document.getElementById('exportFilterModel').value;
 
@@ -1258,10 +1258,9 @@
             const base64Data = modelTemplates[targetModel];
             const mappingConfig = templateMappings[targetModel];
 
-            // 🎯 الحالة 1: الحقن المباشر في قالب الشركة المرفوع
+            // 🎯 الحالة 1: الحقن المباشر في قالب الشركة المرفوع عبر ExcelJS
             if (base64Data && mappingConfig) {
                 try {
-                    // تحويل Base64 إلى Uint8Array لضمان قراءة ثنائية بدون أخطاء
                     const binaryString = atob(base64Data);
                     const len = binaryString.length;
                     const bytes = new Uint8Array(len);
@@ -1269,31 +1268,30 @@
                         bytes[i] = binaryString.charCodeAt(i);
                     }
 
-                    const workbook = XLSX.read(bytes.buffer, { type: 'array', cellStyles: true });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(bytes.buffer);
+                    
+                    const worksheet = workbook.worksheets[0];
                     let currentRow = parseInt(mappingConfig.startRow) || 2;
                     const cols = mappingConfig.columns || {};
 
                     dataToExport.forEach((c) => {
                         if (c.model === targetModel || modelFilter === 'All') {
-                            if (cols.id) worksheet[`${cols.id}${currentRow}`] = { t: 's', v: String(c.id || '') };
-                            if (cols.type) worksheet[`${cols.type}${currentRow}`] = { t: 's', v: String(c.type || '') };
-                            if (cols.loc) worksheet[`${cols.loc}${currentRow}`] = { t: 's', v: String(c.loc || '') };
-                            if (cols.seal) worksheet[`${cols.seal}${currentRow}`] = { t: 's', v: String(c.seal || '') };
-                            if (cols.status) worksheet[`${cols.status}${currentRow}`] = { t: 's', v: String(c.status || '') };
-                            if (cols.date) worksheet[`${cols.date}${currentRow}`] = { t: 's', v: String(c.date || '') };
-                            if (cols.time) worksheet[`${cols.time}${currentRow}`] = { t: 's', v: String(c.time || '') };
-                            if (cols.agent) worksheet[`${cols.agent}${currentRow}`] = { t: 's', v: String(c.agent || '') };
-                            if (cols.notes) worksheet[`${cols.notes}${currentRow}`] = { t: 's', v: String(c.notes || '') };
+                            if (cols.id) worksheet.getCell(`${cols.id}${currentRow}`).value = String(c.id || '');
+                            if (cols.type) worksheet.getCell(`${cols.type}${currentRow}`).value = String(c.type || '');
+                            if (cols.loc) worksheet.getCell(`${cols.loc}${currentRow}`).value = String(c.loc || '');
+                            if (cols.seal) worksheet.getCell(`${cols.seal}${currentRow}`).value = String(c.seal || '');
+                            if (cols.status) worksheet.getCell(`${cols.status}${currentRow}`).value = String(c.status || '');
+                            if (cols.date) worksheet.getCell(`${cols.date}${currentRow}`).value = String(c.date || '');
+                            if (cols.time) worksheet.getCell(`${cols.time}${currentRow}`).value = String(c.time || '');
+                            if (cols.agent) worksheet.getCell(`${cols.agent}${currentRow}`).value = String(c.agent || '');
+                            if (cols.notes) worksheet.getCell(`${cols.notes}${currentRow}`).value = String(c.notes || '');
 
-                            // الحقول المخصصة
                             if (c.customData) {
                                 for (const [k, v] of Object.entries(c.customData)) {
                                     const customColKey = `custom_${k}`;
                                     if (cols[customColKey]) {
-                                        worksheet[`${cols[customColKey]}${currentRow}`] = { t: 's', v: String(v || '-') };
+                                        worksheet.getCell(`${cols[customColKey]}${currentRow}`).value = String(v || '-');
                                     }
                                 }
                             }
@@ -1301,61 +1299,84 @@
                         }
                     });
 
-                    // تحديث نطاق الورقة ليشمل كل الأسطر المحقونة
-                    const ref = worksheet['!ref'];
-                    if (ref) {
-                        const range = XLSX.utils.decode_range(ref);
-                        range.e.r = Math.max(range.e.r, currentRow - 1);
-                        worksheet['!ref'] = XLSX.utils.encode_range(range);
-                    } else {
-                        worksheet['!ref'] = `A1:Z${currentRow}`;
-                    }
-
+                    const buffer = await workbook.xlsx.writeBuffer();
                     const fileName = `DPW_${targetModel.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
-                    XLSX.writeFile(workbook, fileName);
+                    
+                    saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), fileName);
                     closeExportModal();
                     showToast(currentLang === 'ar' ? "✓ تم ملء وتنزيل قالب الشركة بنجاح!" : "✓ Template officiel rempli et téléchargé!");
                     return;
                 } catch (err) {
-                    console.error("Template injection error:", err);
+                    console.error("ExcelJS injection error:", err);
                     showToast(currentLang === 'ar' ? "تعذر الحقن بالقالب، سيتم التصدير القياسي" : "Erreur injection template, basculement en mode standard...", true);
                 }
             }
 
-            // 🎯 الحالة 2: التوليد القياسي النظيف إذا لم يكن هناك قالب
-            const workbook = XLSX.utils.book_new();
-            const models = modelFilter === 'All' ? Object.keys(modelConfigs) : [modelFilter];
+            // 🎯 الحالة 2: التوليد القياسي المنسق في حال عدم وجود قالب
+            try {
+                const workbook = new ExcelJS.Workbook();
+                const models = modelFilter === 'All' ? Object.keys(modelConfigs) : [modelFilter];
 
-            models.forEach(mName => {
-                const filtered = dataToExport.filter(c => c.model === mName);
-                if (filtered.length > 0) {
-                    const modelData = filtered.map(c => {
-                        let rowObj = {
-                            "Date": c.date,
-                            "Heure": c.time,
-                            "N° Conteneur": c.id,
-                            "Étape Flux": c.stage || "En Stockage",
-                            "Type & Taille": c.type,
-                            "Emplacement": c.loc,
-                            "État": c.status,
-                            "N° Plomb": c.seal,
-                            "Pointeur": c.agent || ""
-                        };
-                        if (c.customData) {
-                            for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
-                        }
-                        rowObj["Remarques"] = c.notes;
-                        return rowObj;
-                    });
-                    const wsModel = XLSX.utils.json_to_sheet(modelData);
-                    XLSX.utils.book_append_sheet(workbook, wsModel, mName.substring(0, 30));
-                }
-            });
+                models.forEach(mName => {
+                    const filtered = dataToExport.filter(c => c.model === mName);
+                    if (filtered.length > 0) {
+                        const worksheet = workbook.addWorksheet(mName.substring(0, 30));
+                        
+                        const customFields = modelConfigs[mName] || [];
+                        const columns = [
+                            { header: "Date", key: "date", width: 12 },
+                            { header: "Heure", key: "time", width: 10 },
+                            { header: "N° Conteneur", key: "id", width: 18 },
+                            { header: "Étape Flux", key: "stage", width: 16 },
+                            { header: "Type & Taille", key: "type", width: 14 },
+                            { header: "Emplacement", key: "loc", width: 16 },
+                            { header: "État", key: "status", width: 14 },
+                            { header: "N° Plomb", key: "seal", width: 14 },
+                            { header: "Pointeur", key: "agent", width: 14 }
+                        ];
 
-            const fileName = `Pointeur_DPW_Rapport_${new Date().toISOString().slice(0, 10)}.xlsx`;
-            XLSX.writeFile(workbook, fileName);
-            closeExportModal();
-            showToast(currentLang === 'ar' ? "✓ تم تنزيل تقرير الإكسل القياسي!" : "✓ Rapport Excel généré!");
+                        customFields.forEach(cf => {
+                            columns.push({ header: cf, key: `custom_${cf}`, width: 16 });
+                        });
+
+                        columns.push({ header: "Remarques", key: "notes", width: 25 });
+                        worksheet.columns = columns;
+
+                        worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                        worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF15194A' } };
+
+                        filtered.forEach(c => {
+                            const rowData = {
+                                date: c.date,
+                                time: c.time,
+                                id: c.id,
+                                stage: c.stage || "En Stockage",
+                                type: c.type,
+                                loc: c.loc,
+                                status: c.status,
+                                seal: c.seal,
+                                agent: c.agent || "",
+                                notes: c.notes || ""
+                            };
+                            if (c.customData) {
+                                for (const [k, v] of Object.entries(c.customData)) {
+                                    rowData[`custom_${k}`] = v;
+                                }
+                            }
+                            worksheet.addRow(rowData);
+                        });
+                    }
+                });
+
+                const buffer = await workbook.xlsx.writeBuffer();
+                const fileName = `Pointeur_DPW_Rapport_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), fileName);
+                closeExportModal();
+                showToast(currentLang === 'ar' ? "✓ تم تنزيل تقرير الإكسل القياسي!" : "✓ Rapport Excel généré!");
+            } catch(e) {
+                console.error("Standard export error:", e);
+                showToast("Erreur lors de la génération du fichier Excel", true);
+            }
         }
 
         const translations = {
