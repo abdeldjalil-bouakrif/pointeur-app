@@ -963,7 +963,7 @@
             document.getElementById('kpiStockVal').innerText = containers.filter(c => (c.stage || 'Stock') === 'Stock').length;
         }
 
-        // ================= 🎯 TEMPLATE INJECTION & MAPPING LOGIC =================
+        // ================= 🎯 TEMPLATE INJECTION & MAPPING LOGIC (FIXED) =================
         function triggerUploadTemplate(modelName) {
             currentUploadTemplateTarget = modelName;
             document.getElementById('templateFileInput').click();
@@ -975,20 +975,33 @@
 
             const reader = new FileReader();
             reader.onload = async function(e) {
-                const base64Data = e.target.result.split(',')[1];
-                modelTemplates[currentUploadTemplateTarget] = base64Data;
-                localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
                 try {
-                    await db.ref('modelTemplates/' + currentUploadTemplateTarget).set(base64Data);
-                } catch(e) {}
-                
-                showToast(`✓ Template chargé pour "${currentUploadTemplateTarget}"`);
-                renderModelsList();
-                
-                // فتح نافذة مطابقة الأعمدة مباشرة بعد الرفع
-                openMappingModal(currentUploadTemplateTarget);
+                    const arrayBuffer = e.target.result;
+                    const bytes = new Uint8Array(arrayBuffer);
+                    let binary = '';
+                    for (let i = 0; i < bytes.byteLength; i++) {
+                        binary += String.fromCharCode(bytes[i]);
+                    }
+                    const base64Data = btoa(binary);
+
+                    modelTemplates[currentUploadTemplateTarget] = base64Data;
+                    localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
+                    
+                    try {
+                        await db.ref('modelTemplates/' + currentUploadTemplateTarget).set(base64Data);
+                    } catch(dbErr) {
+                        console.warn("Cloud sync warning for template:", dbErr);
+                    }
+                    
+                    showToast(currentLang === 'ar' ? `✓ تم رفع قالب "${currentUploadTemplateTarget}" بنجاح` : `✓ Template chargé pour "${currentUploadTemplateTarget}"`);
+                    renderModelsList();
+                    openMappingModal(currentUploadTemplateTarget);
+                } catch(err) {
+                    console.error("Error processing Excel file:", err);
+                    showToast(currentLang === 'ar' ? "خطأ في قراءة ملف الإكسل" : "Erreur de lecture du fichier Excel", true);
+                }
             };
-            reader.readAsDataURL(file);
+            reader.readAsArrayBuffer(file);
         }
 
         function openMappingModal(modelName) {
@@ -1028,7 +1041,6 @@
 
             const colOptions = ['None', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
-            // الحقول القياسية
             standardFields.forEach(f => {
                 const currentVal = savedMapping.columns ? (savedMapping.columns[f.key] || f.defaultCol) : f.defaultCol;
                 const div = document.createElement('div');
@@ -1042,7 +1054,6 @@
                 container.appendChild(div);
             });
 
-            // الحقول المخصصة لهذا النموذج
             const customFields = modelConfigs[modelName] || [];
             customFields.forEach((cf, idx) => {
                 const customKey = `custom_${cf}`;
@@ -1134,7 +1145,7 @@
             });
         }
 
-        // ================= 🚀 EXECUTE ADVANCED EXPORT WITH DIRECT INJECTION =================
+        // ================= 🚀 EXECUTE ADVANCED EXPORT WITH DIRECT INJECTION (FIXED) =================
         function executeAdvancedExport() {
             const stageFilter = document.getElementById('exportFilterStage').value;
             const modelFilter = document.getElementById('exportFilterModel').value;
@@ -1148,7 +1159,7 @@
                 return;
             }
 
-            const targetModel = (modelFilter !== 'All') ? modelFilter : dataToExport[0].model;
+            const targetModel = (modelFilter !== 'All') ? modelFilter : (dataToExport[0]?.model || Object.keys(modelConfigs)[0]);
             const hasTemplate = !!modelTemplates[targetModel];
             const mappingConfig = templateMappings[targetModel];
 
@@ -1156,31 +1167,31 @@
             if (hasTemplate && mappingConfig) {
                 try {
                     const base64Data = modelTemplates[targetModel];
-                    const workbook = XLSX.read(base64Data, { type: 'base64' });
+                    const workbook = XLSX.read(base64Data, { type: 'base64', cellStyles: true });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
 
-                    let currentRow = mappingConfig.startRow || 2;
+                    let currentRow = parseInt(mappingConfig.startRow) || 2;
                     const cols = mappingConfig.columns || {};
 
                     dataToExport.forEach((c) => {
                         if (c.model === targetModel || modelFilter === 'All') {
-                            if (cols.id) worksheet[`${cols.id}${currentRow}`] = { t: 's', v: c.id };
-                            if (cols.type) worksheet[`${cols.type}${currentRow}`] = { t: 's', v: c.type };
-                            if (cols.loc) worksheet[`${cols.loc}${currentRow}`] = { t: 's', v: c.loc };
-                            if (cols.seal) worksheet[`${cols.seal}${currentRow}`] = { t: 's', v: c.seal };
-                            if (cols.status) worksheet[`${cols.status}${currentRow}`] = { t: 's', v: c.status };
-                            if (cols.date) worksheet[`${cols.date}${currentRow}`] = { t: 's', v: c.date };
-                            if (cols.time) worksheet[`${cols.time}${currentRow}`] = { t: 's', v: c.time };
-                            if (cols.agent) worksheet[`${cols.agent}${currentRow}`] = { t: 's', v: c.agent || '' };
-                            if (cols.notes) worksheet[`${cols.notes}${currentRow}`] = { t: 's', v: c.notes || '' };
+                            if (cols.id) worksheet[`${cols.id}${currentRow}`] = { t: 's', v: String(c.id || '') };
+                            if (cols.type) worksheet[`${cols.type}${currentRow}`] = { t: 's', v: String(c.type || '') };
+                            if (cols.loc) worksheet[`${cols.loc}${currentRow}`] = { t: 's', v: String(c.loc || '') };
+                            if (cols.seal) worksheet[`${cols.seal}${currentRow}`] = { t: 's', v: String(c.seal || '') };
+                            if (cols.status) worksheet[`${cols.status}${currentRow}`] = { t: 's', v: String(c.status || '') };
+                            if (cols.date) worksheet[`${cols.date}${currentRow}`] = { t: 's', v: String(c.date || '') };
+                            if (cols.time) worksheet[`${cols.time}${currentRow}`] = { t: 's', v: String(c.time || '') };
+                            if (cols.agent) worksheet[`${cols.agent}${currentRow}`] = { t: 's', v: String(c.agent || '') };
+                            if (cols.notes) worksheet[`${cols.notes}${currentRow}`] = { t: 's', v: String(c.notes || '') };
 
                             // الحقول المخصصة
                             if (c.customData) {
                                 for (const [k, v] of Object.entries(c.customData)) {
                                     const customColKey = `custom_${k}`;
                                     if (cols[customColKey]) {
-                                        worksheet[`${cols[customColKey]}${currentRow}`] = { t: 's', v: v || '-' };
+                                        worksheet[`${cols[customColKey]}${currentRow}`] = { t: 's', v: String(v || '-') };
                                     }
                                 }
                             }
@@ -1203,7 +1214,7 @@
                     return;
                 } catch (err) {
                     console.error("Template injection error:", err);
-                    showToast("Erreur injection template, basculement en mode standard...", true);
+                    showToast(currentLang === 'ar' ? "تعذر الحقن بالقالب، سيتم التصدير القياسي" : "Erreur injection template, basculement en mode standard...", true);
                 }
             }
 
