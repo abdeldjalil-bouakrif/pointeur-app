@@ -326,7 +326,7 @@
             <div id="trackingList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
         </div>
 
-        <!-- ================= TAB 3: MODÈLES & TEMPLATES ================= -->
+        <!-- ================= TAB 3: MODÈLES & TEMPLATES (DYNAMIC ENGINE) ================= -->
         <div id="tabSettings" class="hidden space-y-4">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div class="dpw-card p-4 rounded-2xl space-y-3 lg:col-span-1 h-fit">
@@ -334,10 +334,10 @@
                         <i class="fa-solid fa-file-invoice text-[#00ffaa]"></i>
                         <span id="txtModelsTitle">Modèles & Templates Excel</span>
                     </h3>
-                    <p class="text-xs text-gray-400" id="txtModelsDesc">Ajoutez des modèles et chargez le fichier Excel officiel de l'entreprise.</p>
+                    <p class="text-xs text-gray-400" id="txtModelsDesc">Ajoutez vos modèles de travail et configurez le remplissage direct sur vos fichiers Excel officiels.</p>
                     
                     <div class="flex items-center gap-2 pt-1">
-                        <input type="text" id="inpNewModel" placeholder="Nom du modèle (ex: Visite Douane)" class="input-dpw p-2.5 rounded-xl text-xs flex-1">
+                        <input type="text" id="inpNewModel" placeholder="Nom du modèle (ex: Débarquement)" class="input-dpw p-2.5 rounded-xl text-xs flex-1">
                         <button onclick="addNewModel()" class="btn-dpw-gradient px-4 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition" id="btnCreateModel">
                             Créer
                         </button>
@@ -345,7 +345,7 @@
                 </div>
 
                 <div class="dpw-card p-4 rounded-2xl space-y-4 lg:col-span-2">
-                    <h4 class="font-semibold text-xs text-gray-300" id="txtConfiguredModels">Modèles configurés & Templates</h4>
+                    <h4 class="font-semibold text-xs text-gray-300" id="txtConfiguredModels">Modèles configurés & Injection Excel</h4>
                     <div id="modelsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
                 </div>
             </div>
@@ -427,7 +427,7 @@
     <input type="file" id="damagePhotoInput" accept="image/*" capture="environment" class="hidden" onchange="handleDamagePhoto(event)">
     <input type="file" id="templateFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleTemplateUpload(event)">
 
-    <!-- ================= ADD / EDIT MODAL ================= -->
+    <!-- ================= ADD / EDIT CONTAINER MODAL ================= -->
     <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="w-full max-w-lg bg-[#15194a] rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 border border-[#303796] shadow-2xl max-h-[90vh] overflow-y-auto modal-sheet-enter relative">
             
@@ -531,7 +531,47 @@
         </div>
     </div>
 
-    <!-- ADVANCED EXPORT MODAL -->
+    <!-- ================= 🎯 TEMPLATE MAPPING CONFIG MODAL ================= -->
+    <div id="templateMappingModal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#15194a] rounded-3xl p-5 sm:p-6 border border-[#303796] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto modal-sheet-enter">
+            <div class="flex justify-between items-center border-b border-[#252b75] pb-2.5">
+                <div>
+                    <h3 class="font-extrabold text-sm text-white flex items-center gap-2">
+                        <i class="fa-solid fa-file-excel text-[#00ffaa]"></i>
+                        <span id="txtMappingModalTitle">Configuration du Template Excel</span>
+                    </h3>
+                    <p class="text-[10px] text-[#00ffaa] font-semibold" id="txtMappingTargetModel"></p>
+                </div>
+                <button onclick="closeMappingModal()" class="text-gray-400 hover:text-white text-base">✕</button>
+            </div>
+
+            <form onsubmit="saveTemplateMapping(event)" class="space-y-3.5 text-xs">
+                <input type="hidden" id="mappingModelKey" value="">
+
+                <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796]">
+                    <label class="block text-gray-200 font-bold mb-1">Ligne de début des données (Start Row)</label>
+                    <p class="text-[10px] text-gray-400 mb-2">Le numéro de la 1ère ligne vide où commencer à écrire les conteneurs (ex: 2, 5, 10...):</p>
+                    <input type="number" id="mappingStartRow" min="1" max="100" value="2" required class="w-full input-dpw p-2.5 rounded-lg font-bold text-center text-sm">
+                </div>
+
+                <div class="space-y-2">
+                    <p class="text-[11px] font-bold text-[#00ffaa] uppercase tracking-wider">Correspondance des Colonnes (Column Mapping)</p>
+                    <p class="text-[10px] text-gray-400">Précisez la lettre de la colonne Excel (A, B, C...) pour chaque champ :</p>
+                    
+                    <div class="grid grid-cols-2 gap-2.5 max-h-60 overflow-y-auto p-1" id="mappingFieldsContainer">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-2">
+                    <button type="button" onclick="closeMappingModal()" class="w-1/2 bg-[#252b75] text-white font-bold py-2.5 rounded-xl text-xs">Annuler</button>
+                    <button type="submit" class="w-1/2 btn-dpw-green font-extrabold py-2.5 rounded-xl text-xs shadow-lg">Enregistrer Config</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= ADVANCED EXPORT MODAL ================= -->
     <div id="exportModalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-[#15194a] rounded-3xl p-5 sm:p-6 border border-[#252b75] shadow-2xl space-y-4 modal-sheet-enter">
             <div class="flex justify-between items-center border-b border-[#252b75] pb-2.5">
@@ -554,14 +594,19 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-300 font-medium mb-1" id="lblExportModel">Filtrer par Modèle</label>
+                    <label class="block text-gray-300 font-medium mb-1" id="lblExportModel">Modèle à exporter</label>
                     <select id="exportFilterModel" class="w-full input-dpw p-2.5 rounded-xl">
                         <option value="All">Tous les modèles</option>
                     </select>
                 </div>
 
+                <div class="p-2.5 bg-[#1d2263] rounded-xl border border-[#303796] text-[10px] text-gray-300 space-y-1">
+                    <p class="font-bold text-[#00ffaa] flex items-center gap-1.5"><i class="fa-solid fa-wand-magic-sparkles"></i> Mode de génération :</p>
+                    <p id="exportModeHint">Remplissage automatique sur قالب الشركة si configuré, sinon export standard.</p>
+                </div>
+
                 <button onclick="executeAdvancedExport()" class="w-full btn-dpw-green font-extrabold py-3 rounded-xl transition" id="btnDownloadReport">
-                    Télécharger le rapport Excel
+                    Générer & Télécharger le fichier
                 </button>
             </div>
         </div>
@@ -584,9 +629,7 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        try {
-            db.setPersistence(true);
-        } catch(e) {}
+        try { db.setPersistence(true); } catch(e) {}
 
         let currentUser = null;
         let authMode = 'login';
@@ -601,6 +644,8 @@
             'Embarquement': ['Destination', 'Poids (Tonnes)']
         };
         let modelTemplates = JSON.parse(localStorage.getItem('dpw_local_templates')) || {};
+        let templateMappings = JSON.parse(localStorage.getItem('dpw_local_mappings')) || {};
+        
         let currentUploadTemplateTarget = '';
         let currentDamagePhotoBase64 = '';
         let isSaving = false;
@@ -743,7 +788,6 @@
             }, 2500);
         }
 
-        // 🛡️ تثبيت الجلسة وعدم إظهار نافذة تسجيل الدخول عشوائياً عند التحديث
         auth.onAuthStateChanged((user) => {
             const authModal = document.getElementById('authModalOverlay');
             if (user) {
@@ -813,7 +857,6 @@
             }
         }
 
-        // 🔄 المزامنة الصامتة ودعم الهجين (Offline Queue + Cloud)
         async function syncOfflineQueue() {
             if (offlineQueue.length === 0) return;
 
@@ -868,7 +911,6 @@
                 const val = snap.val();
                 if (val) {
                     const cloudList = Object.values(val);
-                    
                     const map = new Map();
                     containers.forEach(c => map.set(c.firebaseKey, c));
                     cloudList.forEach(c => map.set(c.firebaseKey, c));
@@ -899,6 +941,14 @@
                 }
                 renderModelsList();
             });
+
+            db.ref('templateMappings').on('value', (snap) => {
+                const val = snap.val();
+                if (val) {
+                    templateMappings = val;
+                    localStorage.setItem('dpw_local_mappings', JSON.stringify(templateMappings));
+                }
+            });
         }
 
         function updateAccountStats() {
@@ -911,6 +961,286 @@
             document.getElementById('kpiGoodVal').innerText = containers.filter(c => c.status === 'Bon état').length;
             document.getElementById('kpiDamagedVal').innerText = containers.filter(c => c.status === 'Endommagé').length;
             document.getElementById('kpiStockVal').innerText = containers.filter(c => (c.stage || 'Stock') === 'Stock').length;
+        }
+
+        // ================= 🎯 TEMPLATE INJECTION & MAPPING LOGIC =================
+        function triggerUploadTemplate(modelName) {
+            currentUploadTemplateTarget = modelName;
+            document.getElementById('templateFileInput').click();
+        }
+
+        function handleTemplateUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Data = e.target.result.split(',')[1];
+                modelTemplates[currentUploadTemplateTarget] = base64Data;
+                localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
+                try {
+                    await db.ref('modelTemplates/' + currentUploadTemplateTarget).set(base64Data);
+                } catch(e) {}
+                
+                showToast(`✓ Template chargé pour "${currentUploadTemplateTarget}"`);
+                renderModelsList();
+                
+                // فتح نافذة مطابقة الأعمدة مباشرة بعد الرفع
+                openMappingModal(currentUploadTemplateTarget);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function openMappingModal(modelName) {
+            document.getElementById('mappingModelKey').value = modelName;
+            document.getElementById('txtMappingTargetModel').innerText = `Modèle : ${modelName}`;
+            
+            const savedMapping = templateMappings[modelName] || {
+                startRow: 2,
+                columns: {
+                    id: 'A',
+                    type: 'B',
+                    loc: 'C',
+                    seal: 'D',
+                    status: 'E',
+                    date: 'F',
+                    time: 'G',
+                    agent: 'H',
+                    notes: 'I'
+                }
+            };
+
+            document.getElementById('mappingStartRow').value = savedMapping.startRow || 2;
+            const container = document.getElementById('mappingFieldsContainer');
+            container.innerHTML = '';
+
+            const standardFields = [
+                { key: 'id', label: 'N° Conteneur (ID)', defaultCol: 'A' },
+                { key: 'type', label: 'Type & Taille', defaultCol: 'B' },
+                { key: 'loc', label: 'Emplacement (Bay)', defaultCol: 'C' },
+                { key: 'seal', label: 'N° Plomb (Seal)', defaultCol: 'D' },
+                { key: 'status', label: 'État (Statut)', defaultCol: 'E' },
+                { key: 'date', label: 'Date Pointage', defaultCol: 'F' },
+                { key: 'time', label: 'Heure Pointage', defaultCol: 'G' },
+                { key: 'agent', label: 'Agent Pointeur', defaultCol: 'H' },
+                { key: 'notes', label: 'Remarques', defaultCol: 'I' }
+            ];
+
+            const colOptions = ['None', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
+            // الحقول القياسية
+            standardFields.forEach(f => {
+                const currentVal = savedMapping.columns ? (savedMapping.columns[f.key] || f.defaultCol) : f.defaultCol;
+                const div = document.createElement('div');
+                div.className = "bg-[#15194a] p-2 rounded-lg border border-[#252b75]";
+                div.innerHTML = `
+                    <label class="block text-[11px] font-semibold text-gray-200 mb-1">${f.label}</label>
+                    <select data-mapping-key="${f.key}" class="w-full input-dpw p-1.5 rounded text-xs font-bold text-[#00ffaa]">
+                        ${colOptions.map(c => `<option value="${c}" ${c === currentVal ? 'selected' : ''}>Colonne ${c}</option>`).join('')}
+                    </select>
+                `;
+                container.appendChild(div);
+            });
+
+            // الحقول المخصصة لهذا النموذج
+            const customFields = modelConfigs[modelName] || [];
+            customFields.forEach((cf, idx) => {
+                const customKey = `custom_${cf}`;
+                const autoCol = colOptions[10 + idx] || 'J';
+                const currentVal = savedMapping.columns ? (savedMapping.columns[customKey] || autoCol) : autoCol;
+                
+                const div = document.createElement('div');
+                div.className = "bg-[#15194a] p-2 rounded-lg border border-amber-500/40";
+                div.innerHTML = `
+                    <label class="block text-[11px] font-semibold text-amber-300 mb-1">${cf} (Specifique)</label>
+                    <select data-mapping-key="${customKey}" class="w-full input-dpw p-1.5 rounded text-xs font-bold text-amber-400">
+                        ${colOptions.map(c => `<option value="${c}" ${c === currentVal ? 'selected' : ''}>Colonne ${c}</option>`).join('')}
+                    </select>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('templateMappingModal').classList.remove('hidden');
+        }
+
+        function closeMappingModal() {
+            document.getElementById('templateMappingModal').classList.add('hidden');
+        }
+
+        async function saveTemplateMapping(e) {
+            e.preventDefault();
+            const modelName = document.getElementById('mappingModelKey').value;
+            const startRow = parseInt(document.getElementById('mappingStartRow').value) || 2;
+
+            const columns = {};
+            const selects = document.querySelectorAll('[data-mapping-key]');
+            selects.forEach(s => {
+                const key = s.getAttribute('data-mapping-key');
+                const val = s.value;
+                if (val !== 'None') {
+                    columns[key] = val;
+                }
+            });
+
+            templateMappings[modelName] = {
+                startRow: startRow,
+                columns: columns
+            };
+
+            localStorage.setItem('dpw_local_mappings', JSON.stringify(templateMappings));
+            try {
+                await db.ref('templateMappings/' + modelName).set(templateMappings[modelName]);
+            } catch(e) {}
+
+            closeMappingModal();
+            renderModelsList();
+            showToast(`✓ Mapping enregistré pour "${modelName}"`);
+        }
+
+        function renderModelsList() {
+            const listEl = document.getElementById('modelsList');
+            listEl.innerHTML = '';
+            
+            Object.keys(modelConfigs).forEach(mName => {
+                const fields = modelConfigs[mName];
+                const hasTemplate = !!modelTemplates[mName];
+                const hasMapping = !!templateMappings[mName];
+
+                const card = document.createElement('div');
+                card.className = "bg-[#1d2263] p-3.5 rounded-2xl text-xs space-y-2.5 border border-[#303796]";
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-white text-sm">${mName}</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="triggerUploadTemplate('${mName}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 ${hasTemplate ? 'bg-emerald-600/90 text-white' : 'bg-blue-600/90 text-white'}" title="Upload Template">
+                                <i class="fa-solid fa-file-excel"></i>
+                                <span>${hasTemplate ? 'Template ✓' : '+ Template'}</span>
+                            </button>
+                            ${hasTemplate ? `
+                                <button onclick="openMappingModal('${mName}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 bg-[#15194a] text-[#00ffaa] border border-[#00ffaa]/40" title="Configurer les colonnes">
+                                    <i class="fa-solid fa-table-cells"></i>
+                                    <span>${hasMapping ? 'Colonnes ✓' : 'Mapping'}</span>
+                                </button>
+                            ` : ''}
+                            <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        ${fields.map(f => `<span class="bg-[#15194a] text-gray-300 px-2 py-0.5 rounded-md border border-[#252b75] text-[10px]">${f}</span>`).join('')}
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        // ================= 🚀 EXECUTE ADVANCED EXPORT WITH DIRECT INJECTION =================
+        function executeAdvancedExport() {
+            const stageFilter = document.getElementById('exportFilterStage').value;
+            const modelFilter = document.getElementById('exportFilterModel').value;
+
+            let dataToExport = containers;
+            if (stageFilter !== 'All') dataToExport = dataToExport.filter(c => (c.stage || 'Stock') === stageFilter);
+            if (modelFilter !== 'All') dataToExport = dataToExport.filter(c => c.model === modelFilter);
+
+            if (dataToExport.length === 0) {
+                showToast(currentLang === 'ar' ? "لا توجد حاويات تطابق شروط التصدير" : "Aucun conteneur ne correspond à ces critères.", true);
+                return;
+            }
+
+            const targetModel = (modelFilter !== 'All') ? modelFilter : dataToExport[0].model;
+            const hasTemplate = !!modelTemplates[targetModel];
+            const mappingConfig = templateMappings[targetModel];
+
+            // 🎯 الحالة 1: الحقن المباشر في قالب الشركة المرفوع
+            if (hasTemplate && mappingConfig) {
+                try {
+                    const base64Data = modelTemplates[targetModel];
+                    const workbook = XLSX.read(base64Data, { type: 'base64' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+
+                    let currentRow = mappingConfig.startRow || 2;
+                    const cols = mappingConfig.columns || {};
+
+                    dataToExport.forEach((c) => {
+                        if (c.model === targetModel || modelFilter === 'All') {
+                            if (cols.id) worksheet[`${cols.id}${currentRow}`] = { t: 's', v: c.id };
+                            if (cols.type) worksheet[`${cols.type}${currentRow}`] = { t: 's', v: c.type };
+                            if (cols.loc) worksheet[`${cols.loc}${currentRow}`] = { t: 's', v: c.loc };
+                            if (cols.seal) worksheet[`${cols.seal}${currentRow}`] = { t: 's', v: c.seal };
+                            if (cols.status) worksheet[`${cols.status}${currentRow}`] = { t: 's', v: c.status };
+                            if (cols.date) worksheet[`${cols.date}${currentRow}`] = { t: 's', v: c.date };
+                            if (cols.time) worksheet[`${cols.time}${currentRow}`] = { t: 's', v: c.time };
+                            if (cols.agent) worksheet[`${cols.agent}${currentRow}`] = { t: 's', v: c.agent || '' };
+                            if (cols.notes) worksheet[`${cols.notes}${currentRow}`] = { t: 's', v: c.notes || '' };
+
+                            // الحقول المخصصة
+                            if (c.customData) {
+                                for (const [k, v] of Object.entries(c.customData)) {
+                                    const customColKey = `custom_${k}`;
+                                    if (cols[customColKey]) {
+                                        worksheet[`${cols[customColKey]}${currentRow}`] = { t: 's', v: v || '-' };
+                                    }
+                                }
+                            }
+                            currentRow++;
+                        }
+                    });
+
+                    // تحديث نطاق الورقة ليشمل كل الأسطر المحقونة
+                    const ref = worksheet['!ref'];
+                    if (ref) {
+                        const range = XLSX.utils.decode_range(ref);
+                        range.e.r = Math.max(range.e.r, currentRow - 1);
+                        worksheet['!ref'] = XLSX.utils.encode_range(range);
+                    }
+
+                    const fileName = `DPW_${targetModel.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                    XLSX.writeFile(workbook, fileName);
+                    closeExportModal();
+                    showToast(currentLang === 'ar' ? "✓ تم ملء وتنزيل قالب الشركة بنجاح!" : "✓ Template officiel rempli et téléchargé!");
+                    return;
+                } catch (err) {
+                    console.error("Template injection error:", err);
+                    showToast("Erreur injection template, basculement en mode standard...", true);
+                }
+            }
+
+            // 🎯 الحالة 2: التوليد القياسي النظيف إذا لم يكن هناك قالب
+            const workbook = XLSX.utils.book_new();
+            const models = modelFilter === 'All' ? Object.keys(modelConfigs) : [modelFilter];
+
+            models.forEach(mName => {
+                const filtered = dataToExport.filter(c => c.model === mName);
+                if (filtered.length > 0) {
+                    const modelData = filtered.map(c => {
+                        let rowObj = {
+                            "Date": c.date,
+                            "Heure": c.time,
+                            "N° Conteneur": c.id,
+                            "Étape Flux": c.stage || "En Stockage",
+                            "Type & Taille": c.type,
+                            "Emplacement": c.loc,
+                            "État": c.status,
+                            "N° Plomb": c.seal,
+                            "Pointeur": c.agent || ""
+                        };
+                        if (c.customData) {
+                            for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
+                        }
+                        rowObj["Remarques"] = c.notes;
+                        return rowObj;
+                    });
+                    const wsModel = XLSX.utils.json_to_sheet(modelData);
+                    XLSX.utils.book_append_sheet(workbook, wsModel, mName.substring(0, 30));
+                }
+            });
+
+            const fileName = `Pointeur_DPW_Rapport_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+            closeExportModal();
+            showToast(currentLang === 'ar' ? "✓ تم تنزيل تقرير الإكسل القياسي!" : "✓ Rapport Excel généré!");
         }
 
         const translations = {
@@ -933,7 +1263,7 @@
                 suiviTitle: "Suivi Flux (Import & Export)",
                 suiviDesc: "Cliquez sur les étapes pour mettre à jour la position du conteneur en temps réel.",
                 modelsTitle: "Modèles & Templates Excel",
-                modelsDesc: "Ajoutez des modèles et chargez le fichier Excel officiel de l'entreprise.",
+                modelsDesc: "Ajoutez vos modèles de travail et configurez le remplissage direct sur vos fichiers Excel officiels.",
                 create: "Créer",
                 modalTitle: "Pointer un conteneur",
                 modelLbl: "Modèle de pointeage",
@@ -959,8 +1289,8 @@
                 btnArchive: "Archiver la vacation actuelle",
                 exportTitle: "Options d'exportation Excel",
                 exportStage: "Filtrer par étape",
-                exportModel: "Filtrer par Modèle",
-                btnDownload: "Télécharger le rapport Excel",
+                exportModel: "Modèle à exporter",
+                btnDownload: "Générer & Télécharger le fichier",
                 stageNames: { Navire: 'En Navire', Stock: 'En Stock', Douane: 'En Douane', Embarqué: 'Embarqué / Sortie' }
             },
             ar: {
@@ -982,7 +1312,7 @@
                 suiviTitle: "متابعة تدفق الحاويات (استيراد وتصدير)",
                 suiviDesc: "انقر على المحطات لتحديث مسار الحاوية فورياً في السيرفر.",
                 modelsTitle: "النماذج وقوالب إكسل الرسمية",
-                modelsDesc: "أضف نماذج العمل وقم برفع ملف إكسل الرسمي للشركة.",
+                modelsDesc: "أضف نماذج العمل وقم برفع ملف إكسل الرسمي وتحديد مطابقة الأعمدة تلقائياً.",
                 create: "إنشاء نموذج",
                 modalTitle: "تسجيل ورصد حاوية جديدة",
                 modelLbl: "نموذج العمل الميداني",
@@ -1008,8 +1338,8 @@
                 btnArchive: "أرشفة الوردية الحالية",
                 exportTitle: "خيارات تصدير ملف الإكسل",
                 exportStage: "تصفية حسب المرحلة",
-                exportModel: "تصفية حسب النموذج",
-                btnDownload: "تنزيل تقرير الإكسل",
+                exportModel: "النموذج المراد تصديره",
+                btnDownload: "توليد وتنزيل ملف الإكسل",
                 stageNames: { Navire: 'في السفينة', Stock: 'في الساحة', Douane: 'في الجمارك', Embarqué: 'تسليم وخروج' }
             },
             en: {
@@ -1031,7 +1361,7 @@
                 suiviTitle: "Container Flow Tracker (Import & Export)",
                 suiviDesc: "Click stages to update container location in real-time.",
                 modelsTitle: "Models & Excel Templates",
-                modelsDesc: "Add operation models and upload the company official Excel template.",
+                modelsDesc: "Add operation models and configure direct injection into company Excel files.",
                 create: "Create",
                 modalTitle: "Tally New Container",
                 modelLbl: "Operation Model",
@@ -1057,8 +1387,8 @@
                 btnArchive: "Archive Current Shift",
                 exportTitle: "Excel Export Options",
                 exportStage: "Filter by Stage",
-                exportModel: "Filter by Model",
-                btnDownload: "Download Excel Report",
+                exportModel: "Model to Export",
+                btnDownload: "Generate & Download File",
                 stageNames: { Navire: 'On Vessel', Stock: 'In Yard', Douane: 'In Customs', Embarqué: 'Delivered / Out' }
             }
         };
@@ -1524,58 +1854,6 @@
             }
         }
 
-        function renderModelsList() {
-            const listEl = document.getElementById('modelsList');
-            listEl.innerHTML = '';
-            
-            Object.keys(modelConfigs).forEach(mName => {
-                const fields = modelConfigs[mName];
-                const hasTemplate = !!modelTemplates[mName];
-
-                const card = document.createElement('div');
-                card.className = "bg-[#1d2263] p-3.5 rounded-2xl text-xs space-y-2.5 border border-[#303796]";
-                
-                card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-white text-sm">${mName}</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="triggerUploadTemplate('${mName}')" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 ${hasTemplate ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}" title="Upload Company Template">
-                                <i class="fa-solid fa-file-excel"></i>
-                                <span>${hasTemplate ? 'Template OK' : '+ Template Excel'}</span>
-                            </button>
-                            <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5 pt-1">
-                        ${fields.map(f => `<span class="bg-[#15194a] text-gray-300 px-2 py-0.5 rounded-md border border-[#252b75] text-[10px]">${f}</span>`).join('')}
-                    </div>
-                `;
-                listEl.appendChild(card);
-            });
-        }
-
-        function triggerUploadTemplate(modelName) {
-            currentUploadTemplateTarget = modelName;
-            document.getElementById('templateFileInput').click();
-        }
-
-        function handleTemplateUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const base64Data = e.target.result.split(',')[1];
-                modelTemplates[currentUploadTemplateTarget] = base64Data;
-                localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
-                try {
-                    await db.ref('modelTemplates').set(modelTemplates);
-                } catch(e) {}
-                showToast(currentLang === 'ar' ? `تم رفع قالب إكسل لـ "${currentUploadTemplateTarget}"` : `Template Excel enregistré pour "${currentUploadTemplateTarget}"`);
-            };
-            reader.readAsDataURL(file);
-        }
-
         async function addNewModel() {
             const val = document.getElementById('inpNewModel').value.trim();
             if (val && !modelConfigs[val]) {
@@ -1596,11 +1874,14 @@
             if (confirm(confirmMsg)) {
                 delete modelConfigs[modelName];
                 delete modelTemplates[modelName];
+                delete templateMappings[modelName];
                 localStorage.setItem('dpw_local_models', JSON.stringify(modelConfigs));
                 localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
+                localStorage.setItem('dpw_local_mappings', JSON.stringify(templateMappings));
                 try {
-                    await db.ref('modelConfigs').set(modelConfigs);
-                    await db.ref('modelTemplates').set(modelTemplates);
+                    await db.ref('modelConfigs/' + modelName).remove();
+                    await db.ref('modelTemplates/' + modelName).remove();
+                    await db.ref('templateMappings/' + modelName).remove();
                 } catch(e) {}
                 renderModelsList();
                 populateModelSelect();
@@ -1752,7 +2033,7 @@
                         localStorage.setItem('dpw_local_queue', JSON.stringify(offlineQueue));
                     }
                     
-                    showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية (محلياً وسحابياً)!" : "✓ Conteneur enregistré (Local & Cloud)!");
+                    showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية!" : "✓ Conteneur enregistré!");
                 }
 
                 triggerHapticFeedback();
@@ -1775,54 +2056,6 @@
         }
         function closeExportModal() {
             document.getElementById('exportModalOverlay').classList.add('hidden');
-        }
-
-        function executeAdvancedExport() {
-            const stageFilter = document.getElementById('exportFilterStage').value;
-            const modelFilter = document.getElementById('exportFilterModel').value;
-
-            let dataToExport = containers;
-            if (stageFilter !== 'All') dataToExport = dataToExport.filter(c => (c.stage || 'Stock') === stageFilter);
-            if (modelFilter !== 'All') dataToExport = dataToExport.filter(c => c.model === modelFilter);
-
-            if (dataToExport.length === 0) {
-                showToast(currentLang === 'ar' ? "لا توجد حاويات تطابق شروط التصدير" : "Aucun conteneur ne correspond à ces critères.", true);
-                return;
-            }
-
-            const workbook = XLSX.utils.book_new();
-            const models = modelFilter === 'All' ? Object.keys(modelConfigs) : [modelFilter];
-
-            models.forEach(mName => {
-                const filtered = dataToExport.filter(c => c.model === mName);
-                if (filtered.length > 0) {
-                    const modelData = filtered.map(c => {
-                        let rowObj = {
-                            "Date": c.date,
-                            "Heure": c.time,
-                            "N° Conteneur": c.id,
-                            "Étape Flux": c.stage || "En Stockage",
-                            "Type & Taille": c.type,
-                            "Emplacement": c.loc,
-                            "État": c.status,
-                            "N° Plomb": c.seal,
-                            "Pointeur": c.agent || ""
-                        };
-                        if (c.customData) {
-                            for (const [k, v] of Object.entries(c.customData)) rowObj[k] = v;
-                        }
-                        rowObj["Remarques"] = c.notes;
-                        return rowObj;
-                    });
-                    const wsModel = XLSX.utils.json_to_sheet(modelData);
-                    XLSX.utils.book_append_sheet(workbook, wsModel, mName.substring(0, 30));
-                }
-            });
-
-            const fileName = `Pointeur_DPW_Rapport_${new Date().toISOString().slice(0, 10)}.xlsx`;
-            XLSX.writeFile(workbook, fileName);
-            closeExportModal();
-            showToast(currentLang === 'ar' ? "✓ تم تنزيل تقرير الإكسل!" : "✓ Rapport Excel téléchargé!");
         }
 
         async function archiveShiftData() {
