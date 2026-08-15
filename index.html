@@ -161,6 +161,18 @@
         </div>
     </div>
 
+    <!-- 📊 GLOBAL UPLOAD PROGRESS BAR OVERLAY -->
+    <div id="uploadProgressOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-xs dpw-card p-5 rounded-2xl space-y-3 text-center border border-[#00ffaa]/50 shadow-2xl">
+            <i class="fa-solid fa-file-excel text-3xl text-[#00ffaa] animate-bounce"></i>
+            <h4 class="font-extrabold text-sm text-white" id="uploadProgressTitle">Chargement du fichier Excel...</h4>
+            <div class="w-full bg-[#15194a] rounded-full h-3 overflow-hidden border border-[#303796]">
+                <div id="globalProgressBar" class="bg-gradient-to-r from-[#00ffaa] to-[#ff2a6d] h-3 rounded-full transition-all duration-200 w-0"></div>
+            </div>
+            <p id="globalProgressPercent" class="text-xs font-mono font-bold text-[#00ffaa]">0%</p>
+        </div>
+    </div>
+
     <!-- AUTH MODAL -->
     <div id="authModalOverlay" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4">
@@ -966,6 +978,7 @@
         // ================= 🎯 TEMPLATE INJECTION & MAPPING LOGIC =================
         function triggerUploadTemplate(modelName) {
             currentUploadTemplateTarget = modelName;
+            document.getElementById('templateFileInput').value = '';
             document.getElementById('templateFileInput').click();
         }
 
@@ -973,16 +986,53 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            const progressOverlay = document.getElementById('uploadProgressOverlay');
+            const progressBar = document.getElementById('globalProgressBar');
+            const progressPercent = document.getElementById('globalProgressPercent');
+            const progressTitle = document.getElementById('uploadProgressTitle');
+
+            progressOverlay.classList.remove('hidden');
+            progressBar.style.width = '10%';
+            progressPercent.innerText = '10%';
+            progressTitle.innerText = currentLang === 'ar' ? `جاري قراءة قالب (${currentUploadTemplateTarget})...` : `Lecture du template (${currentUploadTemplateTarget})...`;
+
             const reader = new FileReader();
+
+            reader.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 60);
+                    progressBar.style.width = `${percent}%`;
+                    progressPercent.innerText = `${percent}%`;
+                }
+            };
+
             reader.onload = async function(e) {
                 try {
+                    progressBar.style.width = '75%';
+                    progressPercent.innerText = '75%';
+                    progressTitle.innerText = currentLang === 'ar' ? "معالجة بنية ملف الإكسل..." : "Traitement binaire du fichier...";
+
                     const arrayBuffer = e.target.result;
+                    
+                    // اختبار صحة ملف الإكسل عبر SheetJS
+                    const testWb = XLSX.read(arrayBuffer, { type: 'array' });
+                    if (!testWb || !testWb.SheetNames || testWb.SheetNames.length === 0) {
+                        throw new Error("Format Excel invalide");
+                    }
+
+                    // تحويل آمن كلياً ومجزأ (Chunked) لتفادي انهيار الذاكرة
                     const bytes = new Uint8Array(arrayBuffer);
                     let binary = '';
-                    for (let i = 0; i < bytes.byteLength; i++) {
-                        binary += String.fromCharCode(bytes[i]);
+                    const chunkSize = 8192;
+                    for (let i = 0; i < bytes.length; i += chunkSize) {
+                        const chunk = bytes.subarray(i, i + chunkSize);
+                        binary += String.fromCharCode.apply(null, chunk);
                     }
                     const base64Data = btoa(binary);
+
+                    progressBar.style.width = '90%';
+                    progressPercent.innerText = '90%';
+                    progressTitle.innerText = currentLang === 'ar' ? "حفظ القالب في الخادم السحابي..." : "Synchronisation Cloud...";
 
                     modelTemplates[currentUploadTemplateTarget] = base64Data;
                     localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
@@ -992,15 +1042,32 @@
                     } catch(dbErr) {
                         console.warn("Cloud sync warning for template:", dbErr);
                     }
+
+                    progressBar.style.width = '100%';
+                    progressPercent.innerText = '100%';
                     
-                    showToast(currentLang === 'ar' ? `✓ تم رفع قالب "${currentUploadTemplateTarget}" بنجاح` : `✓ Template chargé pour "${currentUploadTemplateTarget}"`);
-                    renderModelsList();
-                    openMappingModal(currentUploadTemplateTarget);
+                    setTimeout(() => {
+                        progressOverlay.classList.add('hidden');
+                        progressBar.style.width = '0%';
+                        showToast(currentLang === 'ar' ? `✓ تم رفع قالب "${currentUploadTemplateTarget}" بنجاح!` : `✓ Template "${currentUploadTemplateTarget}" chargé avec succès!`);
+                        renderModelsList();
+                        openMappingModal(currentUploadTemplateTarget);
+                    }, 400);
+
                 } catch(err) {
                     console.error("Error processing Excel file:", err);
-                    showToast(currentLang === 'ar' ? "خطأ في قراءة ملف الإكسل" : "Erreur de lecture du fichier Excel", true);
+                    progressOverlay.classList.add('hidden');
+                    progressBar.style.width = '0%';
+                    showToast(currentLang === 'ar' ? "خطأ: الملف ليس ملف إكسل سليم" : "Erreur: Fichier Excel corrompu ou illisible", true);
                 }
             };
+
+            reader.onerror = function() {
+                progressOverlay.classList.add('hidden');
+                progressBar.style.width = '0%';
+                showToast(currentLang === 'ar' ? "فشل قراءة الملف" : "Échec de lecture du fichier", true);
+            };
+
             reader.readAsArrayBuffer(file);
         }
 
@@ -1025,7 +1092,7 @@
                 }
 
                 renderModelsList();
-                showToast(currentLang === 'ar' ? `✓ تم حذف قالب "${modelName}" بنجاح` : `✓ Template "${modelName}" supprimé`);
+                showToast(currentLang === 'ar' ? `✓ تم حذف قالب "${modelName}"` : `✓ Template "${modelName}" supprimé`);
             }
         }
 
@@ -1149,7 +1216,7 @@
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-white text-sm">${mName}</span>
                         <div class="flex items-center gap-1.5">
-                            <button onclick="triggerUploadTemplate('${mName}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 ${hasTemplate ? 'bg-emerald-600/90 text-white' : 'bg-blue-600/90 text-white'}" title="${hasTemplate ? 'Changer de Template' : 'Upload Template'}">
+                            <button onclick="triggerUploadTemplate('${mName}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 ${hasTemplate ? 'bg-emerald-600/90 text-white' : 'bg-blue-600/90 text-white'}" title="${hasTemplate ? 'Remplacer le template' : 'Upload Template'}">
                                 <i class="fa-solid fa-file-excel"></i>
                                 <span>${hasTemplate ? 'Template ✓' : '+ Template'}</span>
                             </button>
@@ -1188,14 +1255,21 @@
             }
 
             const targetModel = (modelFilter !== 'All') ? modelFilter : (dataToExport[0]?.model || Object.keys(modelConfigs)[0]);
-            const hasTemplate = !!modelTemplates[targetModel];
+            const base64Data = modelTemplates[targetModel];
             const mappingConfig = templateMappings[targetModel];
 
             // 🎯 الحالة 1: الحقن المباشر في قالب الشركة المرفوع
-            if (hasTemplate && mappingConfig) {
+            if (base64Data && mappingConfig) {
                 try {
-                    const base64Data = modelTemplates[targetModel];
-                    const workbook = XLSX.read(base64Data, { type: 'base64', cellStyles: true });
+                    // تحويل Base64 إلى Uint8Array لضمان قراءة ثنائية بدون أخطاء
+                    const binaryString = atob(base64Data);
+                    const len = binaryString.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+
+                    const workbook = XLSX.read(bytes.buffer, { type: 'array', cellStyles: true });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
 
@@ -1233,6 +1307,8 @@
                         const range = XLSX.utils.decode_range(ref);
                         range.e.r = Math.max(range.e.r, currentRow - 1);
                         worksheet['!ref'] = XLSX.utils.encode_range(range);
+                    } else {
+                        worksheet['!ref'] = `A1:Z${currentRow}`;
                     }
 
                     const fileName = `DPW_${targetModel.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
