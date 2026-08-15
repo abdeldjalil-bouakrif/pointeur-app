@@ -220,7 +220,7 @@
     <!-- MAIN APP CONTAINER -->
     <div class="w-full px-4 sm:px-8 max-w-7xl mx-auto relative z-10 pt-2">
 
-        <!-- BRAND HEADER SECTION -->
+        <!-- BRAND HEADER SECTION (NO LANGUAGE SWITCHER HERE) -->
         <div class="flex items-center justify-between pb-3 border-b border-[#252b75]/80">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 flex items-center justify-center shrink-0">
@@ -243,13 +243,6 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- Desktop Language Buttons -->
-                <div class="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-[#15194a]/90 p-1 rounded-xl border border-[#252b75] mr-1">
-                    <button onclick="setLanguage('fr')" id="langBtn_fr_d" class="px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
-                    <button onclick="setLanguage('ar')" id="langBtn_ar_d" class="px-2.5 py-1 rounded-lg text-gray-300">عربي</button>
-                    <button onclick="setLanguage('en')" id="langBtn_en_d" class="px-2.5 py-1 rounded-lg text-gray-300">EN</button>
-                </div>
-
                 <button onclick="openExportModal()" class="btn-dpw-green px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition" title="Options d'exportation">
                     <i class="fa-solid fa-file-excel text-sm"></i>
                     <span>Excel</span>
@@ -259,14 +252,6 @@
                     <span id="btnPointerText">Pointer</span>
                 </button>
             </div>
-        </div>
-
-        <!-- Mobile Language Selector -->
-        <div class="flex sm:hidden items-center justify-end gap-1.5 my-2.5 text-[10px] font-bold">
-            <span class="text-gray-400 mr-1"><i class="fa-solid fa-globe"></i> Language:</span>
-            <button onclick="setLanguage('fr')" id="langBtn_fr" class="px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
-            <button onclick="setLanguage('ar')" id="langBtn_ar" class="px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300">عربي</button>
-            <button onclick="setLanguage('en')" id="langBtn_en" class="px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300">EN</button>
         </div>
 
         <!-- QUICK KPI CARDS -->
@@ -364,7 +349,7 @@
             </div>
         </div>
 
-        <!-- ================= TAB 4: COMPTE & PROFIL AGENT ================= -->
+        <!-- ================= TAB 4: COMPTE & PROFIL AGENT (WITH LANGUAGE SETTINGS) ================= -->
         <div id="tabCompte" class="hidden space-y-4 max-w-2xl mx-auto">
             <div class="dpw-card p-5 sm:p-6 rounded-2xl space-y-4">
                 <div class="flex items-center gap-4 border-b border-[#252b75] pb-4">
@@ -374,6 +359,18 @@
                     <div>
                         <h3 id="accountEmailDisplay" class="font-extrabold text-base text-white">Agent Pointeur</h3>
                         <p class="text-xs text-[#00ffaa] font-bold uppercase tracking-wider">DP WORLD DJENDJEN TERMINAL</p>
+                    </div>
+                </div>
+
+                <!-- 🌐 LANGUAGE SETTING SECTION -->
+                <div class="bg-[#1d2263]/80 p-4 rounded-xl border border-[#303796] space-y-2">
+                    <p class="text-xs text-gray-300 font-bold flex items-center gap-1.5" id="lblLangSettings">
+                        <i class="fa-solid fa-globe text-[#00ffaa]"></i> <span>Langue de l'application</span>
+                    </p>
+                    <div class="grid grid-cols-3 gap-2 text-xs font-bold pt-1">
+                        <button onclick="setLanguage('fr')" id="langBtn_fr_acc" class="py-2.5 rounded-xl bg-[#00ffaa] text-[#0d1033] transition shadow">Français</button>
+                        <button onclick="setLanguage('ar')" id="langBtn_ar_acc" class="py-2.5 rounded-xl bg-[#15194a] text-gray-300 hover:text-white border border-[#252b75] transition">العربية</button>
+                        <button onclick="setLanguage('en')" id="langBtn_en_acc" class="py-2.5 rounded-xl bg-[#15194a] text-gray-300 hover:text-white border border-[#252b75] transition">English</button>
                     </div>
                 </div>
 
@@ -410,7 +407,7 @@
 
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR -->
+    <!-- BOTTOM NAVIGATION BAR (FLOATING DOCK STYLE) -->
     <div class="fixed bottom-3 left-4 right-4 bg-[#121642]/90 backdrop-blur-xl border border-[#2d3587] rounded-3xl shadow-2xl z-40 max-w-lg mx-auto">
         <div class="grid grid-cols-4 py-2 px-1 text-center">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 py-1.5 nav-pill-active transition-all duration-200">
@@ -649,13 +646,15 @@
         let containers = JSON.parse(localStorage.getItem('dpw_local_containers')) || [];
         let offlineQueue = JSON.parse(localStorage.getItem('dpw_local_queue')) || [];
 
-        let modelConfigs = JSON.parse(localStorage.getItem('dpw_local_models')) || {
+        const defaultModelConfigs = {
             'Débarquement': ['Navire', 'N° Manifeste', 'Température'],
             'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
             'Embarquement': ['Destination', 'Poids (Tonnes)']
         };
-        let modelTemplates = JSON.parse(localStorage.getItem('dpw_local_templates')) || {};
-        let templateMappings = JSON.parse(localStorage.getItem('dpw_local_mappings')) || {};
+
+        let modelConfigs = {};
+        let modelTemplates = {};
+        let templateMappings = {};
         
         let currentUploadTemplateTarget = '';
         let currentDamagePhotoBase64 = '';
@@ -799,20 +798,33 @@
             }, 2500);
         }
 
+        // ================= 👤 AUTH & USER DATA SCOPING =================
+        function loadLocalUserData(uid) {
+            modelConfigs = JSON.parse(localStorage.getItem('dpw_models_' + uid)) || defaultModelConfigs;
+            modelTemplates = JSON.parse(localStorage.getItem('dpw_templates_' + uid)) || {};
+            templateMappings = JSON.parse(localStorage.getItem('dpw_mappings_' + uid)) || {};
+            populateModelSelect();
+            renderModelsList();
+        }
+
         auth.onAuthStateChanged((user) => {
             const authModal = document.getElementById('authModalOverlay');
             if (user) {
                 currentUser = user;
                 localStorage.setItem('dpw_last_agent', user.email);
+                localStorage.setItem('dpw_last_uid', user.uid);
                 authModal.classList.add('hidden');
                 document.getElementById('accountEmailDisplay').innerText = user.email;
+                loadLocalUserData(user.uid);
                 initFirebaseSync();
             } else {
                 const savedAgent = localStorage.getItem('dpw_last_agent');
-                if (savedAgent) {
-                    currentUser = { email: savedAgent };
+                const savedUid = localStorage.getItem('dpw_last_uid');
+                if (savedAgent && savedUid) {
+                    currentUser = { email: savedAgent, uid: savedUid };
                     authModal.classList.add('hidden');
                     document.getElementById('accountEmailDisplay').innerText = savedAgent;
+                    loadLocalUserData(savedUid);
                     filterContainers();
                     renderTrackingList();
                     updateAccountStats();
@@ -863,6 +875,7 @@
             const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً تسجيل الخروج؟" : "Voulez-vous vraiment vous déconnecter ?";
             if (confirm(confirmMsg)) {
                 localStorage.removeItem('dpw_last_agent');
+                localStorage.removeItem('dpw_last_uid');
                 auth.signOut();
                 showToast(currentLang === 'ar' ? "تم تسجيل الخروج" : "Déconnexion réussie");
             }
@@ -934,32 +947,39 @@
                 updateAccountStats();
             });
 
-            db.ref('modelConfigs').on('value', (snap) => {
-                const val = snap.val();
-                if (val) {
-                    modelConfigs = val;
-                    localStorage.setItem('dpw_local_models', JSON.stringify(modelConfigs));
-                }
-                populateModelSelect();
-                renderModelsList();
-            });
+            // 🎯 USER-SCOPED TEMPLATES & CONFIGS (ISOLATED PER ACCOUNT)
+            if (currentUser && currentUser.uid) {
+                const uid = currentUser.uid;
 
-            db.ref('modelTemplates').on('value', (snap) => {
-                const val = snap.val();
-                if (val) {
-                    modelTemplates = val;
-                    localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
-                }
-                renderModelsList();
-            });
+                db.ref(`users/${uid}/modelConfigs`).on('value', (snap) => {
+                    const val = snap.val();
+                    if (val) {
+                        modelConfigs = val;
+                    } else if (Object.keys(modelConfigs).length === 0) {
+                        modelConfigs = defaultModelConfigs;
+                    }
+                    localStorage.setItem('dpw_models_' + uid, JSON.stringify(modelConfigs));
+                    populateModelSelect();
+                    renderModelsList();
+                });
 
-            db.ref('templateMappings').on('value', (snap) => {
-                const val = snap.val();
-                if (val) {
-                    templateMappings = val;
-                    localStorage.setItem('dpw_local_mappings', JSON.stringify(templateMappings));
-                }
-            });
+                db.ref(`users/${uid}/modelTemplates`).on('value', (snap) => {
+                    const val = snap.val();
+                    if (val) {
+                        modelTemplates = val;
+                        localStorage.setItem('dpw_templates_' + uid, JSON.stringify(modelTemplates));
+                    }
+                    renderModelsList();
+                });
+
+                db.ref(`users/${uid}/templateMappings`).on('value', (snap) => {
+                    const val = snap.val();
+                    if (val) {
+                        templateMappings = val;
+                        localStorage.setItem('dpw_mappings_' + uid, JSON.stringify(templateMappings));
+                    }
+                });
+            }
         }
 
         function updateAccountStats() {
@@ -1013,7 +1033,6 @@
 
                     const arrayBuffer = e.target.result;
                     
-                    // التحقق من صحة القالب وفتحه عبر مكتبة ExcelJS
                     const testWb = new ExcelJS.Workbook();
                     await testWb.xlsx.load(arrayBuffer);
                     
@@ -1021,7 +1040,6 @@
                         throw new Error("Aucune feuille trouvée dans le classeur.");
                     }
 
-                    // تشفير آمن مجزأ للحفظ في الذاكرة والسحابة
                     const bytes = new Uint8Array(arrayBuffer);
                     let binary = '';
                     const chunkSize = 8192;
@@ -1035,13 +1053,16 @@
                     progressPercent.innerText = '90%';
                     progressTitle.innerText = currentLang === 'ar' ? "حفظ القالب ومزامنة السحابة..." : "Enregistrement du template...";
 
+                    const uid = currentUser ? currentUser.uid : 'guest';
                     modelTemplates[currentUploadTemplateTarget] = base64Data;
-                    localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
+                    localStorage.setItem('dpw_templates_' + uid, JSON.stringify(modelTemplates));
                     
-                    try {
-                        await db.ref('modelTemplates/' + currentUploadTemplateTarget).set(base64Data);
-                    } catch(dbErr) {
-                        console.warn("Cloud sync warning for template:", dbErr);
+                    if (currentUser && currentUser.uid) {
+                        try {
+                            await db.ref(`users/${uid}/modelTemplates/${currentUploadTemplateTarget}`).set(base64Data);
+                        } catch(dbErr) {
+                            console.warn("Cloud sync warning for template:", dbErr);
+                        }
                     }
 
                     progressBar.style.width = '100%';
@@ -1078,17 +1099,20 @@
                 : `Voulez-vous vraiment supprimer le fichier template Excel de "${modelName}" ?`;
             
             if (confirm(confirmMsg)) {
+                const uid = currentUser ? currentUser.uid : 'guest';
                 delete modelTemplates[modelName];
                 delete templateMappings[modelName];
 
-                localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
-                localStorage.setItem('dpw_local_mappings', JSON.stringify(templateMappings));
+                localStorage.setItem('dpw_templates_' + uid, JSON.stringify(modelTemplates));
+                localStorage.setItem('dpw_mappings_' + uid, JSON.stringify(templateMappings));
 
-                try {
-                    await db.ref('modelTemplates/' + modelName).remove();
-                    await db.ref('templateMappings/' + modelName).remove();
-                } catch(e) {
-                    console.warn("Cloud remove warning:", e);
+                if (currentUser && currentUser.uid) {
+                    try {
+                        await db.ref(`users/${uid}/modelTemplates/${modelName}`).remove();
+                        await db.ref(`users/${uid}/templateMappings/${modelName}`).remove();
+                    } catch(e) {
+                        console.warn("Cloud remove warning:", e);
+                    }
                 }
 
                 renderModelsList();
@@ -1185,15 +1209,18 @@
                 }
             });
 
+            const uid = currentUser ? currentUser.uid : 'guest';
             templateMappings[modelName] = {
                 startRow: startRow,
                 columns: columns
             };
 
-            localStorage.setItem('dpw_local_mappings', JSON.stringify(templateMappings));
-            try {
-                await db.ref('templateMappings/' + modelName).set(templateMappings[modelName]);
-            } catch(e) {}
+            localStorage.setItem('dpw_mappings_' + uid, JSON.stringify(templateMappings));
+            if (currentUser && currentUser.uid) {
+                try {
+                    await db.ref(`users/${uid}/templateMappings/${modelName}`).set(templateMappings[modelName]);
+                } catch(e) {}
+            }
 
             closeMappingModal();
             renderModelsList();
@@ -1240,7 +1267,48 @@
             });
         }
 
-        // ================= 🚀 ADVANCED EXPORT VIA EXCELJS (DIRECT INJECTION) =================
+        async function addNewModel() {
+            const val = document.getElementById('inpNewModel').value.trim();
+            if (val && !modelConfigs[val]) {
+                const uid = currentUser ? currentUser.uid : 'guest';
+                modelConfigs[val] = [];
+                localStorage.setItem('dpw_models_' + uid, JSON.stringify(modelConfigs));
+                if (currentUser && currentUser.uid) {
+                    try {
+                        await db.ref(`users/${uid}/modelConfigs`).set(modelConfigs);
+                    } catch(e) {}
+                }
+                document.getElementById('inpNewModel').value = '';
+                renderModelsList();
+                populateModelSelect();
+                showToast(currentLang === 'ar' ? `تم إنشاء النموذج "${val}"!` : `Modèle "${val}" créé avec succès!`);
+            }
+        }
+
+        async function deleteModel(modelName) {
+            const confirmMsg = currentLang === 'ar' ? `هل تريد بالتأكيد حذف النموذج "${modelName}" ؟` : `Voulez-vous vraiment supprimer le modèle "${modelName}" ?`;
+            if (confirm(confirmMsg)) {
+                const uid = currentUser ? currentUser.uid : 'guest';
+                delete modelConfigs[modelName];
+                delete modelTemplates[modelName];
+                delete templateMappings[modelName];
+                localStorage.setItem('dpw_models_' + uid, JSON.stringify(modelConfigs));
+                localStorage.setItem('dpw_templates_' + uid, JSON.stringify(modelTemplates));
+                localStorage.setItem('dpw_mappings_' + uid, JSON.stringify(templateMappings));
+                if (currentUser && currentUser.uid) {
+                    try {
+                        await db.ref(`users/${uid}/modelConfigs/${modelName}`).remove();
+                        await db.ref(`users/${uid}/modelTemplates/${modelName}`).remove();
+                        await db.ref(`users/${uid}/templateMappings/${modelName}`).remove();
+                    } catch(e) {}
+                }
+                renderModelsList();
+                populateModelSelect();
+                showToast(currentLang === 'ar' ? `تم حذف النموذج "${modelName}"` : `Modèle "${modelName}" supprimé`);
+            }
+        }
+
+        // ================= 🚀 ADVANCED EXPORT VIA EXCELJS =================
         async function executeAdvancedExport() {
             const stageFilter = document.getElementById('exportFilterStage').value;
             const modelFilter = document.getElementById('exportFilterModel').value;
@@ -1258,7 +1326,6 @@
             const base64Data = modelTemplates[targetModel];
             const mappingConfig = templateMappings[targetModel];
 
-            // 🎯 الحالة 1: الحقن المباشر في قالب الشركة المرفوع عبر ExcelJS
             if (base64Data && mappingConfig) {
                 try {
                     const binaryString = atob(base64Data);
@@ -1312,7 +1379,6 @@
                 }
             }
 
-            // 🎯 الحالة 2: التوليد القياسي المنسق في حال عدم وجود قالب
             try {
                 const workbook = new ExcelJS.Workbook();
                 const models = modelFilter === 'All' ? Object.keys(modelConfigs) : [modelFilter];
@@ -1427,6 +1493,7 @@
                 exportStage: "Filtrer par étape",
                 exportModel: "Modèle à exporter",
                 btnDownload: "Générer & Télécharger le fichier",
+                lblLangSettings: "Langue de l'application",
                 stageNames: { Navire: 'En Navire', Stock: 'En Stock', Douane: 'En Douane', Embarqué: 'Embarqué / Sortie' }
             },
             ar: {
@@ -1476,6 +1543,7 @@
                 exportStage: "تصفية حسب المرحلة",
                 exportModel: "النموذج المراد تصديره",
                 btnDownload: "توليد وتنزيل ملف الإكسل",
+                lblLangSettings: "لغة التطبيق",
                 stageNames: { Navire: 'في السفينة', Stock: 'في الساحة', Douane: 'في الجمارك', Embarqué: 'تسليم وخروج' }
             },
             en: {
@@ -1525,6 +1593,7 @@
                 exportStage: "Filter by Stage",
                 exportModel: "Model to Export",
                 btnDownload: "Generate & Download File",
+                lblLangSettings: "Application Language",
                 stageNames: { Navire: 'On Vessel', Stock: 'In Yard', Douane: 'In Customs', Embarqué: 'Delivered / Out' }
             }
         };
@@ -1540,11 +1609,16 @@
                 htmlTag.setAttribute('dir', 'ltr');
             }
 
+            // Update Account Tab Language Buttons Active State
             ['fr', 'ar', 'en'].forEach(l => {
-                const btnM = document.getElementById(`langBtn_${l}`);
-                const btnD = document.getElementById(`langBtn_${l}_d`);
-                if (btnM) btnM.className = (l === lang) ? "px-2 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]" : "px-2 py-1 rounded-lg bg-[#1d2263] text-gray-300";
-                if (btnD) btnD.className = (l === lang) ? "px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]" : "px-2.5 py-1 rounded-lg text-gray-300 hover:text-white";
+                const btnAcc = document.getElementById(`langBtn_${l}_acc`);
+                if (btnAcc) {
+                    if (l === lang) {
+                        btnAcc.className = "py-2.5 rounded-xl bg-[#00ffaa] text-[#0d1033] font-bold transition shadow-lg scale-100";
+                    } else {
+                        btnAcc.className = "py-2.5 rounded-xl bg-[#15194a] text-gray-300 hover:text-white font-bold border border-[#252b75] transition";
+                    }
+                }
             });
 
             const t = translations[lang];
@@ -1589,6 +1663,7 @@
             document.getElementById('lblCloudServer').innerText = t.cloudServer;
             document.getElementById('lblActiveState').innerText = t.activeState;
             document.getElementById('lblTerminalDesc').innerText = t.terminalDesc;
+            document.getElementById('lblLangSettings').innerHTML = `<i class="fa-solid fa-globe text-[#00ffaa]"></i> <span>${t.lblLangSettings}</span>`;
 
             document.getElementById('lblDamagePhotoTitle').innerText = t.damageTitle;
             document.getElementById('btnTakeDamagePhoto').innerText = t.btnTakeDamage;
@@ -1990,41 +2065,6 @@
             }
         }
 
-        async function addNewModel() {
-            const val = document.getElementById('inpNewModel').value.trim();
-            if (val && !modelConfigs[val]) {
-                modelConfigs[val] = [];
-                localStorage.setItem('dpw_local_models', JSON.stringify(modelConfigs));
-                try {
-                    await db.ref('modelConfigs').set(modelConfigs);
-                } catch(e) {}
-                document.getElementById('inpNewModel').value = '';
-                renderModelsList();
-                populateModelSelect();
-                showToast(currentLang === 'ar' ? `تم إنشاء النموذج "${val}"!` : `Modèle "${val}" créé avec succès!`);
-            }
-        }
-
-        async function deleteModel(modelName) {
-            const confirmMsg = currentLang === 'ar' ? `هل تريد بالتأكيد حذف النموذج "${modelName}" ؟` : `Voulez-vous vraiment supprimer le modèle "${modelName}" ?`;
-            if (confirm(confirmMsg)) {
-                delete modelConfigs[modelName];
-                delete modelTemplates[modelName];
-                delete templateMappings[modelName];
-                localStorage.setItem('dpw_local_models', JSON.stringify(modelConfigs));
-                localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
-                localStorage.setItem('dpw_local_mappings', JSON.stringify(templateMappings));
-                try {
-                    await db.ref('modelConfigs/' + modelName).remove();
-                    await db.ref('modelTemplates/' + modelName).remove();
-                    await db.ref('templateMappings/' + modelName).remove();
-                } catch(e) {}
-                renderModelsList();
-                populateModelSelect();
-                showToast(currentLang === 'ar' ? `تم حذف النموذج "${modelName}"` : `Modèle "${modelName}" supprimé`);
-            }
-        }
-
         function openModal() { 
             document.getElementById('editContainerKey').value = '';
             document.getElementById('lblModalTitle').innerText = currentLang === 'ar' ? "تسجيل ورصد حاوية جديدة" : "Pointer un conteneur";
@@ -2220,7 +2260,6 @@
             });
         }
 
-        populateModelSelect();
         filterContainers();
         renderTrackingList();
         setLanguage(currentLang);
