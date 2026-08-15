@@ -174,9 +174,10 @@
         </div>
     </div>
 
-    <!-- AUTH MODAL -->
+    <!-- ================= 🔐 AUTH MODAL (PHONE OTP + EMAIL AUTH) ================= -->
     <div id="authModalOverlay" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4">
+        <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4 relative overflow-hidden">
+            
             <div class="w-12 h-12 mx-auto flex items-center justify-center">
                 <svg class="w-full h-full filter drop-shadow-[0_2px_8px_rgba(0,255,170,0.3)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M22 52C22 30 42 26 62 27C45 30 34 38 32 52C31 65 22 52 22 52Z" fill="url(#auth_logo_grad)"/>
@@ -192,28 +193,94 @@
             </div>
             <div>
                 <h3 class="font-extrabold text-base text-white">DP WORLD DJENDJEN</h3>
-                <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase">Cloud Authentication</p>
+                <p class="text-[11px] text-[#00ffaa] font-bold tracking-wider uppercase" id="lblAuthSubtitle">Terminal Authentication</p>
             </div>
 
-            <div class="flex border-b border-[#252b75] text-xs font-bold">
-                <button id="authTabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]">Connexion</button>
-                <button id="authTabReg" onclick="switchAuthTab('reg')" class="flex-1 py-2 text-gray-400">Créer compte</button>
-            </div>
-
-            <form onsubmit="handleAuthAction(event)" class="space-y-3 text-xs text-left">
-                <div>
-                    <label class="block text-gray-300 font-medium mb-1">Email</label>
-                    <input type="email" id="authEmail" required placeholder="pointeur@dpw.dz" class="w-full input-dpw p-3 rounded-xl">
-                </div>
-                <div>
-                    <label class="block text-gray-300 font-medium mb-1">Mot de passe</label>
-                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full input-dpw p-3 rounded-xl">
-                </div>
-                <button type="submit" id="authSubmitBtn" class="w-full btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg active:scale-95 transition">
-                    Se connecter
+            <!-- Auth Mode Selector (Phone SMS vs Email) -->
+            <div class="grid grid-cols-2 gap-1 bg-[#0d1033] p-1 rounded-xl border border-[#252b75] text-xs font-bold">
+                <button id="tabMethodPhone" onclick="switchAuthMethod('phone')" class="py-2 rounded-lg bg-[#00ffaa] text-[#0d1033] transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-phone"></i>
+                    <span id="txtTabPhone">الهاتف (SMS)</span>
                 </button>
-                <p id="authErrorMsg" class="text-[10px] text-rose-400 text-center font-semibold min-h-[1rem]"></p>
-            </form>
+                <button id="tabMethodEmail" onclick="switchAuthMethod('email')" class="py-2 rounded-lg text-gray-300 hover:text-white transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span id="txtTabEmail">Email</span>
+                </button>
+            </div>
+
+            <!-- 📱 PHONE AUTH CONTAINER -->
+            <div id="phoneAuthContainer" class="space-y-3 text-xs text-left">
+                <!-- Step 1: Phone input -->
+                <div id="phoneStep1" class="space-y-3">
+                    <div>
+                        <label class="block text-gray-300 font-semibold mb-1" id="lblPhoneInput">Numéro de téléphone</label>
+                        <div class="relative flex items-center">
+                            <span class="absolute left-3 text-xs font-bold text-[#00ffaa] flex items-center gap-1 pointer-events-none">
+                                <i class="fa-solid fa-mobile-screen"></i> +213
+                            </span>
+                            <input type="tel" id="authPhoneNumber" placeholder="550 12 34 56" class="w-full input-dpw pl-16 pr-3 py-3 rounded-xl font-mono text-sm tracking-wider text-white">
+                        </div>
+                    </div>
+
+                    <div id="recaptchaContainer" class="flex justify-center my-1"></div>
+
+                    <button type="button" id="btnSendOtp" onclick="sendPhoneVerificationCode()" class="w-full btn-dpw-gradient font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 transition shadow-lg">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span id="txtBtnSendOtp">Envoyer le code SMS</span>
+                    </button>
+                </div>
+
+                <!-- Step 2: OTP Verification Code -->
+                <div id="phoneStep2" class="hidden space-y-3">
+                    <div class="bg-[#1d2263] p-3 rounded-xl border border-[#303796] text-center space-y-1">
+                        <p class="text-gray-300 text-[11px]" id="txtCodeSentNotice">Code de vérification envoyé au :</p>
+                        <p id="displayTargetPhone" class="font-mono font-bold text-[#00ffaa] text-xs" dir="ltr"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-300 font-semibold mb-1 text-center" id="lblOtpCode">Code de vérification (6 chiffres)</label>
+                        <input type="text" id="authOtpCode" maxlength="6" placeholder="123456" class="w-full input-dpw p-3 rounded-xl text-center font-mono font-extrabold text-lg tracking-[0.3em] text-[#00ffaa] focus:border-[#00ffaa]">
+                    </div>
+
+                    <button type="button" id="btnVerifyOtp" onclick="verifyPhoneOtpCode()" class="w-full btn-dpw-green font-extrabold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 transition shadow-lg">
+                        <i class="fa-solid fa-shield-check"></i>
+                        <span id="txtBtnVerifyOtp">Valider & Se connecter</span>
+                    </button>
+
+                    <div class="flex justify-between items-center text-[11px] pt-1 px-1">
+                        <button type="button" onclick="resetPhoneStep()" class="text-gray-400 hover:text-white transition flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-left"></i> <span id="txtBtnChangePhone">Modifier numéro</span>
+                        </button>
+                        <button type="button" onclick="sendPhoneVerificationCode()" class="text-[#00ffaa] hover:underline font-bold" id="btnResendOtp">
+                            Renvoyer
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📧 EMAIL AUTH CONTAINER -->
+            <div id="emailAuthContainer" class="hidden space-y-3 text-xs text-left">
+                <div class="flex border-b border-[#252b75] text-[11px] font-bold mb-2">
+                    <button id="authTabLogin" onclick="switchAuthTab('login')" class="flex-1 py-1.5 text-[#00ffaa] border-b-2 border-[#00ffaa]">Connexion</button>
+                    <button id="authTabReg" onclick="switchAuthTab('reg')" class="flex-1 py-1.5 text-gray-400">Créer compte</button>
+                </div>
+
+                <form onsubmit="handleAuthAction(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1">Email</label>
+                        <input type="email" id="authEmail" placeholder="pointeur@dpw.dz" class="w-full input-dpw p-3 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 font-medium mb-1">Mot de passe</label>
+                        <input type="password" id="authPassword" placeholder="••••••••" class="w-full input-dpw p-3 rounded-xl">
+                    </div>
+                    <button type="submit" id="authSubmitBtn" class="w-full btn-dpw-gradient font-bold py-3.5 rounded-xl text-xs shadow-lg active:scale-95 transition">
+                        Se connecter
+                    </button>
+                </form>
+            </div>
+
+            <p id="authErrorMsg" class="text-[11px] text-rose-400 text-center font-semibold min-h-[1.2rem]"></p>
         </div>
     </div>
 
@@ -243,7 +310,7 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- Desktop Language Buttons -->
+                <!-- Desktop Language Selector -->
                 <div class="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-[#15194a]/90 p-1 rounded-xl border border-[#252b75] mr-1">
                     <button onclick="setLanguage('fr')" id="langBtn_fr_d" class="px-2.5 py-1 rounded-lg bg-[#00ffaa] text-[#0d1033]">FR</button>
                     <button onclick="setLanguage('ar')" id="langBtn_ar_d" class="px-2.5 py-1 rounded-lg text-gray-300">عربي</button>
@@ -410,7 +477,7 @@
 
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR -->
+    <!-- BOTTOM NAVIGATION BAR (FLOATING DOCK) -->
     <div class="fixed bottom-3 left-4 right-4 bg-[#121642]/90 backdrop-blur-xl border border-[#2d3587] rounded-3xl shadow-2xl z-40 max-w-lg mx-auto">
         <div class="grid grid-cols-4 py-2 px-1 text-center">
             <button id="navBtnAccueil" onclick="switchTab('accueil')" class="flex flex-col items-center gap-1 py-1.5 nav-pill-active transition-all duration-200">
@@ -644,6 +711,8 @@
 
         let currentUser = null;
         let authMode = 'login';
+        let currentAuthMethod = 'phone';
+        let confirmationResult = null;
         let currentLang = localStorage.getItem('dpw_lang') || 'fr';
         
         let containers = JSON.parse(localStorage.getItem('dpw_local_containers')) || [];
@@ -799,18 +868,20 @@
             }, 2500);
         }
 
+        // ================= 🔐 AUTH STATE & LOGIC =================
         auth.onAuthStateChanged((user) => {
             const authModal = document.getElementById('authModalOverlay');
             if (user) {
                 currentUser = user;
-                localStorage.setItem('dpw_last_agent', user.email);
+                const userIdentifier = user.phoneNumber || user.email || 'Agent Pointeur';
+                localStorage.setItem('dpw_last_agent', userIdentifier);
                 authModal.classList.add('hidden');
-                document.getElementById('accountEmailDisplay').innerText = user.email;
+                document.getElementById('accountEmailDisplay').innerText = userIdentifier;
                 initFirebaseSync();
             } else {
                 const savedAgent = localStorage.getItem('dpw_last_agent');
                 if (savedAgent) {
-                    currentUser = { email: savedAgent };
+                    currentUser = { email: savedAgent, phoneNumber: savedAgent };
                     authModal.classList.add('hidden');
                     document.getElementById('accountEmailDisplay').innerText = savedAgent;
                     filterContainers();
@@ -820,9 +891,111 @@
                 } else {
                     currentUser = null;
                     authModal.classList.remove('hidden');
+                    switchAuthMethod('phone');
                 }
             }
         });
+
+        function switchAuthMethod(method) {
+            currentAuthMethod = method;
+            const phoneContainer = document.getElementById('phoneAuthContainer');
+            const emailContainer = document.getElementById('emailAuthContainer');
+            const tabPhone = document.getElementById('tabMethodPhone');
+            const tabEmail = document.getElementById('tabMethodEmail');
+            const errEl = document.getElementById('authErrorMsg');
+            errEl.innerText = "";
+
+            if (method === 'phone') {
+                phoneContainer.classList.remove('hidden');
+                emailContainer.classList.add('hidden');
+                tabPhone.className = "py-2 rounded-lg bg-[#00ffaa] text-[#0d1033] transition flex items-center justify-center gap-1.5 shadow-sm";
+                tabEmail.className = "py-2 rounded-lg text-gray-300 hover:text-white transition flex items-center justify-center gap-1.5";
+                initRecaptcha();
+            } else {
+                phoneContainer.classList.add('hidden');
+                emailContainer.classList.remove('hidden');
+                tabEmail.className = "py-2 rounded-lg bg-[#00ffaa] text-[#0d1033] transition flex items-center justify-center gap-1.5 shadow-sm";
+                tabPhone.className = "py-2 rounded-lg text-gray-300 hover:text-white transition flex items-center justify-center gap-1.5";
+            }
+        }
+
+        function initRecaptcha() {
+            if (!window.recaptchaVerifier) {
+                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptchaContainer', {
+                    size: 'invisible',
+                    callback: () => {}
+                });
+            }
+        }
+
+        async function sendPhoneVerificationCode() {
+            const rawNumber = document.getElementById('authPhoneNumber').value.trim().replace(/\s+/g, '');
+            const errEl = document.getElementById('authErrorMsg');
+            const btn = document.getElementById('btnSendOtp');
+            errEl.innerText = "";
+
+            if (!rawNumber) {
+                errEl.innerText = currentLang === 'ar' ? "يرجى إدخال رقم الهاتف" : "Veuillez saisir le numéro de téléphone";
+                return;
+            }
+
+            let fullPhone = rawNumber.startsWith('+') ? rawNumber : `+213${rawNumber.replace(/^0+/, '')}`;
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> ${currentLang === 'ar' ? 'جاري الإرسال...' : 'Envoi en cours...'}`;
+
+            try {
+                initRecaptcha();
+                confirmationResult = await auth.signInWithPhoneNumber(fullPhone, window.recaptchaVerifier);
+                
+                document.getElementById('phoneStep1').classList.add('hidden');
+                document.getElementById('phoneStep2').classList.remove('hidden');
+                document.getElementById('displayTargetPhone').innerText = fullPhone;
+                document.getElementById('authOtpCode').value = '';
+                showToast(currentLang === 'ar' ? "✓ تم إرسال رمز التحقق SMS بنجاح!" : "✓ Code SMS envoyé avec succès!");
+            } catch (error) {
+                console.error("SMS sending error:", error);
+                errEl.innerText = error.message;
+                if (window.recaptchaVerifier) {
+                    window.recaptchaVerifier.render().then(wId => grecaptcha.reset(wId));
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>${document.getElementById('txtBtnSendOtp').innerText}</span>`;
+            }
+        }
+
+        async function verifyPhoneOtpCode() {
+            const code = document.getElementById('authOtpCode').value.trim();
+            const errEl = document.getElementById('authErrorMsg');
+            const btn = document.getElementById('btnVerifyOtp');
+            errEl.innerText = "";
+
+            if (code.length !== 6) {
+                errEl.innerText = currentLang === 'ar' ? "الرمز يجب أن يتكون من 6 أرقام" : "Le code doit comporter 6 chiffres";
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> ${currentLang === 'ar' ? 'جاري التحقق...' : 'Vérification...'}`;
+
+            try {
+                const result = await confirmationResult.confirm(code);
+                showToast(currentLang === 'ar' ? "✓ تم تسجيل الدخول بنجاح!" : "✓ Connexion réussie!");
+            } catch (error) {
+                console.error("OTP verification error:", error);
+                errEl.innerText = currentLang === 'ar' ? "رمز التحقق غير صحيح أو منتهي الصلاحية" : "Code OTP invalide ou expiré";
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-shield-check"></i> <span>${document.getElementById('txtBtnVerifyOtp').innerText}</span>`;
+            }
+        }
+
+        function resetPhoneStep() {
+            document.getElementById('phoneStep2').classList.add('hidden');
+            document.getElementById('phoneStep1').classList.remove('hidden');
+            document.getElementById('authErrorMsg').innerText = "";
+        }
 
         function switchAuthTab(mode) {
             authMode = mode;
@@ -831,12 +1004,12 @@
             const submitBtn = document.getElementById('authSubmitBtn');
 
             if (mode === 'login') {
-                tabLogin.className = "flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]";
-                tabReg.className = "flex-1 py-2 text-gray-400";
+                tabLogin.className = "flex-1 py-1.5 text-[#00ffaa] border-b-2 border-[#00ffaa]";
+                tabReg.className = "flex-1 py-1.5 text-gray-400";
                 submitBtn.innerText = currentLang === 'ar' ? "تسجيل الدخول" : "Se connecter";
             } else {
-                tabReg.className = "flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]";
-                tabLogin.className = "flex-1 py-2 text-gray-400";
+                tabReg.className = "flex-1 py-1.5 text-[#00ffaa] border-b-2 border-[#00ffaa]";
+                tabLogin.className = "flex-1 py-1.5 text-gray-400";
                 submitBtn.innerText = currentLang === 'ar' ? "إنشاء حساب" : "Créer compte";
             }
         }
@@ -964,7 +1137,7 @@
 
         function updateAccountStats() {
             if(!currentUser) return;
-            const agentPrefix = currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur';
+            const agentPrefix = currentUser.phoneNumber || (currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur');
             const myCount = containers.filter(c => c.agent === agentPrefix).length;
             document.getElementById('agentCountStat').innerText = myCount;
 
@@ -1013,7 +1186,6 @@
 
                     const arrayBuffer = e.target.result;
                     
-                    // التحقق من صحة القالب وفتحه عبر مكتبة ExcelJS
                     const testWb = new ExcelJS.Workbook();
                     await testWb.xlsx.load(arrayBuffer);
                     
@@ -1021,7 +1193,6 @@
                         throw new Error("Aucune feuille trouvée dans le classeur.");
                     }
 
-                    // تشفير آمن مجزأ للحفظ في الذاكرة والسحابة
                     const bytes = new Uint8Array(arrayBuffer);
                     let binary = '';
                     const chunkSize = 8192;
@@ -1240,7 +1411,7 @@
             });
         }
 
-        // ================= 🚀 ADVANCED EXPORT VIA EXCELJS (DIRECT INJECTION) =================
+        // ================= 🚀 ADVANCED EXPORT VIA EXCELJS =================
         async function executeAdvancedExport() {
             const stageFilter = document.getElementById('exportFilterStage').value;
             const modelFilter = document.getElementById('exportFilterModel').value;
@@ -1258,7 +1429,6 @@
             const base64Data = modelTemplates[targetModel];
             const mappingConfig = templateMappings[targetModel];
 
-            // 🎯 الحالة 1: الحقن المباشر في قالب الشركة المرفوع عبر ExcelJS
             if (base64Data && mappingConfig) {
                 try {
                     const binaryString = atob(base64Data);
@@ -1312,7 +1482,6 @@
                 }
             }
 
-            // 🎯 الحالة 2: التوليد القياسي المنسق في حال عدم وجود قالب
             try {
                 const workbook = new ExcelJS.Workbook();
                 const models = modelFilter === 'All' ? Object.keys(modelConfigs) : [modelFilter];
@@ -2116,6 +2285,8 @@
                     customData[fieldName] = input.value || '-';
                 });
 
+                const activeAgentIdentifier = currentUser ? (currentUser.phoneNumber || (currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur')) : 'Pointeur';
+
                 if (editKey) {
                     const idx = containers.findIndex(c => c.firebaseKey === editKey);
                     if (idx !== -1) {
@@ -2155,7 +2326,7 @@
                         customData: customData,
                         time: timeStr,
                         date: now.toLocaleDateString('fr-FR'),
-                        agent: currentUser && currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur',
+                        agent: activeAgentIdentifier,
                         timestamp: Date.now()
                     };
 
