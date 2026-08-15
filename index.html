@@ -963,7 +963,7 @@
             document.getElementById('kpiStockVal').innerText = containers.filter(c => (c.stage || 'Stock') === 'Stock').length;
         }
 
-        // ================= 🎯 TEMPLATE INJECTION & MAPPING LOGIC (FIXED) =================
+        // ================= 🎯 TEMPLATE INJECTION & MAPPING LOGIC =================
         function triggerUploadTemplate(modelName) {
             currentUploadTemplateTarget = modelName;
             document.getElementById('templateFileInput').click();
@@ -1002,6 +1002,31 @@
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        // 🗑️ زر حذف قالب الإكسل المرفوع مع إعدادات المطابقة
+        async function deleteTemplate(modelName) {
+            const confirmMsg = currentLang === 'ar' 
+                ? `هل تريد بالتأكيد حذف ملف قالب الإكسل للنموذج "${modelName}"؟` 
+                : `Voulez-vous vraiment supprimer le fichier template Excel de "${modelName}" ?`;
+            
+            if (confirm(confirmMsg)) {
+                delete modelTemplates[modelName];
+                delete templateMappings[modelName];
+
+                localStorage.setItem('dpw_local_templates', JSON.stringify(modelTemplates));
+                localStorage.setItem('dpw_local_mappings', JSON.stringify(templateMappings));
+
+                try {
+                    await db.ref('modelTemplates/' + modelName).remove();
+                    await db.ref('templateMappings/' + modelName).remove();
+                } catch(e) {
+                    console.warn("Cloud remove warning:", e);
+                }
+
+                renderModelsList();
+                showToast(currentLang === 'ar' ? `✓ تم حذف قالب "${modelName}" بنجاح` : `✓ Template "${modelName}" supprimé`);
+            }
         }
 
         function openMappingModal(modelName) {
@@ -1124,7 +1149,7 @@
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-white text-sm">${mName}</span>
                         <div class="flex items-center gap-1.5">
-                            <button onclick="triggerUploadTemplate('${mName}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 ${hasTemplate ? 'bg-emerald-600/90 text-white' : 'bg-blue-600/90 text-white'}" title="Upload Template">
+                            <button onclick="triggerUploadTemplate('${mName}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 ${hasTemplate ? 'bg-emerald-600/90 text-white' : 'bg-blue-600/90 text-white'}" title="${hasTemplate ? 'Changer de Template' : 'Upload Template'}">
                                 <i class="fa-solid fa-file-excel"></i>
                                 <span>${hasTemplate ? 'Template ✓' : '+ Template'}</span>
                             </button>
@@ -1133,8 +1158,11 @@
                                     <i class="fa-solid fa-table-cells"></i>
                                     <span>${hasMapping ? 'Colonnes ✓' : 'Mapping'}</span>
                                 </button>
+                                <button onclick="deleteTemplate('${mName}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 transition" title="Supprimer le template Excel">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
                             ` : ''}
-                            <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1" title="Supprimer le modèle"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-1.5 pt-1">
@@ -1145,7 +1173,7 @@
             });
         }
 
-        // ================= 🚀 EXECUTE ADVANCED EXPORT WITH DIRECT INJECTION (FIXED) =================
+        // ================= 🚀 EXECUTE ADVANCED EXPORT WITH DIRECT INJECTION =================
         function executeAdvancedExport() {
             const stageFilter = document.getElementById('exportFilterStage').value;
             const modelFilter = document.getElementById('exportFilterModel').value;
