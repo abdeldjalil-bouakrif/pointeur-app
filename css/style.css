@@ -215,6 +215,25 @@ body {
    📱 MODAL SYSTEM & MOBILE UI FIXES
    ========================================================================== */
 
+/* Body & Background Scroll Lock when Modal is Active */
+html.modal-open,
+body.modal-open {
+    overflow: hidden !important;
+    height: 100vh !important;
+    overscroll-behavior: none !important;
+    touch-action: none;
+}
+
+/* Modal Overlays with Backdrop Blur and Touch Isolation */
+#yardModalOverlay,
+#modalOverlay,
+#exportModalOverlay,
+#templateMappingModal,
+#authModalOverlay {
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
 /* Top bar / Modal header flex layout */
 .modal-header,
 .top-bar-flex {
@@ -258,12 +277,25 @@ body {
     transform: scale(0.92);
 }
 
-/* Modal dialog container with max-height: 85vh and smooth touch scrolling */
+/* Standard Modal Dialog Container */
 .modal-container-scroll,
 .dpw-modal-box {
     max-height: 85vh !important;
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y;
+}
+
+/* Visual Yard Matrix Modal (Spacious: width: 95%, max-height: 88vh with smooth touch scrolling) */
+.yard-modal-box {
+    width: 95% !important;
+    max-width: 64rem !important;
+    max-height: 88vh !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y;
 }
 
 /* Sticky confirmation & action button footer at bottom of modal */
@@ -333,13 +365,15 @@ body {
 
 .yard-matrix-table {
     border-collapse: separate;
-    border-spacing: 8px 8px;
+    border-spacing: 6px 6px;
     width: 100%;
+    min-width: 480px;
 }
 
 @media (max-width: 640px) {
     .yard-matrix-table {
         border-spacing: 4px 4px;
+        min-width: 440px;
     }
 }
 
@@ -389,6 +423,7 @@ body {
 /* ================= Yard Slot Base ================= */
 .yard-slot {
     height: 64px;
+    min-width: 66px;
     border-radius: 12px;
     position: relative;
     cursor: pointer;
@@ -403,9 +438,10 @@ body {
 
 @media (max-width: 640px) {
     .yard-slot {
-        height: 54px;
-        padding: 3px 4px;
-        border-radius: 8px;
+        height: 56px;
+        min-width: 60px;
+        padding: 4px 5px;
+        border-radius: 9px;
     }
 }
 
