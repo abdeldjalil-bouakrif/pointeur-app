@@ -33,6 +33,12 @@ body {
     overscroll-behavior-y: contain;
 }
 
+/* Modal Open Background Scroll Lock */
+body.modal-open {
+    overflow: hidden;
+    height: 100vh;
+}
+
 /* Safe Area Utility */
 .nav-safe { 
     padding-bottom: max(0.6rem, var(--sab)); 
@@ -224,6 +230,33 @@ body {
     to { 
         transform: translateY(0); 
         opacity: 1; 
+    }
+}
+
+/* Modal Dialog Sizing & Scroll containment */
+.yard-modal-box,
+.dpw-modal-box,
+.modal-container-scroll {
+    max-height: 88vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile Modal Dimensions (max-width: 768px) */
+@media (max-width: 768px) {
+    .yard-modal-box,
+    .dpw-modal-box,
+    .modal-container-scroll,
+    #yardModalOverlay > div,
+    #modalOverlay > div,
+    #exportModalOverlay > div,
+    #templateMappingModal > div,
+    #authModalOverlay > div {
+        width: 95% !important;
+        max-height: 88vh !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
     }
 }
 
