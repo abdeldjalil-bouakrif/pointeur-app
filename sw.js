@@ -1,69 +1,45 @@
 /**
  * DP WORLD DJENDJEN - CONTAINER TALLYING PWA
- * Service Worker - Offline Caching & Background Resilience with Yard Matrix Precache
+ * Service Worker - Gestion du Cache Hors-ligne & Résilience Réseau
  */
 
 const CACHE_NAME = 'dpw-tally-v3';
+
 const APP_SHELL = [
   './',
-  './index.html',
-  './manifest.json',
-  './css/style.css',
-  './js/db.js',
-  './js/ocr.js',
-  './js/excel.js',
-  './js/yard.js',
-  './js/app.js'
+  'index.html',
+  'manifest.json',
+  'css/style.css',
+  'js/app.js',
+  'js/db.js',
+  'js/ocr.js',
+  'js/excel.js',
+  'js/yard.js'
 ];
 
-// External CDN resources to cache for reliable offline operation
-const EXTERNAL_ASSETS = [
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js',
-  'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js',
-  'https://unpkg.com/@zxing/library@latest',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js',
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js'
-];
-
-// Install Event: Precaches core app shell
+// Événement d'installation : Mise en cache du shell applicatif
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      console.log('[SW] Precaching App Shell with Yard Module');
+      console.log('[SW] Mise en cache de la PWA DP World Djendjen');
       try {
         await cache.addAll(APP_SHELL);
       } catch (err) {
-        console.warn('[SW] App shell precache warning:', err);
-      }
-
-      // Precache external CDN assets opportunistically
-      for (const url of EXTERNAL_ASSETS) {
-        try {
-          const response = await fetch(url, { mode: 'cors' });
-          if (response.ok) {
-            await cache.put(url, response);
-          }
-        } catch (e) {
-          // Skip if network fails during install
-        }
+        console.warn('[SW] Avertissement précaching shell:', err);
       }
     })
   );
   self.skipWaiting();
 });
 
-// Activate Event: Purge older cache versions
+// Événement d'activation : Nettoyage des anciennes versions du cache
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((name) => {
           if (name !== CACHE_NAME) {
-            console.log('[SW] Removing old cache:', name);
+            console.log('[SW] Suppression ancien cache:', name);
             return caches.delete(name);
           }
         })
@@ -72,17 +48,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event: Stale-While-Revalidate & Cache-First Strategies
+// Événement de récupération (Fetch) : Stale-While-Revalidate & Cache-First
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Skip Firebase Realtime Database websocket and REST traffic
+  // Ignorer les requêtes temps réel Firebase
   if (url.hostname.includes('firebaseio.com') || url.hostname.includes('googleapis.com')) {
     return;
   }
 
-  // HTML Navigation: Network-First with Cache fallback
+  // Navigation HTML : Network-First avec repli sur le cache
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -93,13 +69,13 @@ self.addEventListener('fetch', (event) => {
           });
         })
         .catch(() => {
-          return caches.match('./index.html') || caches.match('./');
+          return caches.match('index.html') || caches.match('./');
         })
     );
     return;
   }
 
-  // App Shell & Static Assets: Stale-While-Revalidate
+  // Assets & Shell : Stale-While-Revalidate
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request)
@@ -112,8 +88,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch((err) => {
-          // Offline network error is handled by returning cachedResponse if available
+        .catch(() => {
           return cachedResponse;
         });
 
