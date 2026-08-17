@@ -1,9 +1,9 @@
 /**
  * DP WORLD DJENDJEN - CONTAINER TALLYING PWA
- * Service Worker - Offline Caching & Background Resilience
+ * Service Worker - Offline Caching & Background Resilience with Yard Matrix Precache
  */
 
-const CACHE_NAME = 'dpw-tally-v2';
+const CACHE_NAME = 'dpw-tally-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const APP_SHELL = [
   './js/db.js',
   './js/ocr.js',
   './js/excel.js',
+  './js/yard.js',
   './js/app.js'
 ];
 
@@ -32,7 +33,7 @@ const EXTERNAL_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      console.log('[SW] Precaching App Shell');
+      console.log('[SW] Precaching App Shell with Yard Module');
       try {
         await cache.addAll(APP_SHELL);
       } catch (err) {
