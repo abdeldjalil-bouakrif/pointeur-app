@@ -62,7 +62,7 @@
             sealLbl: "N° Plomb (Seal)",
             notesLbl: "Remarques générales",
             cancel: "Annuler",
-            save: "Enregistrer",
+            save: "Valider",
             logout: "Se déconnecter",
             myCounts: "Mes Pointages",
             cloudServer: "Serveur Cloud",
@@ -116,7 +116,7 @@
             sealLbl: "رقم القفل والرصاص (Plomb)",
             notesLbl: "ملاحظات إضافية",
             cancel: "إلغاء",
-            save: "حفظ في السحابة",
+            save: "تأكيد وحفظ",
             logout: "تسجيل الخروج من الحساب",
             myCounts: "تسجيلاتي الميدانية",
             cloudServer: "الخادم السحابي",
@@ -170,7 +170,7 @@
             sealLbl: "Seal No.",
             notesLbl: "General Remarks",
             cancel: "Cancel",
-            save: "Save to Cloud",
+            save: "Validate",
             logout: "Sign Out",
             myCounts: "My Tallies",
             cloudServer: "Cloud Server",
@@ -192,14 +192,33 @@
         }
     };
 
+    /**
+     * Obtenir la liste stricte des conteneurs valides (anti-undefined / anti-phantom)
+     */
+    function getCleanContainersList() {
+        const raw = (window.DPW_DB && Array.isArray(window.DPW_DB.containers)) ? window.DPW_DB.containers : [];
+        return raw
+            .map(c => {
+                if (!c) return null;
+                const num = String(c.containerNumber || c.id || '').trim();
+                return { ...c, containerNumber: num, id: num };
+            })
+            .filter(c => c && c.containerNumber && c.containerNumber.trim() !== '' && c.containerNumber !== 'undefined' && c.containerNumber !== 'null');
+    }
+
     // ================= 🚀 INITIALISATION DE L'APPLICATION =================
     window.addEventListener('DOMContentLoaded', async () => {
         // 1. Initialisation de la base de données
         if (window.DPW_DB && typeof window.DPW_DB.init === 'function') {
             await window.DPW_DB.init(firebaseConfig);
 
+            // Purge au démarrage de tout enregistrement fantôme ou corrompu
+            if (typeof window.DPW_DB.purgeCorruptedContainers === 'function') {
+                await window.DPW_DB.purgeCorruptedContainers();
+            }
+
             // Souscriptions aux événements de synchronisation
-            window.DPW_DB.on('containers', (list) => {
+            window.DPW_DB.on('containers', () => {
                 filterContainers();
                 renderTrackingList();
                 updateAccountStats();
@@ -596,7 +615,7 @@
     }
 
     function updateAccountStats() {
-        const containers = (window.DPW_DB && window.DPW_DB.containers) ? window.DPW_DB.containers : [];
+        const containers = getCleanContainersList();
         const agentPrefix = currentUser && currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur';
         const myCount = containers.filter(c => c.agent === agentPrefix).length;
 
@@ -813,19 +832,22 @@
     }
 
     function openEditModal(fbKey) {
-        const containers = (window.DPW_DB && window.DPW_DB.containers) ? window.DPW_DB.containers : [];
-        const item = containers.find(c => c.firebaseKey === fbKey);
+        const containers = getCleanContainersList();
+        const item = containers.find(c => c.firebaseKey === fbKey || c.id === fbKey || c.containerNumber === fbKey);
         if (!item) return;
 
-        document.getElementById('editContainerKey').value = fbKey;
+        document.getElementById('editContainerKey').value = item.firebaseKey;
         document.getElementById('lblModalTitle').innerText = currentLang === 'ar' ? "تعديل بيانات الحاوية" : "Modifier le conteneur";
-        document.getElementById('inpId').value = item.id;
-        validateISOContainer(item.id);
-        document.getElementById('inpType').value = item.type;
-        document.getElementById('inpStatus').value = item.status;
+        
+        const numVal = item.containerNumber || item.id || '';
+        document.getElementById('inpId').value = numVal;
+        validateISOContainer(numVal);
+        
+        document.getElementById('inpType').value = item.type || "40' HC";
+        document.getElementById('inpStatus').value = item.status || 'Bon état';
         toggleDamageSection(item.status);
-        document.getElementById('inpLoc').value = item.loc;
-        document.getElementById('inpSeal').value = item.seal;
+        document.getElementById('inpLoc').value = item.loc || '';
+        document.getElementById('inpSeal').value = item.seal || 'SL-00000';
         document.getElementById('inpNotes').value = item.notes || '';
 
         if (item.damagePhoto) {
@@ -837,7 +859,7 @@
         }
 
         populateModelSelect();
-        document.getElementById('inpModel').value = item.model;
+        if (item.model) document.getElementById('inpModel').value = item.model;
         updateDynamicFormFields(item.customData || {});
 
         document.getElementById('modalOverlay').classList.remove('hidden');
@@ -851,12 +873,18 @@
     async function handleSave(e) {
         e.preventDefault();
         if (isSaving) return;
-        isSaving = true;
 
+        const inputIdVal = (document.getElementById('inpId')?.value || '').toUpperCase().trim();
+        if (!inputIdVal || inputIdVal === 'UNDEFINED' || inputIdVal === 'NULL') {
+            showToast(currentLang === 'ar' ? "يرجى إدخال رقم حاوية صحيح" : "Veuillez saisir un numéro de conteneur valide", true);
+            return;
+        }
+
+        isSaving = true;
         const saveBtn = document.getElementById('btnSaveSubmit');
-        const originalBtnText = saveBtn ? saveBtn.innerText : "Enregistrer";
+        const originalBtnText = saveBtn ? saveBtn.innerText : "Valider";
         if (saveBtn) {
-            saveBtn.innerText = currentLang === 'ar' ? "جاري الحفظ..." : "Enregistrement...";
+            saveBtn.innerText = currentLang === 'ar' ? "جاري الحفظ..." : "Validation...";
             saveBtn.disabled = true;
         }
 
@@ -864,8 +892,7 @@
             const editKey = document.getElementById('editContainerKey').value;
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            const selectedModel = document.getElementById('inpModel').value;
-            const inputIdVal = document.getElementById('inpId').value.toUpperCase().trim();
+            const selectedModel = document.getElementById('inpModel').value || 'Standard';
 
             const customData = {};
             const customInputs = document.querySelectorAll('[data-custom-field]');
@@ -876,6 +903,7 @@
 
             if (editKey) {
                 const updatedFields = {
+                    containerNumber: inputIdVal,
                     id: inputIdVal,
                     model: selectedModel,
                     type: document.getElementById('inpType').value,
@@ -895,6 +923,7 @@
                 showToast(currentLang === 'ar' ? "✓ تم تحديث بيانات الحاوية" : "✓ Conteneur mis à jour");
             } else {
                 const newItem = {
+                    containerNumber: inputIdVal,
                     id: inputIdVal,
                     model: selectedModel,
                     stage: 'Stock',
@@ -985,15 +1014,18 @@
     }
 
     // ================= 📊 RENDU DES LISTES =================
-    function renderList(data = (window.DPW_DB ? window.DPW_DB.containers : [])) {
+    function renderList(data) {
         const listEl = document.getElementById('containersList');
         if (!listEl) return;
 
+        const cleanData = (data || getCleanContainersList())
+            .filter(c => c && c.containerNumber && c.containerNumber.trim() !== '' && c.containerNumber !== 'undefined' && c.containerNumber !== 'null');
+
         const countEl = document.getElementById('containerCount');
-        if (countEl) countEl.innerText = `${data.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
+        if (countEl) countEl.innerText = `${cleanData.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
         listEl.innerHTML = '';
 
-        if (data.length === 0) {
+        if (cleanData.length === 0) {
             listEl.innerHTML = `
                 <div class="col-span-full text-center py-12 text-gray-500 font-medium text-xs">
                     <i class="fa-solid fa-box-open text-3xl mb-2 block text-gray-600"></i>
@@ -1005,12 +1037,13 @@
 
         const t = translations[currentLang] || translations.fr;
 
-        data.forEach((item) => {
+        cleanData.forEach((item) => {
             const isGood = item.status === 'Bon état';
             const badgeClass = isGood ? 'badge-green' : 'badge-red';
             const currentStage = item.stage || 'Stock';
             const isDamaged = !isGood;
             const isReefer = item.type && item.type.includes('RF');
+            const numAffiche = item.containerNumber || item.id || '';
             
             let stageBadgeClass = 'stage-stock';
             if (currentStage === 'Navire') stageBadgeClass = 'stage-navire';
@@ -1024,7 +1057,7 @@
             if (item.customData && Object.keys(item.customData).length > 0) {
                 customFieldsHTML = `<div class="flex flex-wrap gap-1.5 pt-1 text-[11px] text-gray-300">`;
                 for (const [key, val] of Object.entries(item.customData)) {
-                    if (val) customFieldsHTML += `<span class="bg-[#1d2263] px-2 py-0.5 rounded border border-[#303796]"><b>${key}:</b> ${val}</span>`;
+                    if (val && val !== '-') customFieldsHTML += `<span class="bg-[#1d2263] px-2 py-0.5 rounded border border-[#303796]"><b>${key}:</b> ${val}</span>`;
                 }
                 customFieldsHTML += `</div>`;
             }
@@ -1043,7 +1076,7 @@
             card.innerHTML = `
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <h4 class="font-extrabold text-base tracking-wider text-white font-container-id" dir="ltr">${item.id}</h4>
+                        <h4 class="font-extrabold text-base tracking-wider text-white font-container-id" dir="ltr">${numAffiche}</h4>
                         <span class="px-2.5 py-0.5 rounded-md font-semibold text-[10px] ${stageBadgeClass}">${stageDisplayName}</span>
                     </div>
                     <div class="flex items-center gap-1.5">
@@ -1072,20 +1105,21 @@
     }
 
     function filterContainers() {
-        const containers = (window.DPW_DB && window.DPW_DB.containers) ? window.DPW_DB.containers : [];
+        const containers = getCleanContainersList();
         const statusVal = document.getElementById('filterStatus')?.value || 'All';
         const stageVal = document.getElementById('filterStage')?.value || 'All';
         const searchVal = (document.getElementById('liveSearchInput')?.value || '').toLowerCase().trim();
 
-        let filtered = containers;
+        let filtered = containers.filter(c => c && c.containerNumber && c.containerNumber.trim() !== '' && c.containerNumber !== 'undefined');
         if (statusVal !== 'All') filtered = filtered.filter(c => c.status === statusVal);
         if (stageVal !== 'All') filtered = filtered.filter(c => (c.stage || 'Stock') === stageVal);
         if (searchVal) {
-            filtered = filtered.filter(c => 
-                (c.id && c.id.toLowerCase().includes(searchVal)) || 
-                (c.loc && c.loc.toLowerCase().includes(searchVal)) ||
-                (c.seal && c.seal.toLowerCase().includes(searchVal))
-            );
+            filtered = filtered.filter(c => {
+                const num = (c.containerNumber || c.id || '').toLowerCase();
+                const loc = (c.loc || '').toLowerCase();
+                const seal = (c.seal || '').toLowerCase();
+                return num.includes(searchVal) || loc.includes(searchVal) || seal.includes(searchVal);
+            });
         }
 
         renderList(filtered);
@@ -1096,7 +1130,9 @@
         if (!listEl) return;
         listEl.innerHTML = '';
 
-        const containers = (window.DPW_DB && window.DPW_DB.containers) ? window.DPW_DB.containers : [];
+        const containers = getCleanContainersList()
+            .filter(c => c && c.containerNumber && c.containerNumber.trim() !== '' && c.containerNumber !== 'undefined');
+
         if (containers.length === 0) {
             listEl.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 font-medium text-xs">${currentLang === 'ar' ? 'لا توجد حاويات لتتبعها.' : 'Aucun conteneur à suivre.'}</div>`;
             return;
@@ -1108,6 +1144,7 @@
         containers.forEach((item) => {
             const currentStage = item.stage || 'Navire';
             const stageIndex = stagesOrder.indexOf(currentStage);
+            const numAffiche = item.containerNumber || item.id || '';
 
             const card = document.createElement('div');
             card.className = "dpw-card p-4 rounded-2xl space-y-3.5 text-xs";
@@ -1123,7 +1160,7 @@
             card.innerHTML = `
                 <div class="flex items-center justify-between">
                     <div>
-                        <span class="font-extrabold text-base text-white tracking-wider font-container-id" dir="ltr">${item.id}</span>
+                        <span class="font-extrabold text-base text-white tracking-wider font-container-id" dir="ltr">${numAffiche}</span>
                         <p class="text-[10px] text-gray-400 mt-0.5">${item.type} • ${currentLang === 'ar' ? 'الموقع:' : 'Emplacement:'} <b class="text-white" dir="ltr">${item.loc}</b></p>
                     </div>
                     <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${currentStage === 'Navire' ? 'stage-navire' : currentStage === 'Stock' ? 'stage-stock' : currentStage === 'Douane' ? 'stage-douane' : 'stage-embarque'}">
@@ -1426,8 +1463,9 @@
         const modelFilter = document.getElementById('exportFilterModel').value;
 
         if (window.DPW_EXCEL && typeof window.DPW_EXCEL.export === 'function') {
+            const cleanContainers = getCleanContainersList();
             const result = await window.DPW_EXCEL.export({
-                containers: window.DPW_DB ? window.DPW_DB.containers : [],
+                containers: cleanContainers,
                 modelConfigs: window.DPW_DB ? window.DPW_DB.modelConfigs : {},
                 modelTemplates: window.DPW_DB ? window.DPW_DB.modelTemplates : {},
                 templateMappings: window.DPW_DB ? window.DPW_DB.templateMappings : {},
