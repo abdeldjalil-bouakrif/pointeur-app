@@ -42,7 +42,6 @@
         const texte = locStr.trim().toUpperCase();
 
         // 1. Format Complet : [Bloc]-[Travée/Bay]-[Rangée/Row]-[Hauteur/Tier]
-        // Exemples : A-T01-R04-H2, A-B01-R04-T2, B-01-04-02
         const matchComplet = texte.match(/^([ABCR])-?(?:T|B)?(\d{1,2})-?R?(\d{1,2})-?(?:H|T)?(\d{1,2})$/);
         if (matchComplet) {
             return {
@@ -55,7 +54,6 @@
         }
 
         // 2. Format 3 éléments : T[Travée]-R[Rangée]-H[Hauteur] ou B[Bay]-R[Row]-T[Tier]
-        // Exemples : T01-R04-H2, B01-R04-T2, 01-04-02
         const matchCourt = texte.match(/^(?:T|B)?(\d{1,2})-?R?(\d{1,2})-?(?:H|T)?(\d{1,2})$/);
         if (matchCourt) {
             const blk = blocActif || 'A';
@@ -187,7 +185,7 @@
         if (document.getElementById('countFilterDamaged')) document.getElementById('countFilterDamaged').innerText = nbAvaries;
         if (document.getElementById('countFilterReefer')) document.getElementById('countFilterReefer').innerText = nbFrigorifiques;
 
-        // Construction du tableau matriciel (Hauteurs du haut vers le bas, Rangées de gauche à droite)
+        // Construction du tableau matriciel
         let html = `
             <div class="w-full overflow-x-auto pb-2">
                 <table class="yard-matrix-table mx-auto">
@@ -207,7 +205,7 @@
                     <tbody>
         `;
 
-        // Rendu vertical des hauteurs : de la plus haute (ex: H4) vers le sol (H1)
+        // Rendu vertical des hauteurs : de la plus haute vers le sol
         for (let h = nbHauteurs; h >= 1; h--) {
             html += `
                 <tr>
@@ -639,12 +637,16 @@
         peuplerSelecteurTravees();
         afficherGrilleParc();
         modal.classList.remove('hidden');
+        document.body.classList.add('modal-open');
+        document.documentElement.classList.add('modal-open');
     }
 
     function closeYardModal() {
         const modal = document.getElementById('yardModalOverlay');
         if (modal) modal.classList.add('hidden');
         fermerInspecteur();
+        document.body.classList.remove('modal-open');
+        document.documentElement.classList.remove('modal-open');
     }
 
     // Exposition de l'API globale
