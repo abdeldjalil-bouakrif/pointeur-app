@@ -1,6 +1,6 @@
 /**
  * DP WORLD DJENDJEN - CONTAINER TALLYING PWA
- * Core Stylesheet & Design System
+ * Core Stylesheet & Design System with Visual Yard Matrix Engine
  */
 
 :root {
@@ -11,6 +11,7 @@
     --dpw-accent-green: #00ffaa;
     --dpw-accent-pink: #ff2a6d;
     --dpw-accent-orange: #ff5e1e;
+    --dpw-accent-cyan: #00e5ff;
     --dpw-card-border: rgba(48, 57, 155, 0.6);
 }
 
@@ -92,6 +93,24 @@ body {
 
 .btn-dpw-green:active { 
     transform: scale(0.96); 
+}
+
+.btn-dpw-yard {
+    background: linear-gradient(135deg, #1d2570 0%, #13174a 100%);
+    color: #00ffaa;
+    border: 1.5px solid rgba(0, 255, 170, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 255, 170, 0.18);
+    transition: all 0.15s ease;
+}
+
+.btn-dpw-yard:hover {
+    border-color: #00ffaa;
+    box-shadow: 0 0 16px rgba(0, 255, 170, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-dpw-yard:active {
+    transform: scale(0.96);
 }
 
 /* Status Badges */
@@ -208,6 +227,211 @@ body {
     }
 }
 
+/* ==========================================================================
+   🏗️ VISUAL YARD MATRIX DESIGN SYSTEM (BLOCK / BAY / ROW / TIER)
+   ========================================================================== */
+
+.yard-block-pill-active {
+    background: linear-gradient(135deg, #00ffaa 0%, #00d288 100%) !important;
+    color: #080b21 !important;
+    box-shadow: 0 2px 10px rgba(0, 255, 170, 0.35);
+}
+
+/* Yard Matrix Canvas Container */
+.bg-radial-gradient {
+    background: radial-gradient(circle at 50% 30%, rgba(30, 39, 115, 0.4) 0%, rgba(10, 13, 41, 0.95) 80%);
+}
+
+.yard-matrix-table {
+    border-collapse: separate;
+    border-spacing: 8px 8px;
+    width: 100%;
+}
+
+@media (max-width: 640px) {
+    .yard-matrix-table {
+        border-spacing: 5px 5px;
+    }
+}
+
+/* Tier Y-Axis Header */
+.yard-tier-badge {
+    background: #151a54;
+    border: 1px solid #303796;
+    color: #818cf8;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 10px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 32px;
+    user-select: none;
+}
+
+/* Row X-Axis Header */
+.yard-row-badge {
+    background: #151a54;
+    border: 1px solid #303796;
+    color: #00ffaa;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 6px 4px;
+    border-radius: 8px;
+    text-align: center;
+    user-select: none;
+}
+
+/* Ground Line Track */
+.yard-ground-track {
+    background: repeating-linear-gradient(
+        -45deg,
+        #1d246b,
+        #1d246b 10px,
+        #2d368d 10px,
+        #2d368d 20px
+    );
+    border-top: 2px solid #00ffaa;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 15px rgba(0, 255, 170, 0.2);
+}
+
+/* ================= Yard Slot Base ================= */
+.yard-slot {
+    height: 64px;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 6px 7px;
+    user-select: none;
+    overflow: hidden;
+}
+
+@media (max-width: 640px) {
+    .yard-slot {
+        height: 56px;
+        padding: 4px 5px;
+        border-radius: 8px;
+    }
+}
+
+/* Slot: Empty State */
+.yard-slot-empty {
+    background: rgba(21, 26, 84, 0.35);
+    border: 1.5px dashed rgba(79, 93, 184, 0.45);
+    color: #4b5563;
+}
+
+.yard-slot-empty:hover {
+    background: rgba(0, 255, 170, 0.08);
+    border-color: var(--dpw-accent-green);
+    color: var(--dpw-accent-green);
+    transform: translateY(-2px);
+    box-shadow: 0 0 14px rgba(0, 255, 170, 0.25);
+}
+
+.yard-slot-empty:hover .yard-empty-plus {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.yard-empty-plus {
+    opacity: 0.4;
+    transition: all 0.2s ease;
+}
+
+/* Slot: Occupied Base (Container Box 3D Styling) */
+.yard-slot-occupied {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border-width: 1.5px;
+    border-style: solid;
+}
+
+.yard-slot-occupied::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.12),
+        rgba(0, 0, 0, 0.12) 3px,
+        transparent 3px,
+        transparent 7px
+    );
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.yard-slot-occupied:hover {
+    transform: translateY(-3px) scale(1.02);
+    z-index: 10;
+}
+
+/* Slot State: Good Condition */
+.yard-slot-good {
+    background: linear-gradient(135deg, #103c39 0%, #0c2033 100%);
+    border-color: #00ffaa;
+    box-shadow: 0 4px 14px rgba(0, 255, 170, 0.22);
+}
+
+.yard-slot-good:hover {
+    box-shadow: 0 6px 20px rgba(0, 255, 170, 0.45);
+}
+
+/* Slot State: Damaged Condition */
+.yard-slot-damaged {
+    background: linear-gradient(135deg, #541122 0%, #200814 100%);
+    border-color: #ff2a6d;
+    box-shadow: 0 0 12px rgba(255, 42, 109, 0.35);
+    animation: yardPulseDamage 2.5s infinite;
+}
+
+@keyframes yardPulseDamage {
+    0%, 100% { border-color: #ff2a6d; box-shadow: 0 0 12px rgba(255, 42, 109, 0.35); }
+    50% { border-color: #ffa4b6; box-shadow: 0 0 20px rgba(255, 42, 109, 0.7); }
+}
+
+/* Slot State: Reefer Container */
+.yard-slot-reefer {
+    background: linear-gradient(135deg, #09374d 0%, #0d1e38 100%);
+    border-color: #00e5ff;
+    box-shadow: 0 4px 14px rgba(0, 229, 255, 0.28);
+}
+
+.yard-slot-reefer:hover {
+    box-shadow: 0 6px 22px rgba(0, 229, 255, 0.5);
+}
+
+/* Slot: Selected / Highlighted Search Match */
+.yard-slot-active-target {
+    border-color: #fbbf24 !important;
+    box-shadow: 0 0 22px rgba(251, 191, 36, 0.85) !important;
+    transform: scale(1.05) translateY(-3px);
+    z-index: 20;
+    animation: pulseTarget 1.2s infinite;
+}
+
+@keyframes pulseTarget {
+    0%, 100% { outline: 2px solid #fbbf24; }
+    50% { outline: 4px solid #fef08a; }
+}
+
+/* Slot Dimmed (when filter doesn't match) */
+.yard-slot-dimmed {
+    opacity: 0.22;
+    filter: grayscale(0.85);
+    transform: scale(0.96);
+    pointer-events: none;
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
     width: 6px;
@@ -239,7 +463,8 @@ body {
     display: inline-block;
 }
 
-[dir="rtl"] #liveSearchInput {
+[dir="rtl"] #liveSearchInput,
+[dir="rtl"] #yardSearchInput {
     padding-left: 0.75rem;
     padding-right: 2.25rem;
 }
@@ -247,4 +472,8 @@ body {
 [dir="rtl"] .search-icon-pos {
     left: auto;
     right: 0.875rem;
+}
+
+[dir="rtl"] .yard-matrix-table {
+    direction: ltr; /* Maritime Yard grids are globally standardized LTR */
 }
