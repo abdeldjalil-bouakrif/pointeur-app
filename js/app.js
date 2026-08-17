@@ -192,6 +192,20 @@
         }
     };
 
+    /**
+     * Obtenir la liste stricte des conteneurs valides
+     */
+    function getCleanContainersList() {
+        const raw = (window.DPW_DB && Array.isArray(window.DPW_DB.containers)) ? window.DPW_DB.containers : [];
+        return raw
+            .map(c => {
+                if (!c) return null;
+                const num = String(c.containerNumber || c.id || '').trim();
+                return { ...c, containerNumber: num, id: num };
+            })
+            .filter(c => c && c.containerNumber && c.containerNumber.trim() !== '' && c.containerNumber !== 'undefined' && c.containerNumber !== 'null');
+    }
+
     // ================= 🚀 INITIALISATION DE L'APPLICATION =================
     window.addEventListener('DOMContentLoaded', async () => {
         // 1. Initialisation de la base de données
@@ -199,7 +213,7 @@
             await window.DPW_DB.init(firebaseConfig);
 
             // Souscriptions aux événements de synchronisation
-            window.DPW_DB.on('containers', (list) => {
+            window.DPW_DB.on('containers', () => {
                 filterContainers();
                 renderTrackingList();
                 updateAccountStats();
@@ -596,7 +610,7 @@
     }
 
     function updateAccountStats() {
-        const containers = (window.DPW_DB && window.DPW_DB.containers) ? window.DPW_DB.containers : [];
+        const containers = getCleanContainersList();
         const agentPrefix = currentUser && currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur';
         const myCount = containers.filter(c => c.agent === agentPrefix).length;
 
@@ -809,23 +823,25 @@
         if (badge) badge.classList.add('hidden');
         removeDamagePhoto();
         populateModelSelect();
+        document.body.classList.add('modal-open');
         document.getElementById('modalOverlay').classList.remove('hidden');
     }
 
     function openEditModal(fbKey) {
-        const containers = (window.DPW_DB && window.DPW_DB.containers) ? window.DPW_DB.containers : [];
-        const item = containers.find(c => c.firebaseKey === fbKey);
+        const containers = getCleanContainersList();
+        const item = containers.find(c => c && (c.firebaseKey === fbKey || c.id === fbKey));
         if (!item) return;
 
         document.getElementById('editContainerKey').value = fbKey;
         document.getElementById('lblModalTitle').innerText = currentLang === 'ar' ? "تعديل بيانات الحاوية" : "Modifier le conteneur";
-        document.getElementById('inpId').value = item.id;
-        validateISOContainer(item.id);
-        document.getElementById('inpType').value = item.type;
-        document.getElementById('inpStatus').value = item.status;
+        const containerNo = item.containerNumber || item.id || '';
+        document.getElementById('inpId').value = containerNo;
+        validateISOContainer(containerNo);
+        document.getElementById('inpType').value = item.type || '40HC';
+        document.getElementById('inpStatus').value = item.status || 'Bon état';
         toggleDamageSection(item.status);
-        document.getElementById('inpLoc').value = item.loc;
-        document.getElementById('inpSeal').value = item.seal;
+        document.getElementById('inpLoc').value = item.loc || '';
+        document.getElementById('inpSeal').value = item.seal || '';
         document.getElementById('inpNotes').value = item.notes || '';
 
         if (item.damagePhoto) {
@@ -837,15 +853,42 @@
         }
 
         populateModelSelect();
-        document.getElementById('inpModel').value = item.model;
+        if (item.model) document.getElementById('inpModel').value = item.model;
         updateDynamicFormFields(item.customData || {});
 
+        document.body.classList.add('modal-open');
         document.getElementById('modalOverlay').classList.remove('hidden');
     }
 
     function closeModal() {
+        document.body.classList.remove('modal-open');
         document.getElementById('modalOverlay').classList.add('hidden');
         isSaving = false;
+    }
+
+    // ================= 🏗️ GESTION DU PARC (YARD MODAL) =================
+    function openYardModal(selectMode = false) {
+        document.body.classList.add('modal-open');
+        if (window.DPW_YARD && typeof window.DPW_YARD.openYardModal === 'function') {
+            window.DPW_YARD.openYardModal(selectMode);
+        } else {
+            const modal = document.getElementById('yardModalOverlay');
+            if (modal) modal.classList.remove('hidden');
+        }
+    }
+
+    function closeYardModal() {
+        document.body.classList.remove('modal-open');
+        if (window.DPW_YARD && typeof window.DPW_YARD.closeYardModal === 'function') {
+            window.DPW_YARD.closeYardModal();
+        } else {
+            const modal = document.getElementById('yardModalOverlay');
+            if (modal) modal.classList.add('hidden');
+        }
+    }
+
+    function openYardModalWithSelectMode() {
+        openYardModal(true);
     }
 
     async function handleSave(e) {
@@ -877,6 +920,7 @@
             if (editKey) {
                 const updatedFields = {
                     id: inputIdVal,
+                    containerNumber: inputIdVal,
                     model: selectedModel,
                     type: document.getElementById('inpType').value,
                     status: document.getElementById('inpStatus').value,
@@ -896,6 +940,7 @@
             } else {
                 const newItem = {
                     id: inputIdVal,
+                    containerNumber: inputIdVal,
                     model: selectedModel,
                     stage: 'Stock',
                     type: document.getElementById('inpType').value,
@@ -989,11 +1034,21 @@
         const listEl = document.getElementById('containersList');
         if (!listEl) return;
 
+        // Normalisation et validation stricte
+        const sourceData = (data || []).map(c => {
+            if (c && !c.containerNumber && c.id) {
+                return { ...c, containerNumber: c.id };
+            }
+            return c;
+        });
+
+        const cleanData = sourceData.filter(c => c && c.containerNumber && c.containerNumber !== 'undefined');
+
         const countEl = document.getElementById('containerCount');
-        if (countEl) countEl.innerText = `${data.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
+        if (countEl) countEl.innerText = `${cleanData.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
         listEl.innerHTML = '';
 
-        if (data.length === 0) {
+        if (cleanData.length === 0) {
             listEl.innerHTML = `
                 <div class="col-span-full text-center py-12 text-gray-500 font-medium text-xs">
                     <i class="fa-solid fa-box-open text-3xl mb-2 block text-gray-600"></i>
@@ -1005,12 +1060,19 @@
 
         const t = translations[currentLang] || translations.fr;
 
-        data.forEach((item) => {
+        sourceData.forEach((c) => {
+            // Validation stricte : ignorer et ne pas afficher de conteneur invalide/fantôme
+            if (!c || !c.containerNumber || c.containerNumber === 'undefined') {
+                return;
+            }
+
+            const item = c;
             const isGood = item.status === 'Bon état';
             const badgeClass = isGood ? 'badge-green' : 'badge-red';
             const currentStage = item.stage || 'Stock';
             const isDamaged = !isGood;
             const isReefer = item.type && item.type.includes('RF');
+            const numAffiche = item.containerNumber;
             
             let stageBadgeClass = 'stage-stock';
             if (currentStage === 'Navire') stageBadgeClass = 'stage-navire';
@@ -1024,7 +1086,7 @@
             if (item.customData && Object.keys(item.customData).length > 0) {
                 customFieldsHTML = `<div class="flex flex-wrap gap-1.5 pt-1 text-[11px] text-gray-300">`;
                 for (const [key, val] of Object.entries(item.customData)) {
-                    if (val) customFieldsHTML += `<span class="bg-[#1d2263] px-2 py-0.5 rounded border border-[#303796]"><b>${key}:</b> ${val}</span>`;
+                    if (val && val !== '-') customFieldsHTML += `<span class="bg-[#1d2263] px-2 py-0.5 rounded border border-[#303796]"><b>${key}:</b> ${val}</span>`;
                 }
                 customFieldsHTML += `</div>`;
             }
@@ -1043,7 +1105,7 @@
             card.innerHTML = `
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <h4 class="font-extrabold text-base tracking-wider text-white font-container-id" dir="ltr">${item.id}</h4>
+                        <h4 class="font-extrabold text-base tracking-wider text-white font-container-id" dir="ltr">${numAffiche}</h4>
                         <span class="px-2.5 py-0.5 rounded-md font-semibold text-[10px] ${stageBadgeClass}">${stageDisplayName}</span>
                     </div>
                     <div class="flex items-center gap-1.5">
@@ -1054,15 +1116,15 @@
                 </div>
                 <p class="text-gray-400 font-medium text-xs flex items-center gap-1.5">
                     ${isReefer ? '<i class="fa-solid fa-snowflake text-cyan-400" title="Frigorifique (Reefer)"></i>' : ''}
-                    <span><b class="text-gray-200">${item.type}</b> • <i class="fa-solid fa-location-dot text-[#00ffaa] text-[10px]"></i> <span class="text-gray-200 font-bold" dir="ltr">${item.loc}</span> • <i class="fa-solid fa-shield-halved text-gray-400 text-[10px]"></i> <span dir="ltr">${item.seal}</span></span>
+                    <span><b class="text-gray-200">${item.type || '40HC'}</b> • <i class="fa-solid fa-location-dot text-[#00ffaa] text-[10px]"></i> <span class="text-gray-200 font-bold" dir="ltr">${item.loc || 'B1-01-01-1'}</span> • <i class="fa-solid fa-shield-halved text-gray-400 text-[10px]"></i> <span dir="ltr">${item.seal || 'SL-00000'}</span></span>
                 </p>
                 ${customFieldsHTML}
                 ${damagePhotoHTML}
                 <div class="flex items-center justify-between text-gray-400 text-[11px] pt-1.5 border-t border-[#252b75]/80">
                     <div class="flex items-center gap-2">
-                        <span>${item.time}</span>
+                        <span>${item.time || '--:--'}</span>
                         <span>•</span>
-                        <span>${item.date}</span>
+                        <span>${item.date || ''}</span>
                     </div>
                     <span class="text-[10px] text-gray-400 font-mono bg-[#1d2263] px-2 py-0.5 rounded-md border border-[#303796]">${item.agent || 'Pointeur'}</span>
                 </div>
@@ -1072,20 +1134,21 @@
     }
 
     function filterContainers() {
-        const containers = (window.DPW_DB && window.DPW_DB.containers) ? window.DPW_DB.containers : [];
+        const rawContainers = getCleanContainersList();
         const statusVal = document.getElementById('filterStatus')?.value || 'All';
         const stageVal = document.getElementById('filterStage')?.value || 'All';
         const searchVal = (document.getElementById('liveSearchInput')?.value || '').toLowerCase().trim();
 
-        let filtered = containers;
+        let filtered = rawContainers.filter(c => c && c.containerNumber && c.containerNumber !== 'undefined');
         if (statusVal !== 'All') filtered = filtered.filter(c => c.status === statusVal);
         if (stageVal !== 'All') filtered = filtered.filter(c => (c.stage || 'Stock') === stageVal);
         if (searchVal) {
-            filtered = filtered.filter(c => 
-                (c.id && c.id.toLowerCase().includes(searchVal)) || 
-                (c.loc && c.loc.toLowerCase().includes(searchVal)) ||
-                (c.seal && c.seal.toLowerCase().includes(searchVal))
-            );
+            filtered = filtered.filter(c => {
+                const num = (c.containerNumber || c.id || '').toLowerCase();
+                const loc = (c.loc || '').toLowerCase();
+                const seal = (c.seal || '').toLowerCase();
+                return num.includes(searchVal) || loc.includes(searchVal) || seal.includes(searchVal);
+            });
         }
 
         renderList(filtered);
@@ -1096,7 +1159,9 @@
         if (!listEl) return;
         listEl.innerHTML = '';
 
-        const containers = (window.DPW_DB && window.DPW_DB.containers) ? window.DPW_DB.containers : [];
+        const containers = getCleanContainersList()
+            .filter(c => c && c.containerNumber && c.containerNumber !== 'undefined');
+
         if (containers.length === 0) {
             listEl.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500 font-medium text-xs">${currentLang === 'ar' ? 'لا توجد حاويات لتتبعها.' : 'Aucun conteneur à suivre.'}</div>`;
             return;
@@ -1105,7 +1170,13 @@
         const stagesOrder = ['Navire', 'Stock', 'Douane', 'Embarqué'];
         const t = translations[currentLang] || translations.fr;
 
-        containers.forEach((item) => {
+        containers.forEach((c) => {
+            // Validation stricte : ignorer et ne pas afficher de conteneur invalide/fantôme
+            if (!c || !c.containerNumber || c.containerNumber === 'undefined') {
+                return;
+            }
+
+            const item = c;
             const currentStage = item.stage || 'Navire';
             const stageIndex = stagesOrder.indexOf(currentStage);
 
@@ -1123,8 +1194,8 @@
             card.innerHTML = `
                 <div class="flex items-center justify-between">
                     <div>
-                        <span class="font-extrabold text-base text-white tracking-wider font-container-id" dir="ltr">${item.id}</span>
-                        <p class="text-[10px] text-gray-400 mt-0.5">${item.type} • ${currentLang === 'ar' ? 'الموقع:' : 'Emplacement:'} <b class="text-white" dir="ltr">${item.loc}</b></p>
+                        <span class="font-extrabold text-base text-white tracking-wider font-container-id" dir="ltr">${item.containerNumber}</span>
+                        <p class="text-[10px] text-gray-400 mt-0.5">${item.type || '40HC'} • ${currentLang === 'ar' ? 'الموقع:' : 'Emplacement:'} <b class="text-white" dir="ltr">${item.loc || 'B1-01-01-1'}</b></p>
                     </div>
                     <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${currentStage === 'Navire' ? 'stage-navire' : currentStage === 'Stock' ? 'stage-stock' : currentStage === 'Douane' ? 'stage-douane' : 'stage-embarque'}">
                         ${stageDisplayName}
@@ -1314,6 +1385,7 @@
     }
 
     function openMappingModal(modelName) {
+        document.body.classList.add('modal-open');
         document.getElementById('mappingModelKey').value = modelName;
         document.getElementById('txtMappingTargetModel').innerText = `Modèle : ${modelName}`;
         
@@ -1386,6 +1458,7 @@
     }
 
     function closeMappingModal() {
+        document.body.classList.remove('modal-open');
         document.getElementById('templateMappingModal').classList.add('hidden');
     }
 
@@ -1414,10 +1487,12 @@
 
     // ================= 📥 EXPORTATION EXCEL =================
     function openExportModal() {
+        document.body.classList.add('modal-open');
         document.getElementById('exportModalOverlay').classList.remove('hidden');
     }
 
     function closeExportModal() {
+        document.body.classList.remove('modal-open');
         document.getElementById('exportModalOverlay').classList.add('hidden');
     }
 
@@ -1427,7 +1502,7 @@
 
         if (window.DPW_EXCEL && typeof window.DPW_EXCEL.export === 'function') {
             const result = await window.DPW_EXCEL.export({
-                containers: window.DPW_DB ? window.DPW_DB.containers : [],
+                containers: getCleanContainersList(),
                 modelConfigs: window.DPW_DB ? window.DPW_DB.modelConfigs : {},
                 modelTemplates: window.DPW_DB ? window.DPW_DB.modelTemplates : {},
                 templateMappings: window.DPW_DB ? window.DPW_DB.templateMappings : {},
@@ -1483,6 +1558,9 @@
     window.openModal = openModal;
     window.openEditModal = openEditModal;
     window.closeModal = closeModal;
+    window.openYardModal = openYardModal;
+    window.closeYardModal = closeYardModal;
+    window.openYardModalWithSelectMode = openYardModalWithSelectMode;
     window.handleSave = handleSave;
     window.deleteContainer = deleteContainer;
     window.updateContainerStage = updateContainerStage;
