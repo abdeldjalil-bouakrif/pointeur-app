@@ -106,8 +106,8 @@
     <!-- 📱 MAIN APP CONTAINER -->
     <div class="w-full px-4 sm:px-8 max-w-7xl mx-auto relative z-10 pt-2">
 
-        <!-- BRAND HEADER SECTION -->
-        <header class="modal-header pb-3 border-b border-[#252b75]/80">
+        <!-- BRAND HEADER SECTION (CLEAN BRAND BAR) -->
+        <header class="flex items-center justify-between pb-3 border-b border-[#252b75]/80">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 flex items-center justify-center shrink-0">
                     <svg class="w-full h-full filter drop-shadow-[0_2px_10px_rgba(0,255,170,0.35)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -127,24 +127,28 @@
                     <p class="text-[11px] sm:text-xs text-[#00ffaa] font-extrabold tracking-wider uppercase">DP WORLD DJENDJEN</p>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-2 shrink-0">
-                <!-- Visual Yard Matrix Button -->
-                <button onclick="openYardModal()" class="btn-dpw-yard px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition" title="Matrice Visuelle du Parc (Yard Matrix)" id="btnYardMatrix">
-                    <i class="fa-solid fa-cubes-stacked text-sm text-[#00ffaa]"></i>
-                    <span class="hidden xs:inline sm:inline" id="btnYardText">Parc à Conteneurs</span>
-                </button>
-
-                <button onclick="openExportModal()" class="btn-dpw-green px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition" title="Options d'exportation Excel">
-                    <i class="fa-solid fa-file-excel text-sm"></i>
-                    <span class="hidden xs:inline sm:inline">Excel</span>
-                </button>
-                <button onclick="openModal()" class="btn-dpw-gradient px-3.5 sm:px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 active:scale-95 transition">
-                    <i class="fa-solid fa-plus text-xs"></i>
-                    <span id="btnPointerText">Pointer</span>
-                </button>
-            </div>
         </header>
+
+        <!-- ACTION BUTTONS SECTION (RESTORED DEDICATED CONTAINER BELOW HEADER) -->
+        <section class="grid grid-cols-3 gap-2.5 sm:gap-4 my-3.5" aria-label="Actions rapides">
+            <!-- Visual Yard Matrix Button -->
+            <button onclick="openYardModal()" class="btn-dpw-yard py-3 px-3 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition shadow-lg" title="Matrice Visuelle du Parc (Yard Matrix)" id="btnYardMatrix">
+                <i class="fa-solid fa-cubes-stacked text-base text-[#00ffaa]"></i>
+                <span id="btnYardText">Parc à Conteneurs</span>
+            </button>
+
+            <!-- Excel Export Button -->
+            <button onclick="openExportModal()" class="btn-dpw-green py-3 px-3 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition shadow-lg" title="Options d'exportation Excel">
+                <i class="fa-solid fa-file-excel text-base"></i>
+                <span>Excel</span>
+            </button>
+
+            <!-- Add Container Button -->
+            <button onclick="openModal()" class="btn-dpw-gradient py-3 px-3 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition shadow-lg">
+                <i class="fa-solid fa-plus text-sm"></i>
+                <span id="btnPointerText">Pointer</span>
+            </button>
+        </section>
 
         <!-- QUICK KPI METRIC CARDS -->
         <section class="grid grid-cols-4 gap-2 sm:gap-4 my-3 text-center" aria-label="Statistiques rapides">
@@ -330,7 +334,7 @@
     <input type="file" id="templateFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleTemplateUpload(event)">
 
     <!-- ================= ADD / EDIT CONTAINER MODAL ================= -->
-    <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="modalOverlay" onclick="if(event.target === this) closeModal()" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="w-full max-w-lg bg-[#15194a] rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 border border-[#303796] shadow-2xl modal-container-scroll modal-sheet-enter relative">
             
             <div class="w-12 h-1.5 bg-gray-500/40 rounded-full mx-auto mb-3 sm:hidden"></div>
@@ -433,15 +437,15 @@
                 <!-- Sticky Touch Confirmation Buttons -->
                 <div class="modal-sticky-footer">
                     <button type="button" onclick="closeModal()" class="w-1/2 bg-[#252b75] hover:bg-[#303796] text-white font-bold rounded-xl text-xs btn-touch-action transition active:scale-95" id="btnCancel">Annuler</button>
-                    <button type="submit" id="btnSaveSubmit" class="w-1/2 btn-dpw-gradient font-bold rounded-xl text-xs btn-touch-action shadow-lg transition active:scale-95">Valider</button>
+                    <button type="submit" id="btnSaveSubmit" class="w-1/2 btn-dpw-gradient font-bold rounded-xl text-xs btn-touch-action shadow-lg transition active:scale-95" id="btnSave">Valider</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- ================= 🏗️ VISUAL YARD MATRIX MODAL (PARC À CONTENEURS) ================= -->
-    <div id="yardModalOverlay" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
-        <div class="w-full max-w-5xl bg-[#11153b] rounded-[28px] border border-[#303796] shadow-2xl flex flex-col modal-container-scroll modal-sheet-enter relative">
+    <div id="yardModalOverlay" onclick="if(event.target === this) closeYardModal()" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
+        <div class="w-[95%] max-w-5xl bg-[#11153b] rounded-[28px] border border-[#303796] shadow-2xl flex flex-col yard-modal-box modal-sheet-enter relative">
             
             <!-- Yard Top Bar -->
             <div class="p-4 sm:p-5 border-b border-[#252b75] modal-header bg-[#151a54]/60">
@@ -469,7 +473,7 @@
             </div>
 
             <!-- Yard Navigation Controls (Bloc / Travée / Filtres / Recherche) -->
-            <div class="px-4 py-3 bg-[#131845] border-b border-[#252b75] space-y-3">
+            <div class="px-3.5 py-3 sm:px-4 bg-[#131845] border-b border-[#252b75] space-y-2.5">
                 <div class="flex flex-wrap items-center justify-between gap-2.5">
                     
                     <!-- Bloc Selector Tabs -->
@@ -497,7 +501,7 @@
                     </div>
 
                     <!-- Yard Search / Jump by Container ID -->
-                    <div class="relative flex-1 min-w-[200px] max-w-xs">
+                    <div class="relative flex-1 min-w-[180px] max-w-xs">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                         <input type="text" id="yardSearchInput" oninput="searchYardContainer(this.value)" placeholder="Localiser un conteneur (ex: MSCU)..." class="w-full input-dpw pl-8 pr-3 py-1.5 rounded-xl text-xs font-mono">
                     </div>
@@ -524,14 +528,14 @@
             </div>
 
             <!-- Yard Matrix Viewport & Grid Canvas -->
-            <div class="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-auto min-h-[340px] flex flex-col justify-center items-center relative bg-radial-gradient">
+            <div class="flex-1 p-3 sm:p-6 overflow-y-auto overflow-x-auto min-h-[320px] flex flex-col justify-center items-center relative bg-radial-gradient">
                 <div id="yardGridContainer" class="w-full max-w-4xl mx-auto flex flex-col items-center">
                     <!-- Dynamic Bay Row/Tier Grid Rendered by yard.js -->
                 </div>
             </div>
 
             <!-- Dynamic Slot Inspector Floating Drawer -->
-            <div id="yardSlotInspector" class="hidden border-t border-[#303796] bg-[#15194a]/95 backdrop-blur-xl p-4 transition-all duration-300">
+            <div id="yardSlotInspector" class="hidden border-t border-[#303796] bg-[#15194a]/95 backdrop-blur-xl p-3.5 sm:p-4 transition-all duration-300">
                 <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs" id="yardInspectorContent">
                     <!-- Populated dynamically when clicking a slot -->
                 </div>
@@ -541,7 +545,7 @@
     </div>
 
     <!-- ================= 🎯 TEMPLATE MAPPING CONFIG MODAL ================= -->
-    <div id="templateMappingModal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div id="templateMappingModal" onclick="if(event.target === this) closeMappingModal()" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-md bg-[#15194a] rounded-3xl p-5 sm:p-6 border border-[#303796] shadow-2xl space-y-4 modal-container-scroll modal-sheet-enter">
             <div class="modal-header border-b border-[#252b75] pb-2.5">
                 <div>
@@ -581,7 +585,7 @@
     </div>
 
     <!-- ================= 📊 ADVANCED EXPORT MODAL ================= -->
-    <div id="exportModalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div id="exportModalOverlay" onclick="if(event.target === this) closeExportModal()" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="w-full max-w-sm bg-[#15194a] rounded-3xl p-5 sm:p-6 border border-[#252b75] shadow-2xl space-y-4 modal-container-scroll modal-sheet-enter">
             <div class="modal-header border-b border-[#252b75] pb-2.5">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
