@@ -1,247 +1,256 @@
 /**
  * DP WORLD DJENDJEN - CONTAINER TALLYING PWA
- * Visual Yard Matrix Engine (Yard 2D / 3D Layout, Slot Mapping & Inspection)
+ * Moteur de Matrice Visuelle du Parc à Conteneurs (Yard 2D Engine)
+ * Terminologie Maritime Francophone Unifiée (Bloc, Travée, Rangée, Hauteur, Occupé, Disponible)
  */
 
 (function(window) {
     'use strict';
 
-    // Yard Block Configurations
-    const YARD_CONFIG = {
-        blocks: {
-            'A': { name: 'BLOC A (Dry)', type: 'Dry', bays: 24, rows: 6, maxTiers: 4, defaultType: "40' HC" },
-            'B': { name: 'BLOC B (Dry)', type: 'Dry', bays: 24, rows: 6, maxTiers: 4, defaultType: "20' ST" },
-            'C': { name: 'BLOC C (Empty)', type: 'Empty', bays: 20, rows: 6, maxTiers: 5, defaultType: "Empty" },
-            'R': { name: 'BLOC R (Reefer)', type: 'Reefer', bays: 16, rows: 4, maxTiers: 3, defaultType: "40' RF" }
+    // Configuration des Blocs du Parc Portuaire DP World Djendjen
+    const CONFIG_PARC = {
+        blocs: {
+            'A': { nom: 'BLOC A (Standard)', type: 'Dry', travees: 24, rangees: 6, maxHauteurs: 4, typeDefaut: "40' HC" },
+            'B': { nom: 'BLOC B (Standard)', type: 'Dry', travees: 24, rangees: 6, maxHauteurs: 4, typeDefaut: "20' ST" },
+            'C': { nom: 'BLOC C (Vides)', type: 'Empty', travees: 20, rangees: 6, maxHauteurs: 5, typeDefaut: "20' ST" },
+            'R': { nom: 'BLOC R (Frigorifique)', type: 'Reefer', travees: 16, rangees: 4, maxHauteurs: 3, typeDefaut: "40' RF" }
         }
     };
 
-    // Internal State
-    let currentBlock = 'A';
-    let currentBay = 1;
-    let currentFilter = 'all';
-    let searchQuery = '';
-    let selectedSlotData = null;
-    let isSelectMode = false; // When opened directly from Tally form "Choisir sur Parc"
+    // État interne du module Parc
+    let blocActif = 'A';
+    let traveeActive = 1;
+    let filtreActif = 'all';
+    let requeteRecherche = '';
+    let slotSelectionne = null;
+    let modeSelectionSeule = false; // Activé lorsque appelé depuis le formulaire de pointage ("Choisir sur Parc")
 
-    // ================= 🧭 LOCATION PARSER & NORMALIZER =================
+    // ================= 🧭 ANALYSEUR & NORMALISATEUR D'EMPLACEMENT =================
     /**
-     * Parses diverse location string formats entered by tallymen
-     * Supported formats:
-     * - B01-R04-T2, B1-R4-T2
-     * - A-B01-R04-T2, A-01-04-02
-     * - A010402, BLK A BAY 01 R 04 T 02
-     * - 01-04-02
+     * Analyse tout format d'emplacement saisi par les pointeurs et le convertit
+     * en coordonnées structurées : { bloc, travee, rangee, hauteur, standard }
+     * Formats supportés :
+     * - A-T01-R04-H2, B01-R04-H2, B01-R04-T2, A-01-04-02
+     * - BLOC A TRAVEE 01 RANGEE 04 HAUTEUR 02
+     * - 01-04-02, B1-R4-H2
      */
-    function parseLocation(locStr) {
+    function analyserEmplacement(locStr) {
         if (!locStr || typeof locStr !== 'string') {
             return null;
         }
 
-        const clean = locStr.trim().toUpperCase();
+        const texte = locStr.trim().toUpperCase();
 
-        // 1. Try format: [Block]-[Bay]-[Row]-[Tier] or [Block]-B[Bay]-R[Row]-T[Tier]
-        // Examples: A-B01-R04-T2, A-01-04-02, B-B12-R02-T3
-        const blockMatch = clean.match(/^([ABCR])-?B?(\d{1,2})-?R?(\d{1,2})-?T?(\d{1,2})$/);
-        if (blockMatch) {
+        // 1. Format Complet : [Bloc]-[Travée/Bay]-[Rangée/Row]-[Hauteur/Tier]
+        // Exemples : A-T01-R04-H2, A-B01-R04-T2, B-01-04-02
+        const matchComplet = texte.match(/^([ABCR])-?(?:T|B)?(\d{1,2})-?R?(\d{1,2})-?(?:H|T)?(\d{1,2})$/);
+        if (matchComplet) {
             return {
-                block: blockMatch[1],
-                bay: parseInt(blockMatch[2], 10),
-                row: parseInt(blockMatch[3], 10),
-                tier: parseInt(blockMatch[4], 10),
-                standard: `${blockMatch[1]}-B${String(blockMatch[2]).padStart(2, '0')}-R${String(blockMatch[3]).padStart(2, '0')}-T${blockMatch[4]}`
+                bloc: matchComplet[1],
+                travee: parseInt(matchComplet[2], 10),
+                rangee: parseInt(matchComplet[3], 10),
+                hauteur: parseInt(matchComplet[4], 10),
+                standard: `${matchComplet[1]}-T${String(matchComplet[2]).padStart(2, '0')}-R${String(matchComplet[3]).padStart(2, '0')}-H${matchComplet[4]}`
             };
         }
 
-        // 2. Try standard 3-part: B[Bay]-R[Row]-T[Tier] or [Bay]-[Row]-[Tier]
-        // Examples: B01-R04-T2, B1-R4-T2, 01-04-02
-        const bayMatch = clean.match(/^B?(\d{1,2})-?R?(\d{1,2})-?T?(\d{1,2})$/);
-        if (bayMatch) {
+        // 2. Format 3 éléments : T[Travée]-R[Rangée]-H[Hauteur] ou B[Bay]-R[Row]-T[Tier]
+        // Exemples : T01-R04-H2, B01-R04-T2, 01-04-02
+        const matchCourt = texte.match(/^(?:T|B)?(\d{1,2})-?R?(\d{1,2})-?(?:H|T)?(\d{1,2})$/);
+        if (matchCourt) {
+            const blk = blocActif || 'A';
             return {
-                block: currentBlock || 'A',
-                bay: parseInt(bayMatch[1], 10),
-                row: parseInt(bayMatch[2], 10),
-                tier: parseInt(bayMatch[3], 10),
-                standard: `B${String(bayMatch[1]).padStart(2, '0')}-R${String(bayMatch[2]).padStart(2, '0')}-T${bayMatch[3]}`
+                bloc: blk,
+                travee: parseInt(matchCourt[1], 10),
+                rangee: parseInt(matchCourt[2], 10),
+                hauteur: parseInt(matchCourt[3], 10),
+                standard: `${blk}-T${String(matchCourt[1]).padStart(2, '0')}-R${String(matchCourt[2]).padStart(2, '0')}-H${matchCourt[3]}`
             };
         }
 
-        // 3. Try natural space-separated: "BLK A BAY 01 R 04 T 02"
-        const naturalMatch = clean.match(/(?:BLK|BLOCK)?\s*([ABCR])?\s*(?:BAY|B)?\s*(\d{1,2})\s*(?:ROW|R)?\s*(\d{1,2})\s*(?:TIER|T)?\s*(\d{1,2})/);
-        if (naturalMatch && naturalMatch[2] && naturalMatch[3] && naturalMatch[4]) {
-            const blk = naturalMatch[1] || currentBlock || 'A';
+        // 3. Format texte naturel : "BLOC A TRAVEE 01 RANGEE 04 HAUTEUR 02"
+        const matchTexte = texte.match(/(?:BLOC|BLOCK)?\s*([ABCR])?\s*(?:TRAVEE|TRAVÉE|BAY|T|B)?\s*(\d{1,2})\s*(?:RANGEE|RANGÉE|ROW|R)?\s*(\d{1,2})\s*(?:HAUTEUR|TIER|H|T)?\s*(\d{1,2})/);
+        if (matchTexte && matchTexte[2] && matchTexte[3] && matchTexte[4]) {
+            const blk = matchTexte[1] || blocActif || 'A';
             return {
-                block: blk,
-                bay: parseInt(naturalMatch[2], 10),
-                row: parseInt(naturalMatch[3], 10),
-                tier: parseInt(naturalMatch[4], 10),
-                standard: `${blk}-B${String(naturalMatch[2]).padStart(2, '0')}-R${String(naturalMatch[3]).padStart(2, '0')}-T${naturalMatch[4]}`
+                bloc: blk,
+                travee: parseInt(matchTexte[2], 10),
+                rangee: parseInt(matchTexte[3], 10),
+                hauteur: parseInt(matchTexte[4], 10),
+                standard: `${blk}-T${String(matchTexte[2]).padStart(2, '0')}-R${String(matchTexte[3]).padStart(2, '0')}-H${matchTexte[4]}`
             };
         }
 
         return null;
     }
 
-    function formatSlotKey(block, bay, row, tier) {
-        return `${block}_${parseInt(bay, 10)}_${parseInt(row, 10)}_${parseInt(tier, 10)}`;
+    function genererCleSlot(bloc, travee, rangee, hauteur) {
+        return `${bloc}_${parseInt(travee, 10)}_${parseInt(rangee, 10)}_${parseInt(hauteur, 10)}`;
     }
 
-    function formatDisplayLocation(block, bay, row, tier) {
-        return `${block}-B${String(bay).padStart(2, '0')}-R${String(row).padStart(2, '0')}-T${tier}`;
+    function formaterEmplacementMaritime(bloc, travee, rangee, hauteur) {
+        return `${bloc}-T${String(travee).padStart(2, '0')}-R${String(rangee).padStart(2, '0')}-H${hauteur}`;
     }
 
-    // ================= 🏗️ YARD GRID MAPPING & RENDERING =================
-    function buildYardMap() {
-        const containers = (window.DPW_DB && window.DPW_DB.containers) ? window.DPW_DB.containers : [];
-        const slotMap = new Map();
-        const containerIndex = [];
+    // ================= 🏗️ MAPPAGE DU PARC & PERSISTANCE =================
+    function construireCarteParc() {
+        const conteneurs = (window.DPW_DB && Array.isArray(window.DPW_DB.containers)) 
+            ? window.DPW_DB.containers 
+            : JSON.parse(localStorage.getItem('dpw_containers_local') || '[]');
 
-        containers.forEach(container => {
-            if (!container.loc) return;
-            const parsed = parseLocation(container.loc);
-            if (parsed) {
-                const key = formatSlotKey(parsed.block, parsed.bay, parsed.row, parsed.tier);
-                slotMap.set(key, container);
-                containerIndex.push({
-                    parsed,
-                    container
+        const carteSlots = new Map();
+        const indexConteneurs = [];
+
+        conteneurs.forEach(c => {
+            if (!c.loc) return;
+            const pos = analyserEmplacement(c.loc);
+            if (pos) {
+                const cle = genererCleSlot(pos.bloc, pos.travee, pos.rangee, pos.hauteur);
+                carteSlots.set(cle, c);
+                indexConteneurs.push({
+                    pos,
+                    conteneur: c
                 });
             }
         });
 
-        return { slotMap, containerIndex };
+        return { carteSlots, indexConteneurs };
     }
 
-    function populateBaySelector() {
-        const baySelect = document.getElementById('yardBaySelect');
-        if (!baySelect) return;
+    function peuplerSelecteurTravees() {
+        const selectEl = document.getElementById('yardBaySelect');
+        if (!selectEl) return;
 
-        const config = YARD_CONFIG.blocks[currentBlock] || YARD_CONFIG.blocks['A'];
-        const totalBays = config.bays;
+        const config = CONFIG_PARC.blocs[blocActif] || CONFIG_PARC.blocs['A'];
+        const total = config.travees;
 
-        baySelect.innerHTML = '';
-        for (let b = 1; b <= totalBays; b++) {
+        selectEl.innerHTML = '';
+        for (let t = 1; t <= total; t++) {
             const opt = document.createElement('option');
-            opt.value = b;
-            opt.innerText = `Bay ${String(b).padStart(2, '0')}${b % 2 === 0 ? " (40')" : " (20')"}`;
-            if (b === currentBay) opt.selected = true;
-            baySelect.appendChild(opt);
+            opt.value = t;
+            const descriptionTaille = t % 2 === 0 ? " (40' HC)" : " (20' ST)";
+            opt.innerText = `Travée ${String(t).padStart(2, '0')}${descriptionTaille}`;
+            if (t === traveeActive) opt.selected = true;
+            selectEl.appendChild(opt);
         }
     }
 
-    function renderYardMatrix(highlightKey = null) {
-        const containerEl = document.getElementById('yardGridContainer');
-        if (!containerEl) return;
+    // ================= 🎨 RENDU DE LA GRILLE DU PARC (2D MATRIX) =================
+    function afficherGrilleParc(cleSurbrillance = null) {
+        const conteneurGrille = document.getElementById('yardGridContainer');
+        if (!conteneurGrille) return;
 
-        const config = YARD_CONFIG.blocks[currentBlock] || YARD_CONFIG.blocks['A'];
-        const numRows = config.rows;
-        const numTiers = config.maxTiers;
-        const { slotMap } = buildYardMap();
+        const config = CONFIG_PARC.blocs[blocActif] || CONFIG_PARC.blocs['A'];
+        const nbRangees = config.rangees;
+        const nbHauteurs = config.maxHauteurs;
+        const { carteSlots } = construireCarteParc();
 
-        // Calculate statistics for current Bay
-        let bayOccupiedCount = 0;
-        let bayDamagedCount = 0;
-        let bayReeferCount = 0;
-        const bayTotalSlots = numRows * numTiers;
+        // Calcul des statistiques de la travée
+        let nbOccupes = 0;
+        let nbAvaries = 0;
+        let nbFrigorifiques = 0;
+        const totalSlots = nbRangees * nbHauteurs;
 
-        for (let r = 1; r <= numRows; r++) {
-            for (let t = 1; t <= numTiers; t++) {
-                const k = formatSlotKey(currentBlock, currentBay, r, t);
-                const c = slotMap.get(k);
-                if (c) {
-                    bayOccupiedCount++;
-                    if (c.status === 'Endommagé') bayDamagedCount++;
-                    if (c.type && c.type.includes('RF')) bayReeferCount++;
+        for (let r = 1; r <= nbRangees; r++) {
+            for (let h = 1; h <= nbHauteurs; h++) {
+                const k = genererCleSlot(blocActif, traveeActive, r, h);
+                const item = carteSlots.get(k);
+                if (item) {
+                    nbOccupes++;
+                    if (item.status === 'Endommagé') nbAvaries++;
+                    if (item.type && item.type.includes('RF')) nbFrigorifiques++;
                 }
             }
         }
 
-        const bayEmptyCount = bayTotalSlots - bayOccupiedCount;
-        const occRate = Math.round((bayOccupiedCount / bayTotalSlots) * 100);
+        const nbDisponibles = totalSlots - nbOccupes;
+        const tauxOccupation = Math.round((nbOccupes / totalSlots) * 100);
 
-        // Update Occupancy badge & filter counts
+        // Mise à jour de l'indicateur d'occupation & badges
         const occRateEl = document.getElementById('yardOccupancyRate');
-        if (occRateEl) occRateEl.innerText = `${occRate}% OCC (${bayOccupiedCount}/${bayTotalSlots})`;
+        if (occRateEl) {
+            occRateEl.innerText = `${tauxOccupation}% OCCUPÉ (${nbOccupes}/${totalSlots})`;
+        }
 
-        if (document.getElementById('countFilterAll')) document.getElementById('countFilterAll').innerText = bayTotalSlots;
-        if (document.getElementById('countFilterOccupied')) document.getElementById('countFilterOccupied').innerText = bayOccupiedCount;
-        if (document.getElementById('countFilterEmpty')) document.getElementById('countFilterEmpty').innerText = bayEmptyCount;
-        if (document.getElementById('countFilterDamaged')) document.getElementById('countFilterDamaged').innerText = bayDamagedCount;
-        if (document.getElementById('countFilterReefer')) document.getElementById('countFilterReefer').innerText = bayReeferCount;
+        if (document.getElementById('countFilterAll')) document.getElementById('countFilterAll').innerText = totalSlots;
+        if (document.getElementById('countFilterOccupied')) document.getElementById('countFilterOccupied').innerText = nbOccupes;
+        if (document.getElementById('countFilterEmpty')) document.getElementById('countFilterEmpty').innerText = nbDisponibles;
+        if (document.getElementById('countFilterDamaged')) document.getElementById('countFilterDamaged').innerText = nbAvaries;
+        if (document.getElementById('countFilterReefer')) document.getElementById('countFilterReefer').innerText = nbFrigorifiques;
 
-        // Build HTML Table Matrix (Tiers Top-to-Bottom, Rows Left-to-Right)
+        // Construction du tableau matriciel (Hauteurs du haut vers le bas, Rangées de gauche à droite)
         let html = `
             <div class="w-full overflow-x-auto pb-2">
                 <table class="yard-matrix-table mx-auto">
                     <thead>
                         <tr>
-                            <th class="p-1 w-10"></th>
-                            ${Array.from({ length: numRows }, (_, i) => `
+                            <th class="p-1 w-12 text-center text-[10px] text-gray-400 font-bold">HAUTEUR</th>
+                            ${Array.from({ length: nbRangees }, (_, i) => `
                                 <th class="p-1 text-center">
                                     <div class="yard-row-badge">
                                         R${String(i + 1).padStart(2, '0')}
                                     </div>
                                 </th>
                             `).join('')}
-                            <th class="p-1 w-10"></th>
+                            <th class="p-1 w-12 text-center text-[10px] text-gray-400 font-bold">HAUTEUR</th>
                         </tr>
                     </thead>
                     <tbody>
         `;
 
-        // Render Tiers from Highest (e.g. 4) down to 1
-        for (let t = numTiers; t >= 1; t--) {
+        // Rendu vertical des hauteurs : de la plus haute (ex: H4) vers le sol (H1)
+        for (let h = nbHauteurs; h >= 1; h--) {
             html += `
                 <tr>
                     <td class="p-1 align-middle">
-                        <div class="yard-tier-badge">T${t}</div>
+                        <div class="yard-tier-badge">H${h}</div>
                     </td>
             `;
 
-            for (let r = 1; r <= numRows; r++) {
-                const slotKey = formatSlotKey(currentBlock, currentBay, r, t);
-                const container = slotMap.get(slotKey);
-                const isOccupied = !!container;
-                const isHighlighted = highlightKey === slotKey;
+            for (let r = 1; r <= nbRangees; r++) {
+                const cleSlot = genererCleSlot(blocActif, traveeActive, r, h);
+                const conteneur = carteSlots.get(cleSlot);
+                const estOccupe = !!conteneur;
+                const estEnSurbrillance = cleSurbrillance === cleSlot;
 
-                // Determine filter visibility
-                let isDimmed = false;
-                if (currentFilter === 'occupied' && !isOccupied) isDimmed = true;
-                if (currentFilter === 'empty' && isOccupied) isDimmed = true;
-                if (currentFilter === 'damaged' && (!isOccupied || container.status !== 'Endommagé')) isDimmed = true;
-                if (currentFilter === 'reefer' && (!isOccupied || !container.type || !container.type.includes('RF'))) isDimmed = true;
+                // Filtrage visuel
+                let estAttenue = false;
+                if (filtreActif === 'occupied' && !estOccupe) estAttenue = true;
+                if (filtreActif === 'empty' && estOccupe) estAttenue = true;
+                if (filtreActif === 'damaged' && (!estOccupe || conteneur.status !== 'Endommagé')) estAttenue = true;
+                if (filtreActif === 'reefer' && (!estOccupe || !conteneur.type || !conteneur.type.includes('RF'))) estAttenue = true;
 
-                if (isOccupied) {
-                    const isDamaged = container.status === 'Endommagé';
-                    const isReefer = container.type && container.type.includes('RF');
+                if (estOccupe) {
+                    const estAvarie = conteneur.status === 'Endommagé';
+                    const estFrigo = conteneur.type && conteneur.type.includes('RF');
                     
-                    let slotClass = 'yard-slot-good';
-                    if (isDamaged) slotClass = 'yard-slot-damaged';
-                    else if (isReefer) slotClass = 'yard-slot-reefer';
+                    let classeSlot = 'yard-slot-good';
+                    if (estAvarie) classeSlot = 'yard-slot-damaged';
+                    else if (estFrigo) classeSlot = 'yard-slot-reefer';
 
                     html += `
                         <td class="p-1 align-middle">
-                            <div onclick="DPW_YARD.onSlotClicked('${currentBlock}', ${currentBay}, ${r}, ${t})" 
-                                 id="slot_${slotKey}"
-                                 class="yard-slot yard-slot-occupied ${slotClass} ${isHighlighted ? 'yard-slot-active-target' : ''} ${isDimmed ? 'yard-slot-dimmed' : ''}"
-                                 title="${container.id} (${container.type}) - ${container.status}">
+                            <div onclick="DPW_YARD.onSlotClicked('${blocActif}', ${traveeActive}, ${r}, ${h})" 
+                                 id="slot_${cleSlot}"
+                                 class="yard-slot yard-slot-occupied ${classeSlot} ${estEnSurbrillance ? 'yard-slot-active-target' : ''} ${estAttenue ? 'yard-slot-dimmed' : ''}"
+                                 title="Conteneur : ${conteneur.id} (${conteneur.type}) - ${conteneur.status}">
                                 
                                 <div class="flex items-center justify-between pointer-events-none">
-                                    <span class="text-[9px] font-black font-container-id text-white truncate max-w-[85px] tracking-wide" dir="ltr">
-                                        ${container.id}
+                                    <span class="text-[9.5px] font-black font-container-id text-white truncate max-w-[85px] tracking-wide" dir="ltr">
+                                        ${conteneur.id}
                                     </span>
-                                    <span class="text-[8px] font-bold px-1 rounded bg-black/40 text-[#00ffaa]">
-                                        ${container.type ? container.type.split(' ')[0] : "40'"}
+                                    <span class="text-[8px] font-extrabold px-1 rounded bg-black/40 text-[#00ffaa]">
+                                        ${conteneur.type ? conteneur.type.split(' ')[0] : "40'"}
                                     </span>
                                 </div>
 
                                 <div class="flex items-center justify-between text-[8px] text-gray-300 font-semibold pointer-events-none">
                                     <span class="flex items-center gap-0.5">
-                                        ${isReefer ? '<i class="fa-solid fa-snowflake text-cyan-300 text-[9px]"></i>' : ''}
-                                        ${isDamaged ? '<i class="fa-solid fa-triangle-exclamation text-rose-300 text-[9px]"></i>' : ''}
-                                        <span dir="ltr">${container.seal ? container.seal.substring(0, 7) : 'SL-00'}</span>
+                                        ${estFrigo ? '<i class="fa-solid fa-snowflake text-cyan-300 text-[9px]" title="Frigorifique"></i>' : ''}
+                                        ${estAvarie ? '<i class="fa-solid fa-triangle-exclamation text-rose-300 text-[9px]" title="Avarié"></i>' : ''}
+                                        <span dir="ltr">${conteneur.seal ? conteneur.seal.substring(0, 7) : 'SL-00'}</span>
                                     </span>
-                                    <span class="text-[7.5px] font-mono text-gray-400">R${r}T${t}</span>
+                                    <span class="text-[7.5px] font-mono text-gray-400">R${r}H${h}</span>
                                 </div>
                             </div>
                         </td>
@@ -249,22 +258,22 @@
                 } else {
                     html += `
                         <td class="p-1 align-middle">
-                            <div onclick="DPW_YARD.onSlotClicked('${currentBlock}', ${currentBay}, ${r}, ${t})" 
-                                 id="slot_${slotKey}"
-                                 class="yard-slot yard-slot-empty ${isHighlighted ? 'yard-slot-active-target' : ''} ${isDimmed ? 'yard-slot-dimmed' : ''}"
-                                 title="Slot Disponible : R${r}-T${t}">
+                            <div onclick="DPW_YARD.onSlotClicked('${blocActif}', ${traveeActive}, ${r}, ${h})" 
+                                 id="slot_${cleSlot}"
+                                 class="yard-slot yard-slot-empty ${estEnSurbrillance ? 'yard-slot-active-target' : ''} ${estAttenue ? 'yard-slot-dimmed' : ''}"
+                                 title="Emplacement Libre : Rangée ${r} - Hauteur ${h} (Cliquer pour assigner)">
                                 
                                 <div class="flex items-center justify-between text-[8px] text-gray-500 font-mono font-bold pointer-events-none">
-                                    <span>R${r}T${t}</span>
-                                    <span class="text-[7.5px] text-gray-500 font-semibold">LIBRE</span>
+                                    <span>R${r}H${h}</span>
+                                    <span class="text-[7.5px] text-emerald-400/80 font-bold">LIBRE</span>
                                 </div>
 
-                                <div class="w-full flex items-center justify-center py-1 yard-empty-plus pointer-events-none">
+                                <div class="w-full flex items-center justify-center py-0.5 yard-empty-plus pointer-events-none text-emerald-400">
                                     <i class="fa-solid fa-plus text-xs"></i>
                                 </div>
 
-                                <div class="text-[7.5px] text-center text-gray-500/70 font-semibold pointer-events-none">
-                                    ${config.type}
+                                <div class="text-[7.5px] text-center text-gray-400/80 font-semibold pointer-events-none">
+                                    ${config.typeDefaut}
                                 </div>
                             </div>
                         </td>
@@ -274,206 +283,301 @@
 
             html += `
                     <td class="p-1 align-middle">
-                        <div class="yard-tier-badge">T${t}</div>
+                        <div class="yard-tier-badge">H${h}</div>
                     </td>
                 </tr>
             `;
         }
 
-        // Ground asphalt bar
+        // Voie de circulation au sol
         html += `
                     </tbody>
                 </table>
 
-                <!-- Yard Asphalt / Rail Track Ground Line -->
-                <div class="max-w-3xl mx-auto h-3 mt-2 yard-ground-track flex items-center justify-center">
-                    <span class="text-[8px] font-extrabold tracking-widest text-[#00ffaa]/70 uppercase">SOL PARC DJENDJEN (GROUND TRACK)</span>
+                <!-- Voie de circulation portuaire au sol -->
+                <div class="max-w-3xl mx-auto h-3.5 mt-2.5 yard-ground-track flex items-center justify-center">
+                    <span class="text-[8px] font-extrabold tracking-widest text-[#00ffaa]/80 uppercase">SOL DU PARC - VOIE DE CIRCULATION QUAI</span>
                 </div>
             </div>
         `;
 
-        containerEl.innerHTML = html;
+        conteneurGrille.innerHTML = html;
     }
 
-    // ================= 🔍 SLOT INSPECTOR & ACTIONS =================
-    function onSlotClicked(block, bay, row, tier) {
-        const slotKey = formatSlotKey(block, bay, row, tier);
-        const { slotMap } = buildYardMap();
-        const container = slotMap.get(slotKey);
-        const locStr = formatDisplayLocation(block, bay, row, tier);
+    // ================= 🔍 INSPECTION & GESTION DES SLOTS =================
+    function onSlotClicked(bloc, travee, rangee, hauteur) {
+        const cleSlot = genererCleSlot(bloc, travee, rangee, hauteur);
+        const { carteSlots } = construireCarteParc();
+        const conteneur = carteSlots.get(cleSlot);
+        const locMaritime = formaterEmplacementMaritime(bloc, travee, rangee, hauteur);
 
-        selectedSlotData = { block, bay, row, tier, locStr, container };
+        slotSelectionne = { bloc, travee, rangee, hauteur, locMaritime, conteneur };
 
-        const inspectorEl = document.getElementById('yardSlotInspector');
-        const contentEl = document.getElementById('yardInspectorContent');
-        if (!inspectorEl || !contentEl) return;
+        const inspecteurEl = document.getElementById('yardSlotInspector');
+        const contenuEl = document.getElementById('yardInspectorContent');
+        if (!inspecteurEl || !contenuEl) return;
 
         if (window.triggerHapticFeedback) window.triggerHapticFeedback();
 
-        if (container) {
-            // OCCUPIED SLOT INSPECTOR
-            const isGood = container.status === 'Bon état';
-            const isReefer = container.type && container.type.includes('RF');
+        if (conteneur) {
+            // ================= 📦 SLOT OCCUPÉ : DÉTAILS & ACTIONS =================
+            const estBonEtat = conteneur.status === 'Bon état';
+            const estFrigo = conteneur.type && conteneur.type.includes('RF');
 
-            let damagePhotoThumbnail = '';
-            if (container.damagePhoto) {
-                damagePhotoThumbnail = `
-                    <img src="${container.damagePhoto}" onclick="window.open('${container.damagePhoto}')" class="w-12 h-12 rounded-xl object-cover border border-rose-500/50 cursor-pointer shrink-0" title="Voir photo grand format">
+            let vignettePhoto = '';
+            if (conteneur.damagePhoto) {
+                vignettePhoto = `
+                    <img src="${conteneur.damagePhoto}" onclick="window.open('${conteneur.damagePhoto}')" class="w-12 h-12 rounded-xl object-cover border border-rose-500/60 cursor-pointer shrink-0" title="Agrandir la photo d'avarie">
                 `;
             }
 
-            contentEl.innerHTML = `
+            contenuEl.innerHTML = `
                 <div class="flex items-center gap-3">
-                    ${damagePhotoThumbnail}
+                    ${vignettePhoto}
                     <div>
                         <div class="flex items-center gap-2">
-                            <span class="font-extrabold text-sm sm:text-base text-white font-container-id tracking-wider" dir="ltr">${container.id}</span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${isGood ? 'bg-emerald-600/80 text-white' : 'bg-rose-600/80 text-white'}">
-                                ${container.status}
+                            <span class="font-extrabold text-sm sm:text-base text-white font-container-id tracking-wider" dir="ltr">${conteneur.id}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${estBonEtat ? 'bg-emerald-600/90 text-white' : 'bg-rose-600/90 text-white'}">
+                                ${conteneur.status}
                             </span>
-                            ${isReefer ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-600/80 text-white"><i class="fa-solid fa-snowflake"></i> RF</span>' : ''}
+                            ${estFrigo ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-600/90 text-white"><i class="fa-solid fa-snowflake"></i> Frigo</span>' : ''}
                         </div>
                         <p class="text-[11px] text-gray-300 mt-0.5">
-                            <span class="text-[#00ffaa] font-bold" dir="ltr">${locStr}</span> • ${container.type} • Plomb: <b class="text-white" dir="ltr">${container.seal || 'N/A'}</b>
+                            Emplacement: <span class="text-[#00ffaa] font-bold font-mono" dir="ltr">${locMaritime}</span> • Type: <b class="text-white">${conteneur.type}</b> • Plomb: <b class="text-white" dir="ltr">${conteneur.seal || 'SL-00000'}</b>
+                        </p>
+                        <p class="text-[10px] text-gray-400">
+                            Pointeur: <b class="text-gray-200">${conteneur.agent || 'Pointeur'}</b> • Date: ${conteneur.date || '-'} ${conteneur.time || ''}
                         </p>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button onclick="DPW_YARD.editSelectedContainer('${container.firebaseKey}')" class="btn-dpw-green px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow active:scale-95 transition">
+                    <button onclick="DPW_YARD.modifierConteneur('${conteneur.firebaseKey}')" class="btn-dpw-green px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow active:scale-95 transition" title="Modifier les données du conteneur">
                         <i class="fa-solid fa-pen-to-square"></i>
                         <span>Modifier</span>
                     </button>
-                    <button onclick="DPW_YARD.moveContainerPrompt('${container.firebaseKey}', '${container.id}', '${locStr}')" class="bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] border border-[#00ffaa]/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition">
+
+                    <button onclick="DPW_YARD.deplacerConteneur('${conteneur.firebaseKey}', '${conteneur.id}', '${locMaritime}')" class="bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] border border-[#00ffaa]/50 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition" title="Déplacer vers un autre slot">
                         <i class="fa-solid fa-arrows-up-down-left-right"></i>
                         <span>Déplacer</span>
                     </button>
-                    <button onclick="DPW_YARD.closeInspector()" class="text-gray-400 hover:text-white p-2 text-sm">
+
+                    <button onclick="DPW_YARD.retirerConteneur('${conteneur.firebaseKey}', '${conteneur.id}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition" title="Retirer ou libérer ce slot">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                        <span>Retirer</span>
+                    </button>
+
+                    <button onclick="DPW_YARD.fermerInspecteur()" class="text-gray-400 hover:text-white p-2 text-sm">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
             `;
         } else {
-            // EMPTY SLOT INSPECTOR
-            contentEl.innerHTML = `
+            // ================= 🟢 SLOT DISPONIBLE : ASSIGNATION RAPIDE =================
+            contenuEl.innerHTML = `
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-[#1d2263] border border-[#00ffaa]/40 flex items-center justify-center text-[#00ffaa] font-black text-base">
+                    <div class="w-10 h-10 rounded-xl bg-[#1d2263] border border-[#00ffaa]/40 flex items-center justify-center text-[#00ffaa] font-black text-base shadow">
                         <i class="fa-solid fa-map-pin"></i>
                     </div>
                     <div>
-                        <h4 class="font-extrabold text-sm text-white">Slot Disponible</h4>
+                        <h4 class="font-extrabold text-sm text-white">Emplacement Disponible</h4>
                         <p class="text-[11px] text-gray-300 font-mono">
-                            Emplacement: <span class="text-[#00ffaa] font-bold" dir="ltr">${locStr}</span> (${YARD_CONFIG.blocks[block].name})
+                            Slot: <span class="text-[#00ffaa] font-bold" dir="ltr">${locMaritime}</span> (${CONFIG_PARC.blocs[bloc].nom})
                         </p>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button onclick="DPW_YARD.tallyAtSlot('${locStr}')" class="btn-dpw-gradient px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 shadow-lg active:scale-95 transition">
+                    <button onclick="DPW_YARD.assignerConteneurAuSlot('${locMaritime}')" class="btn-dpw-gradient px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-lg active:scale-95 transition">
                         <i class="fa-solid fa-plus"></i>
-                        <span>Pointer ce Slot</span>
+                        <span>Assigner un Conteneur</span>
                     </button>
-                    <button onclick="DPW_YARD.closeInspector()" class="text-gray-400 hover:text-white p-2 text-sm">
+                    <button onclick="DPW_YARD.fermerInspecteur()" class="text-gray-400 hover:text-white p-2 text-sm">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
             `;
         }
 
-        inspectorEl.classList.remove('hidden');
+        inspecteurEl.classList.remove('hidden');
     }
 
-    function closeInspector() {
-        const inspectorEl = document.getElementById('yardSlotInspector');
-        if (inspectorEl) inspectorEl.classList.add('hidden');
+    function fermerInspecteur() {
+        const inspecteurEl = document.getElementById('yardSlotInspector');
+        if (inspecteurEl) inspecteurEl.classList.add('hidden');
     }
 
-    function tallyAtSlot(locStr) {
+    // ================= 📝 ACTIONS UTILISATEUR & PERSISTANCE =================
+    function assignerConteneurAuSlot(locMaritime) {
         closeYardModal();
-        if (isSelectMode) {
-            // Fill into active form
+        if (modeSelectionSeule) {
             const inp = document.getElementById('inpLoc');
-            if (inp) inp.value = locStr;
-            isSelectMode = false;
+            if (inp) inp.value = locMaritime;
+            modeSelectionSeule = false;
         } else {
-            // Open modal fresh with location prefilled
             if (window.openModal) {
                 window.openModal();
                 const inp = document.getElementById('inpLoc');
-                if (inp) inp.value = locStr;
+                if (inp) inp.value = locMaritime;
+                
+                // Pré-sélectionner le type suggéré selon le bloc
+                const selType = document.getElementById('inpType');
+                if (selType && locMaritime.startsWith('R-')) {
+                    selType.value = "40' RF";
+                } else if (selType && locMaritime.startsWith('B-')) {
+                    selType.value = "20' ST";
+                }
+
+                // Focus sur le champ N° Conteneur
+                setTimeout(() => {
+                    const idInp = document.getElementById('inpId');
+                    if (idInp) idInp.focus();
+                }, 150);
             }
         }
     }
 
-    function editSelectedContainer(fbKey) {
+    function modifierConteneur(fbKey) {
         closeYardModal();
         if (window.openEditModal) {
             window.openEditModal(fbKey);
         }
     }
 
-    async function moveContainerPrompt(fbKey, containerId, oldLoc) {
-        const newLoc = prompt(`Déplacer le conteneur ${containerId} vers un nouvel emplacement (ex: B02-R01-T3) :`, oldLoc);
-        if (newLoc && newLoc.trim() !== '' && newLoc.trim().toUpperCase() !== oldLoc) {
-            const formatted = newLoc.trim().toUpperCase();
-            await window.DPW_DB.updateContainer(fbKey, { loc: formatted });
-            if (window.showToast) window.showToast(`✓ Conteneur ${containerId} déplacé vers ${formatted}`);
-            renderYardMatrix();
-            closeInspector();
-        }
-    }
+    async function deplacerConteneur(fbKey, idConteneur, ancienEmplacement) {
+        const saisie = prompt(
+            `Déplacer le conteneur ${idConteneur}\nAncien emplacement : ${ancienEmplacement}\n\nSaisissez le nouvel emplacement (ex: ${blocActif}-T02-R03-H2 ou B02-R03-H2) :`,
+            ancienEmplacement
+        );
 
-    // ================= 🔍 QUICK CONTAINER LOCATOR & SEARCH =================
-    function searchYardContainer(query) {
-        searchQuery = (query || '').trim().toUpperCase();
-        if (!searchQuery) {
-            renderYardMatrix();
+        if (!saisie || saisie.trim() === '' || saisie.trim().toUpperCase() === ancienEmplacement) {
             return;
         }
 
-        const { containerIndex } = buildYardMap();
-        const match = containerIndex.find(item => 
-            item.container.id.toUpperCase().includes(searchQuery)
-        );
+        const analyse = analyserEmplacement(saisie.trim());
+        if (!analyse) {
+            if (window.showToast) window.showToast("Format d'emplacement invalide (ex: A-T01-R02-H3)", true);
+            return;
+        }
 
-        if (match) {
-            const { parsed, container } = match;
-            currentBlock = parsed.block;
-            currentBay = parsed.bay;
+        const nouvelEmplacement = analyse.standard;
 
-            // Sync Block Pills UI
-            updateBlockTabsUI();
-            populateBaySelector();
+        // Vérifier si le slot de destination est déjà occupé
+        const { carteSlots } = construireCarteParc();
+        const cleDest = genererCleSlot(analyse.bloc, analyse.travee, analyse.rangee, analyse.hauteur);
+        const occupant = carteSlots.get(cleDest);
 
-            const targetKey = formatSlotKey(parsed.block, parsed.bay, parsed.row, parsed.tier);
-            renderYardMatrix(targetKey);
-            onSlotClicked(parsed.block, parsed.bay, parsed.row, parsed.tier);
+        if (occupant && occupant.firebaseKey !== fbKey) {
+            const confirmerEcrasement = confirm(`Attention: Le slot ${nouvelEmplacement} est déjà occupé par ${occupant.id}. Voulez-vous continuer et déplacer quand même ?`);
+            if (!confirmerEcrasement) return;
+        }
+
+        try {
+            if (window.DPW_DB && typeof window.DPW_DB.updateContainer === 'function') {
+                await window.DPW_DB.updateContainer(fbKey, { loc: nouvelEmplacement });
+            } else {
+                // Fallback LocalStorage
+                const locaux = JSON.parse(localStorage.getItem('dpw_containers_local') || '[]');
+                const idx = locaux.findIndex(c => c.firebaseKey === fbKey);
+                if (idx !== -1) {
+                    locaux[idx].loc = nouvelEmplacement;
+                    localStorage.setItem('dpw_containers_local', JSON.stringify(locaux));
+                }
+            }
 
             if (window.showToast) {
-                window.showToast(`✓ Conteneur trouvé: ${container.id} (${parsed.standard})`);
+                window.showToast(`✓ Conteneur ${idConteneur} déplacé vers ${nouvelEmplacement}`);
+            }
+
+            // Mettre à jour la vue sur le nouveau bloc / travée
+            blocActif = analyse.bloc;
+            traveeActive = analyse.travee;
+            majOngletsBlocsUI();
+            peuplerSelecteurTravees();
+            afficherGrilleParc(cleDest);
+            onSlotClicked(analyse.bloc, analyse.travee, analyse.rangee, analyse.hauteur);
+        } catch (err) {
+            console.error("Erreur déplacement:", err);
+            if (window.showToast) window.showToast("Erreur lors du déplacement", true);
+        }
+    }
+
+    async function retirerConteneur(fbKey, idConteneur) {
+        const choix = confirm(
+            `Voulez-vous retirer le conteneur ${idConteneur} du parc ?\n\n- Cliquez OK pour enregistrer sa sortie / livraison.\n- Cliquez Annuler pour conserver.`
+        );
+
+        if (!choix) return;
+
+        try {
+            if (window.DPW_DB && typeof window.DPW_DB.updateContainerStage === 'function') {
+                await window.DPW_DB.updateContainerStage(fbKey, 'Embarqué');
+            } else if (window.DPW_DB && typeof window.DPW_DB.deleteContainer === 'function') {
+                await window.DPW_DB.deleteContainer(fbKey);
+            }
+
+            if (window.showToast) {
+                window.showToast(`✓ Conteneur ${idConteneur} retiré du parc`);
+            }
+
+            afficherGrilleParc();
+            fermerInspecteur();
+        } catch (err) {
+            console.error("Erreur retrait conteneur:", err);
+            if (window.showToast) window.showToast("Erreur lors du retrait", true);
+        }
+    }
+
+    // ================= 🔍 RECHERCHE & LOCALISATION RAPIDE =================
+    function searchYardContainer(query) {
+        requeteRecherche = (query || '').trim().toUpperCase();
+        if (!requeteRecherche) {
+            afficherGrilleParc();
+            return;
+        }
+
+        const { indexConteneurs } = construireCarteParc();
+        const resultat = indexConteneurs.find(item => 
+            item.conteneur.id && item.conteneur.id.toUpperCase().includes(requeteRecherche)
+        );
+
+        if (resultat) {
+            const { pos, conteneur } = resultat;
+            blocActif = pos.bloc;
+            traveeActive = pos.travee;
+
+            majOngletsBlocsUI();
+            peuplerSelecteurTravees();
+
+            const cleCible = genererCleSlot(pos.bloc, pos.travee, pos.rangee, pos.hauteur);
+            afficherGrilleParc(cleCible);
+            onSlotClicked(pos.bloc, pos.travee, pos.rangee, pos.hauteur);
+
+            if (window.showToast) {
+                window.showToast(`✓ Conteneur localisé : ${conteneur.id} (${pos.standard})`);
             }
         }
     }
 
-    // ================= 🎛️ CONTROLS & INTERACTION DISPATCHERS =================
-    function selectYardBlock(blockKey) {
-        if (!YARD_CONFIG.blocks[blockKey]) return;
-        currentBlock = blockKey;
-        currentBay = 1;
-        updateBlockTabsUI();
-        populateBaySelector();
-        renderYardMatrix();
-        closeInspector();
+    // ================= 🎛️ CONTRÔLES D'INTERACTION =================
+    function selectYardBlock(blocKey) {
+        if (!CONFIG_PARC.blocs[blocKey]) return;
+        blocActif = blocKey;
+        traveeActive = 1;
+        majOngletsBlocsUI();
+        peuplerSelecteurTravees();
+        afficherGrilleParc();
+        fermerInspecteur();
     }
 
-    function updateBlockTabsUI() {
-        const container = document.getElementById('yardBlockTabsContainer');
-        if (!container) return;
+    function majOngletsBlocsUI() {
+        const conteneur = document.getElementById('yardBlockTabsContainer');
+        if (!conteneur) return;
 
-        const btns = container.querySelectorAll('[data-yard-block]');
-        btns.forEach(btn => {
+        const boutons = conteneur.querySelectorAll('[data-yard-block]');
+        boutons.forEach(btn => {
             const b = btn.getAttribute('data-yard-block');
-            if (b === currentBlock) {
+            if (b === blocActif) {
                 btn.className = "px-3 py-1.5 rounded-lg text-xs font-black transition yard-block-pill-active";
             } else {
                 btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition";
@@ -481,67 +585,67 @@
         });
     }
 
-    function changeYardBay(bayVal) {
-        currentBay = parseInt(bayVal, 10) || 1;
-        renderYardMatrix();
-        closeInspector();
+    function changeYardBay(valeurTravee) {
+        traveeActive = parseInt(valeurTravee, 10) || 1;
+        afficherGrilleParc();
+        fermerInspecteur();
     }
 
     function stepYardBay(delta) {
-        const config = YARD_CONFIG.blocks[currentBlock] || YARD_CONFIG.blocks['A'];
-        let nextBay = currentBay + delta;
-        if (nextBay < 1) nextBay = config.bays;
-        if (nextBay > config.bays) nextBay = 1;
+        const config = CONFIG_PARC.blocs[blocActif] || CONFIG_PARC.blocs['A'];
+        let suivante = traveeActive + delta;
+        if (suivante < 1) suivante = config.travees;
+        if (suivante > config.travees) suivante = 1;
 
-        currentBay = nextBay;
-        const baySelect = document.getElementById('yardBaySelect');
-        if (baySelect) baySelect.value = currentBay;
-        renderYardMatrix();
-        closeInspector();
+        traveeActive = suivante;
+        const selectEl = document.getElementById('yardBaySelect');
+        if (selectEl) selectEl.value = traveeActive;
+        afficherGrilleParc();
+        fermerInspecteur();
     }
 
-    function setYardFilter(filterName) {
-        currentFilter = filterName;
-        const filterBtns = document.querySelectorAll('.yard-filter-btn');
-        filterBtns.forEach(btn => {
+    function setYardFilter(nomFiltre) {
+        filtreActif = nomFiltre;
+        const boutons = document.querySelectorAll('.yard-filter-btn');
+        boutons.forEach(btn => {
             const f = btn.getAttribute('data-yard-filter');
-            if (f === filterName) {
+            if (f === nomFiltre) {
                 btn.className = "yard-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#00ffaa] text-[#0d1033] shadow";
             } else {
                 btn.className = "yard-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#1d2263] text-gray-300 hover:text-white border border-[#252b75]";
             }
         });
 
-        renderYardMatrix();
+        afficherGrilleParc();
     }
 
     function refreshYardMatrix() {
-        renderYardMatrix();
-        if (window.showToast) window.showToast("✓ Parc 2D actualisé");
+        afficherGrilleParc();
+        if (window.showToast) window.showToast("✓ Parc à conteneurs actualisé");
     }
 
-    function openYardModal(selectMode = false) {
-        isSelectMode = selectMode;
+    function openYardModal(modeSelection = false) {
+        modeSelectionSeule = modeSelection;
         const modal = document.getElementById('yardModalOverlay');
         if (!modal) return;
 
-        updateBlockTabsUI();
-        populateBaySelector();
-        renderYardMatrix();
+        majOngletsBlocsUI();
+        peuplerSelecteurTravees();
+        afficherGrilleParc();
         modal.classList.remove('hidden');
     }
 
     function closeYardModal() {
         const modal = document.getElementById('yardModalOverlay');
         if (modal) modal.classList.add('hidden');
-        closeInspector();
+        fermerInspecteur();
     }
 
-    // Public API
+    // Exposition de l'API globale
     window.DPW_YARD = {
-        config: YARD_CONFIG,
-        parseLocation,
-        formatDisplayLocation,
+        config: CONFIG_PARC,
+        analyserEmplacement,
+        formaterEmplacementMaritime,
         openYardModal,
         closeYardModal,
         selectYardBlock,
@@ -551,14 +655,15 @@
         searchYardContainer,
         refreshYardMatrix,
         onSlotClicked,
-        closeInspector,
-        tallyAtSlot,
-        editSelectedContainer,
-        moveContainerPrompt,
-        updateContainers: () => renderYardMatrix()
+        fermerInspecteur,
+        assignerConteneurAuSlot,
+        modifierConteneur,
+        deplacerConteneur,
+        retirerConteneur,
+        updateContainers: () => afficherGrilleParc()
     };
 
-    // Global helper mappings for inline HTML onclick attributes
+    // Mappages globaux pour les attributs onclick du DOM
     window.openYardModal = () => openYardModal(false);
     window.openYardModalWithSelectMode = () => openYardModal(true);
     window.closeYardModal = closeYardModal;
