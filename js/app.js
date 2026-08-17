@@ -30,6 +30,10 @@
     const translations = {
         fr: {
             btnPointer: "Pointer",
+            btnYardText: "Parc 2D",
+            lblPickYard: "Choisir sur Parc",
+            txtYardModalTitle: "Matrice Visuelle du Parc (Yard 2D)",
+            txtYardModalSub: "Vue en coupe de la travée (Bay) • Lignes (Rows) & Étages (Tiers)",
             searchPlaceholder: "Rechercher par N° ou emplacement...",
             cloudDirect: "Cloud Direct",
             navAccueil: "Accueil",
@@ -80,6 +84,10 @@
         },
         ar: {
             btnPointer: "تسجيل +",
+            btnYardText: "الساحة 2D",
+            lblPickYard: "اختيار من الساحة",
+            txtYardModalTitle: "المصفوفة المرئية لساحة الحاويات (Yard 2D)",
+            txtYardModalSub: "عرض مقطعي للخانة (Bay) • الصفوف والطوابق (Rows & Tiers)",
             searchPlaceholder: "بحث برقم الحاوية أو الموقع في الساحة...",
             cloudDirect: "اتصال سحابي مباشر",
             navAccueil: "الرئيسية",
@@ -130,6 +138,10 @@
         },
         en: {
             btnPointer: "Tally +",
+            btnYardText: "Yard 2D",
+            lblPickYard: "Pick from Yard",
+            txtYardModalTitle: "Visual Yard Matrix (Yard 2D)",
+            txtYardModalSub: "Cross-section Bay view • Rows & Tiers stacking",
             searchPlaceholder: "Search by container ID or yard bay...",
             cloudDirect: "Live Cloud",
             navAccueil: "Home",
@@ -190,6 +202,9 @@
             filterContainers();
             renderTrackingList();
             updateAccountStats();
+            if (window.DPW_YARD && typeof window.DPW_YARD.updateContainers === 'function') {
+                window.DPW_YARD.updateContainers();
+            }
         });
 
         window.DPW_DB.on('connection', (isConnected) => {
@@ -335,6 +350,10 @@
 
         const t = translations[lang] || translations.fr;
         if (document.getElementById('btnPointerText')) document.getElementById('btnPointerText').innerText = t.btnPointer;
+        if (document.getElementById('btnYardText')) document.getElementById('btnYardText').innerText = t.btnYardText;
+        if (document.getElementById('lblPickYard')) document.getElementById('lblPickYard').innerText = t.lblPickYard;
+        if (document.getElementById('txtYardModalTitle')) document.getElementById('txtYardModalTitle').innerText = t.txtYardModalTitle;
+        if (document.getElementById('txtYardModalSub')) document.getElementById('txtYardModalSub').innerText = t.txtYardModalSub;
         if (document.getElementById('liveSearchInput')) document.getElementById('liveSearchInput').placeholder = t.searchPlaceholder;
         if (document.getElementById('lblCloudDirect')) document.getElementById('lblCloudDirect').innerText = t.cloudDirect;
         if (document.getElementById('navAccueil')) document.getElementById('navAccueil').innerText = t.navAccueil;
@@ -851,6 +870,9 @@
             filterContainers();
             renderTrackingList();
             updateAccountStats();
+            if (window.DPW_YARD && typeof window.DPW_YARD.updateContainers === 'function') {
+                window.DPW_YARD.updateContainers();
+            }
             closeModal();
         } catch (err) {
             console.error("Save error:", err);
@@ -869,6 +891,9 @@
             filterContainers();
             renderTrackingList();
             updateAccountStats();
+            if (window.DPW_YARD && typeof window.DPW_YARD.updateContainers === 'function') {
+                window.DPW_YARD.updateContainers();
+            }
             showToast(currentLang === 'ar' ? "تم حذف الحاوية بنجاح" : "Conteneur supprimé");
         }
     }
@@ -891,6 +916,9 @@
             filterContainers();
             renderTrackingList();
             updateAccountStats();
+            if (window.DPW_YARD && typeof window.DPW_YARD.updateContainers === 'function') {
+                window.DPW_YARD.updateContainers();
+            }
             showToast(currentLang === 'ar' ? "تمت أرشفة الوردية بنجاح!" : "Vacation archivée avec succès!");
         }
     }
