@@ -62,7 +62,7 @@
 
     <!-- 🔒 AUTH MODAL -->
     <div id="authModalOverlay" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4 modal-container-scroll">
+        <div class="w-full max-w-sm bg-[#15194a] rounded-[28px] p-6 border border-[#252b75] shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 mx-auto flex items-center justify-center">
                 <svg class="w-full h-full filter drop-shadow-[0_2px_8px_rgba(0,255,170,0.3)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M22 52C22 30 42 26 62 27C45 30 34 38 32 52C31 65 22 52 22 52Z" fill="url(#auth_logo_grad)"/>
@@ -95,7 +95,7 @@
                     <label class="block text-gray-300 font-medium mb-1">Mot de passe</label>
                     <input type="password" id="authPassword" required placeholder="••••••••" class="w-full input-dpw p-3 rounded-xl">
                 </div>
-                <button type="submit" id="authSubmitBtn" class="w-full btn-dpw-gradient font-bold py-3 rounded-xl text-xs btn-touch-action shadow-lg active:scale-95 transition">
+                <button type="submit" id="authSubmitBtn" class="w-full btn-dpw-gradient font-bold py-3 rounded-xl text-xs shadow-lg active:scale-95 transition">
                     Se connecter
                 </button>
                 <p id="authErrorMsg" class="text-[10px] text-rose-400 text-center font-semibold min-h-[1rem]"></p>
@@ -106,7 +106,7 @@
     <!-- 📱 MAIN APP CONTAINER -->
     <div class="w-full px-4 sm:px-8 max-w-7xl mx-auto relative z-10 pt-2">
 
-        <!-- BRAND HEADER SECTION (CLEAN BRAND BAR) -->
+        <!-- BRAND HEADER SECTION -->
         <header class="flex items-center justify-between pb-3 border-b border-[#252b75]/80">
             <div class="flex items-center gap-3">
                 <div class="w-11 h-11 flex items-center justify-center shrink-0">
@@ -127,28 +127,24 @@
                     <p class="text-[11px] sm:text-xs text-[#00ffaa] font-extrabold tracking-wider uppercase">DP WORLD DJENDJEN</p>
                 </div>
             </div>
+            
+            <div class="flex items-center gap-2">
+                <!-- Visual Yard Matrix Button -->
+                <button onclick="openYardModal()" class="btn-dpw-yard px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition" title="Matrice Visuelle du Parc (Yard Matrix)" id="btnYardMatrix">
+                    <i class="fa-solid fa-cubes-stacked text-sm text-[#00ffaa]"></i>
+                    <span class="hidden xs:inline sm:inline" id="btnYardText">Parc à Conteneurs</span>
+                </button>
+
+                <button onclick="openExportModal()" class="btn-dpw-green px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition" title="Options d'exportation Excel">
+                    <i class="fa-solid fa-file-excel text-sm"></i>
+                    <span class="hidden xs:inline sm:inline">Excel</span>
+                </button>
+                <button onclick="openModal()" class="btn-dpw-gradient px-3.5 sm:px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 active:scale-95 transition">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span id="btnPointerText">Pointer</span>
+                </button>
+            </div>
         </header>
-
-        <!-- ACTION BUTTONS SECTION (RESTORED DEDICATED CONTAINER BELOW HEADER) -->
-        <section class="grid grid-cols-3 gap-2.5 sm:gap-4 my-3.5" aria-label="Actions rapides">
-            <!-- Visual Yard Matrix Button -->
-            <button onclick="openYardModal()" class="btn-dpw-yard py-3 px-3 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition shadow-lg" title="Matrice Visuelle du Parc (Yard Matrix)" id="btnYardMatrix">
-                <i class="fa-solid fa-cubes-stacked text-base text-[#00ffaa]"></i>
-                <span id="btnYardText">Parc à Conteneurs</span>
-            </button>
-
-            <!-- Excel Export Button -->
-            <button onclick="openExportModal()" class="btn-dpw-green py-3 px-3 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition shadow-lg" title="Options d'exportation Excel">
-                <i class="fa-solid fa-file-excel text-base"></i>
-                <span>Excel</span>
-            </button>
-
-            <!-- Add Container Button -->
-            <button onclick="openModal()" class="btn-dpw-gradient py-3 px-3 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition shadow-lg">
-                <i class="fa-solid fa-plus text-sm"></i>
-                <span id="btnPointerText">Pointer</span>
-            </button>
-        </section>
 
         <!-- QUICK KPI METRIC CARDS -->
         <section class="grid grid-cols-4 gap-2 sm:gap-4 my-3 text-center" aria-label="Statistiques rapides">
@@ -334,14 +330,14 @@
     <input type="file" id="templateFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleTemplateUpload(event)">
 
     <!-- ================= ADD / EDIT CONTAINER MODAL ================= -->
-    <div id="modalOverlay" onclick="if(event.target === this) closeModal()" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="w-full max-w-lg bg-[#15194a] rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 border border-[#303796] shadow-2xl modal-container-scroll modal-sheet-enter relative">
+    <div id="modalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="w-full max-w-lg bg-[#15194a] rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 border border-[#303796] shadow-2xl max-h-[90vh] overflow-y-auto modal-sheet-enter relative">
             
             <div class="w-12 h-1.5 bg-gray-500/40 rounded-full mx-auto mb-3 sm:hidden"></div>
 
-            <div class="modal-header mb-4 border-b border-[#252b75] pb-3">
-                <h3 class="font-extrabold text-base text-white flex-1" id="lblModalTitle">Pointer un conteneur</h3>
-                <button type="button" onclick="closeModal()" class="modal-close-btn" aria-label="Fermer">
+            <div class="flex items-center justify-between mb-4 border-b border-[#252b75] pb-3">
+                <h3 class="font-extrabold text-base text-center w-full text-white" id="lblModalTitle">Pointer un conteneur</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-lg p-1 absolute right-5 top-5" aria-label="Fermer">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -361,10 +357,10 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <input type="text" id="inpId" oninput="validateISOContainer(this.value)" required placeholder="MSCU1234567" class="w-full input-dpw p-3 rounded-xl uppercase font-extrabold tracking-wider text-sm font-container-id">
-                        <button type="button" onclick="triggerCameraOCR()" class="btn-dpw-gradient px-3.5 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 min-h-[44px]" title="Scanner avec OCR">
+                        <button type="button" onclick="triggerCameraOCR()" class="btn-dpw-gradient px-3.5 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0" title="Scanner avec OCR">
                             <i class="fa-solid fa-camera text-base"></i>
                         </button>
-                        <button type="button" onclick="triggerBarcodeScan()" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0 min-h-[44px]" title="Scanner Code-barres / QR">
+                        <button type="button" onclick="triggerBarcodeScan()" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-3 rounded-xl text-xs font-bold flex items-center justify-center shrink-0" title="Scanner Code-barres / QR">
                             <i class="fa-solid fa-barcode text-base"></i>
                         </button>
                     </div>
@@ -434,21 +430,20 @@
                     <textarea id="inpNotes" rows="2" placeholder="Informations complémentaires..." class="w-full input-dpw p-3 rounded-xl"></textarea>
                 </div>
 
-                <!-- Sticky Touch Confirmation Buttons -->
-                <div class="modal-sticky-footer">
-                    <button type="button" onclick="closeModal()" class="w-1/2 bg-[#252b75] hover:bg-[#303796] text-white font-bold rounded-xl text-xs btn-touch-action transition active:scale-95" id="btnCancel">Annuler</button>
-                    <button type="submit" id="btnSaveSubmit" class="w-1/2 btn-dpw-gradient font-bold rounded-xl text-xs btn-touch-action shadow-lg transition active:scale-95" id="btnSave">Valider</button>
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" onclick="closeModal()" class="w-1/2 bg-[#252b75] hover:bg-gray-700 text-white font-bold py-3.5 rounded-xl text-xs" id="btnCancel">Annuler</button>
+                    <button type="submit" id="btnSaveSubmit" class="w-1/2 btn-dpw-gradient font-bold py-3.5 rounded-xl text-xs" id="btnSave">Enregistrer</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- ================= 🏗️ VISUAL YARD MATRIX MODAL (PARC À CONTENEURS) ================= -->
-    <div id="yardModalOverlay" onclick="if(event.target === this) closeYardModal()" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
-        <div class="w-[95%] max-w-5xl bg-[#11153b] rounded-[28px] border border-[#303796] shadow-2xl flex flex-col yard-modal-box modal-sheet-enter relative">
+    <div id="yardModalOverlay" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
+        <div class="w-full max-w-5xl bg-[#11153b] rounded-[28px] border border-[#303796] shadow-2xl flex flex-col max-h-[95vh] overflow-hidden modal-sheet-enter relative">
             
             <!-- Yard Top Bar -->
-            <div class="p-4 sm:p-5 border-b border-[#252b75] modal-header bg-[#151a54]/60">
+            <div class="p-4 sm:p-5 border-b border-[#252b75] flex flex-wrap items-center justify-between gap-3 bg-[#151a54]/60">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00ffaa] to-[#121642] flex items-center justify-center text-[#0d1033] shadow-lg font-black text-lg">
                         <i class="fa-solid fa-cubes-stacked"></i>
@@ -462,18 +457,18 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0">
-                    <button onclick="refreshYardMatrix()" class="modal-close-btn text-[#00ffaa]" title="Actualiser le parc">
+                <div class="flex items-center gap-2">
+                    <button onclick="refreshYardMatrix()" class="p-2.5 rounded-xl bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] border border-[#303796] transition active:scale-95" title="Actualiser le parc">
                         <i class="fa-solid fa-arrows-rotate text-sm"></i>
                     </button>
-                    <button onclick="closeYardModal()" class="modal-close-btn" aria-label="Fermer">
+                    <button onclick="closeYardModal()" class="w-9 h-9 rounded-xl bg-[#1d2263] hover:bg-rose-950/60 hover:text-rose-400 text-gray-300 flex items-center justify-center text-base border border-[#303796] transition" aria-label="Fermer">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Yard Navigation Controls (Bloc / Travée / Filtres / Recherche) -->
-            <div class="px-3.5 py-3 sm:px-4 bg-[#131845] border-b border-[#252b75] space-y-2.5">
+            <div class="px-4 py-3 bg-[#131845] border-b border-[#252b75] space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-2.5">
                     
                     <!-- Bloc Selector Tabs -->
@@ -501,7 +496,7 @@
                     </div>
 
                     <!-- Yard Search / Jump by Container ID -->
-                    <div class="relative flex-1 min-w-[180px] max-w-xs">
+                    <div class="relative flex-1 min-w-[200px] max-w-xs">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                         <input type="text" id="yardSearchInput" oninput="searchYardContainer(this.value)" placeholder="Localiser un conteneur (ex: MSCU)..." class="w-full input-dpw pl-8 pr-3 py-1.5 rounded-xl text-xs font-mono">
                     </div>
@@ -528,14 +523,14 @@
             </div>
 
             <!-- Yard Matrix Viewport & Grid Canvas -->
-            <div class="flex-1 p-3 sm:p-6 overflow-y-auto overflow-x-auto min-h-[320px] flex flex-col justify-center items-center relative bg-radial-gradient">
+            <div class="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-auto min-h-[340px] flex flex-col justify-center items-center relative bg-radial-gradient">
                 <div id="yardGridContainer" class="w-full max-w-4xl mx-auto flex flex-col items-center">
                     <!-- Dynamic Bay Row/Tier Grid Rendered by yard.js -->
                 </div>
             </div>
 
             <!-- Dynamic Slot Inspector Floating Drawer -->
-            <div id="yardSlotInspector" class="hidden border-t border-[#303796] bg-[#15194a]/95 backdrop-blur-xl p-3.5 sm:p-4 transition-all duration-300">
+            <div id="yardSlotInspector" class="hidden border-t border-[#303796] bg-[#15194a]/95 backdrop-blur-xl p-4 transition-all duration-300">
                 <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs" id="yardInspectorContent">
                     <!-- Populated dynamically when clicking a slot -->
                 </div>
@@ -545,9 +540,9 @@
     </div>
 
     <!-- ================= 🎯 TEMPLATE MAPPING CONFIG MODAL ================= -->
-    <div id="templateMappingModal" onclick="if(event.target === this) closeMappingModal()" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-[#15194a] rounded-3xl p-5 sm:p-6 border border-[#303796] shadow-2xl space-y-4 modal-container-scroll modal-sheet-enter">
-            <div class="modal-header border-b border-[#252b75] pb-2.5">
+    <div id="templateMappingModal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-[#15194a] rounded-3xl p-5 sm:p-6 border border-[#303796] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto modal-sheet-enter">
+            <div class="flex justify-between items-center border-b border-[#252b75] pb-2.5">
                 <div>
                     <h3 class="font-extrabold text-sm text-white flex items-center gap-2">
                         <i class="fa-solid fa-file-excel text-[#00ffaa]"></i>
@@ -555,9 +550,7 @@
                     </h3>
                     <p class="text-[10px] text-[#00ffaa] font-semibold" id="txtMappingTargetModel"></p>
                 </div>
-                <button type="button" onclick="closeMappingModal()" class="modal-close-btn" aria-label="Fermer">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <button onclick="closeMappingModal()" class="text-gray-400 hover:text-white text-base">✕</button>
             </div>
 
             <form onsubmit="saveTemplateMapping(event)" class="space-y-3.5 text-xs">
@@ -576,25 +569,23 @@
                     <div class="grid grid-cols-2 gap-2.5 max-h-60 overflow-y-auto p-1" id="mappingFieldsContainer"></div>
                 </div>
 
-                <div class="modal-sticky-footer">
-                    <button type="button" onclick="closeMappingModal()" class="w-1/2 bg-[#252b75] text-white font-bold rounded-xl text-xs btn-touch-action">Annuler</button>
-                    <button type="submit" class="w-1/2 btn-dpw-green font-extrabold rounded-xl text-xs btn-touch-action shadow-lg">Valider Configuration</button>
+                <div class="flex items-center gap-2 pt-2">
+                    <button type="button" onclick="closeMappingModal()" class="w-1/2 bg-[#252b75] text-white font-bold py-2.5 rounded-xl text-xs">Annuler</button>
+                    <button type="submit" class="w-1/2 btn-dpw-green font-extrabold py-2.5 rounded-xl text-xs shadow-lg">Enregistrer Config</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- ================= 📊 ADVANCED EXPORT MODAL ================= -->
-    <div id="exportModalOverlay" onclick="if(event.target === this) closeExportModal()" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-[#15194a] rounded-3xl p-5 sm:p-6 border border-[#252b75] shadow-2xl space-y-4 modal-container-scroll modal-sheet-enter">
-            <div class="modal-header border-b border-[#252b75] pb-2.5">
+    <div id="exportModalOverlay" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-[#15194a] rounded-3xl p-5 sm:p-6 border border-[#252b75] shadow-2xl space-y-4 modal-sheet-enter">
+            <div class="flex justify-between items-center border-b border-[#252b75] pb-2.5">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2">
                     <i class="fa-solid fa-file-excel text-[#00ffaa]"></i>
                     <span id="lblExportModalTitle">Options d'exportation Excel</span>
                 </h3>
-                <button type="button" onclick="closeExportModal()" class="modal-close-btn" aria-label="Fermer">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <button onclick="closeExportModal()" class="text-gray-400 hover:text-white text-base">✕</button>
             </div>
 
             <div class="space-y-3.5 text-xs">
@@ -620,7 +611,7 @@
                     <p id="exportModeHint">Remplissage direct sur template officiel (ExcelJS) ou export standard.</p>
                 </div>
 
-                <button onclick="executeAdvancedExport()" class="w-full btn-dpw-green font-extrabold rounded-xl btn-touch-action shadow-lg transition" id="btnDownloadReport">
+                <button onclick="executeAdvancedExport()" class="w-full btn-dpw-green font-extrabold py-3 rounded-xl transition" id="btnDownloadReport">
                     Générer & Télécharger le fichier
                 </button>
             </div>

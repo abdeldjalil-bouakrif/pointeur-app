@@ -23,7 +23,7 @@
             this.currentUser = null;
             this.idb = null;
             
-            // In-memory state cache (starts completely empty, no seed containers)
+            // In-memory state cache
             this.containers = [];
             this.offlineQueue = [];
             this.modelConfigs = { ...DEFAULT_MODEL_CONFIGS };
@@ -44,51 +44,13 @@
         }
 
         /**
-         * Strict validation to verify if a container record is valid and non-corrupted
-         */
-        _isValidContainer(c) {
-            if (!c || typeof c !== 'object') return false;
-            const num = (c.containerNumber !== undefined && c.containerNumber !== null) 
-                ? String(c.containerNumber) 
-                : ((c.id !== undefined && c.id !== null) ? String(c.id) : '');
-            
-            const trimmed = num.trim();
-            if (!trimmed || trimmed === '' || trimmed === 'undefined' || trimmed === 'null' || trimmed === '[object Object]') {
-                return false;
-            }
-            return true;
-        }
-
-        /**
-         * Normalize a container object so containerNumber and id are identical and trimmed
-         */
-        _normalizeContainer(c) {
-            if (!c) return null;
-            const num = String(c.containerNumber || c.id || '').trim();
-            const key = c.firebaseKey || ('cnt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
-            return {
-                ...c,
-                containerNumber: num,
-                id: num,
-                firebaseKey: key,
-                stage: c.stage || 'Stock',
-                status: c.status || 'Bon état',
-                type: c.type || "40' HC",
-                loc: (c.loc || '').toUpperCase().trim(),
-                seal: (c.seal || 'SL-00000').toUpperCase().trim(),
-                notes: c.notes || '',
-                timestamp: c.timestamp || Date.now()
-            };
-        }
-
-        /**
          * Initialize IndexedDB and Firebase SDK
          */
         async init(firebaseConfig) {
             // 1. Initialize IndexedDB
             await this._initIndexedDB();
 
-            // 2. Load Local Data Cache & Automatically Purge Corrupted Records
+            // 2. Load Local Data Cache
             await this._loadLocalCache();
 
             // 3. Initialize Firebase
@@ -187,7 +149,7 @@
         }
 
         async _idbDelete(storeName, key) {
-            if (!this.idb || !key) return false;
+            if (!this.idb) return false;
             return new Promise((resolve) => {
                 try {
                     const tx = this.idb.transaction(storeName, 'readwrite');
@@ -216,96 +178,39 @@
             });
         }
 
-        // ================= LOCAL CACHE MANAGEMENT & STARTUP PURGE =================
+        // ================= LOCAL CACHE MANAGEMENT =================
 
         async _loadLocalCache() {
+            // Load containers
             let loadedContainers = [];
-            let corruptedKeysToDelete = [];
-
-            // 1. Fetch from IndexedDB if available
             if (this.idb) {
-                const idbRecords = await this._idbGetAll('containers');
-                if (Array.isArray(idbRecords) && idbRecords.length > 0) {
-                    idbRecords.forEach(c => {
-                        if (this._isValidContainer(c)) {
-                            loadedContainers.push(this._normalizeContainer(c));
-                        } else if (c && c.firebaseKey) {
-                            corruptedKeysToDelete.push(c.firebaseKey);
-                        }
-                    });
-                }
+                loadedContainers = await this._idbGetAll('containers');
             }
-
-            // 2. Fetch from LocalStorage fallback if IndexedDB returned nothing
             if (!loadedContainers || loadedContainers.length === 0) {
                 try {
-                    const rawLocal = JSON.parse(localStorage.getItem('dpw_local_containers')) || 
-                                     JSON.parse(localStorage.getItem('dpw_containers_local')) || [];
-                    if (Array.isArray(rawLocal)) {
-                        rawLocal.forEach(c => {
-                            if (this._isValidContainer(c)) {
-                                loadedContainers.push(this._normalizeContainer(c));
-                            }
-                        });
-                    }
+                    loadedContainers = JSON.parse(localStorage.getItem('dpw_local_containers')) || [];
                 } catch (e) {
                     loadedContainers = [];
                 }
             }
+            this.containers = loadedContainers.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-            // 3. Purge corrupted records from IndexedDB
-            if (this.idb && corruptedKeysToDelete.length > 0) {
-                for (const key of corruptedKeysToDelete) {
-                    await this._idbDelete('containers', key);
-                }
-            }
-
-            // 4. Strict filter and sort
-            this.containers = loadedContainers
-                .filter(c => this._isValidContainer(c))
-                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-            // 5. Clean & rewrite LocalStorage cache
-            localStorage.setItem('dpw_local_containers', JSON.stringify(this.containers));
-            localStorage.removeItem('dpw_containers_local'); // purge deprecated key
-
-            // 6. Synchronize clean state to IndexedDB
-            if (this.idb) {
-                await this._idbClear('containers');
-                for (const item of this.containers) {
-                    await this._idbPut('containers', item);
-                }
-            }
-
-            // 7. Load offline queue and purge corrupted queue items
+            // Load offline queue
             try {
-                const rawQueue = JSON.parse(localStorage.getItem('dpw_local_queue')) || [];
-                this.offlineQueue = (Array.isArray(rawQueue) ? rawQueue : [])
-                    .filter(q => this._isValidContainer(q))
-                    .map(q => this._normalizeContainer(q));
-                localStorage.setItem('dpw_local_queue', JSON.stringify(this.offlineQueue));
+                this.offlineQueue = JSON.parse(localStorage.getItem('dpw_local_queue')) || [];
             } catch (e) {
                 this.offlineQueue = [];
             }
 
-            // 8. Load last user scoped data
+            // Load last user scoped data
             const lastUid = localStorage.getItem('dpw_last_uid');
             if (lastUid) {
                 this.loadUserData(lastUid);
             }
-
-            this._emit('containers', this.containers);
         }
 
         async _persistContainersLocal() {
-            // Guarantee only valid records are persisted
-            this.containers = this.containers
-                .filter(c => this._isValidContainer(c))
-                .map(c => this._normalizeContainer(c));
-
             localStorage.setItem('dpw_local_containers', JSON.stringify(this.containers));
-            localStorage.removeItem('dpw_containers_local');
-
             if (this.idb) {
                 await this._idbClear('containers');
                 for (const item of this.containers) {
@@ -316,31 +221,7 @@
         }
 
         async _persistQueueLocal() {
-            this.offlineQueue = this.offlineQueue.filter(q => this._isValidContainer(q));
             localStorage.setItem('dpw_local_queue', JSON.stringify(this.offlineQueue));
-        }
-
-        /**
-         * Global Purge utility: cleans corrupt records from Memory, IndexedDB and LocalStorage
-         */
-        async purgeCorruptedContainers() {
-            this.containers = this.containers.filter(c => this._isValidContainer(c));
-            this.offlineQueue = this.offlineQueue.filter(q => this._isValidContainer(q));
-            
-            await this._persistContainersLocal();
-            await this._persistQueueLocal();
-
-            if (this.idb) {
-                const all = await this._idbGetAll('containers');
-                for (const item of all) {
-                    if (!this._isValidContainer(item)) {
-                        if (item && item.firebaseKey) {
-                            await this._idbDelete('containers', item.firebaseKey);
-                        }
-                    }
-                }
-            }
-            this._emit('containers', this.containers);
         }
 
         // ================= USER-SCOPED DATA (ISOLATED BY UID) =================
@@ -397,19 +278,12 @@
             this.db.ref('containers').on('value', (snap) => {
                 const val = snap.val();
                 if (val) {
-                    const rawCloudList = Object.values(val);
-                    const cloudList = rawCloudList
-                        .filter(c => this._isValidContainer(c))
-                        .map(c => this._normalizeContainer(c));
-
+                    const cloudList = Object.values(val);
                     const map = new Map();
-                    this.containers.filter(c => this._isValidContainer(c)).forEach(c => map.set(c.firebaseKey, c));
+                    this.containers.forEach(c => map.set(c.firebaseKey, c));
                     cloudList.forEach(c => map.set(c.firebaseKey, c));
 
-                    this.containers = Array.from(map.values())
-                        .filter(c => this._isValidContainer(c))
-                        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                    
+                    this.containers = Array.from(map.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                     this._persistContainersLocal();
                 } else {
                     this._emit('containers', this.containers);
@@ -460,12 +334,6 @@
             const pending = [...this.offlineQueue];
 
             for (const item of pending) {
-                if (!this._isValidContainer(item)) {
-                    this.offlineQueue = this.offlineQueue.filter(q => q.firebaseKey !== item.firebaseKey);
-                    await this._persistQueueLocal();
-                    continue;
-                }
-
                 try {
                     await this.db.ref('containers/' + item.firebaseKey).set(item);
                     this.offlineQueue = this.offlineQueue.filter(q => q.firebaseKey !== item.firebaseKey);
@@ -481,24 +349,12 @@
 
         // ================= CRUD OPERATIONS: CONTAINERS =================
 
-        async saveContainer(rawItem) {
-            if (!this._isValidContainer(rawItem)) {
-                console.warn('Tentative d’enregistrement d’un conteneur invalide/undefined ignorée:', rawItem);
-                return null;
-            }
-
-            const item = this._normalizeContainer(rawItem);
+        async saveContainer(item) {
             const uniqueKey = item.firebaseKey || ('cnt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
             item.firebaseKey = uniqueKey;
+            item.timestamp = item.timestamp || Date.now();
 
-            // Prevent duplicate entries
-            const existingIdx = this.containers.findIndex(c => c.firebaseKey === uniqueKey || (c.containerNumber && c.containerNumber === item.containerNumber));
-            if (existingIdx !== -1) {
-                this.containers[existingIdx] = { ...this.containers[existingIdx], ...item };
-            } else {
-                this.containers.unshift(item);
-            }
-
+            this.containers.unshift(item);
             await this._persistContainersLocal();
 
             if (this.db && navigator.onLine) {
@@ -517,73 +373,35 @@
         }
 
         async updateContainer(firebaseKey, updatedData) {
-            const idx = this.containers.findIndex(c => c.firebaseKey === firebaseKey || c.id === firebaseKey || c.containerNumber === firebaseKey);
+            const idx = this.containers.findIndex(c => c.firebaseKey === firebaseKey);
             if (idx !== -1) {
-                const merged = { ...this.containers[idx], ...updatedData };
-                if (this._isValidContainer(merged)) {
-                    this.containers[idx] = this._normalizeContainer(merged);
-                    await this._persistContainersLocal();
+                this.containers[idx] = { ...this.containers[idx], ...updatedData };
+                await this._persistContainersLocal();
 
-                    const keyToUse = this.containers[idx].firebaseKey;
-                    if (this.db && navigator.onLine && keyToUse) {
-                        try {
-                            await this.db.ref('containers/' + keyToUse).update(this.containers[idx]);
-                        } catch (e) {
-                            this.offlineQueue.push(this.containers[idx]);
-                            await this._persistQueueLocal();
-                        }
-                    } else if (keyToUse) {
+                if (this.db && navigator.onLine) {
+                    try {
+                        await this.db.ref('containers/' + firebaseKey).update(this.containers[idx]);
+                    } catch (e) {
                         this.offlineQueue.push(this.containers[idx]);
                         await this._persistQueueLocal();
                     }
-                    return this.containers[idx];
+                } else {
+                    this.offlineQueue.push(this.containers[idx]);
+                    await this._persistQueueLocal();
                 }
             }
-            return null;
+            return this.containers[idx];
         }
 
         async deleteContainer(firebaseKey) {
-            const targetKey = String(firebaseKey || '').trim();
-
-            // Filter out by firebaseKey, id, or containerNumber, as well as any malformed record
-            this.containers = this.containers.filter(c => {
-                if (!this._isValidContainer(c)) return false;
-                if (c.firebaseKey === targetKey || c.id === targetKey || c.containerNumber === targetKey) {
-                    return false;
-                }
-                return true;
-            });
-
-            this.offlineQueue = this.offlineQueue.filter(q => {
-                if (!this._isValidContainer(q)) return false;
-                if (q.firebaseKey === targetKey || q.id === targetKey || q.containerNumber === targetKey) {
-                    return false;
-                }
-                return true;
-            });
-
+            this.containers = this.containers.filter(c => c.firebaseKey !== firebaseKey);
+            this.offlineQueue = this.offlineQueue.filter(q => q.firebaseKey !== firebaseKey);
             await this._persistContainersLocal();
             await this._persistQueueLocal();
 
-            // Delete from IndexedDB even if key is malformed or invalid
-            if (this.idb) {
-                if (targetKey) {
-                    await this._idbDelete('containers', targetKey);
-                }
-                const all = await this._idbGetAll('containers');
-                for (const item of all) {
-                    if (!this._isValidContainer(item) || item.firebaseKey === targetKey || item.id === targetKey || item.containerNumber === targetKey) {
-                        if (item.firebaseKey) {
-                            await this._idbDelete('containers', item.firebaseKey);
-                        }
-                    }
-                }
-            }
-
-            // Remove from Firebase RTDB
-            if (this.db && navigator.onLine && targetKey && targetKey !== 'undefined' && targetKey !== 'null') {
+            if (this.db && navigator.onLine) {
                 try {
-                    await this.db.ref('containers/' + targetKey).remove();
+                    await this.db.ref('containers/' + firebaseKey).remove();
                 } catch (e) {
                     console.warn('Delete cloud sync warning:', e);
                 }
@@ -591,20 +409,19 @@
         }
 
         async updateContainerStage(firebaseKey, newStage) {
-            const idx = this.containers.findIndex(c => c.firebaseKey === firebaseKey || c.id === firebaseKey || c.containerNumber === firebaseKey);
+            const idx = this.containers.findIndex(c => c.firebaseKey === firebaseKey);
             if (idx !== -1) {
                 this.containers[idx].stage = newStage;
                 await this._persistContainersLocal();
 
-                const keyToUse = this.containers[idx].firebaseKey;
-                if (this.db && navigator.onLine && keyToUse) {
+                if (this.db && navigator.onLine) {
                     try {
-                        await this.db.ref('containers/' + keyToUse).update({ stage: newStage });
+                        await this.db.ref('containers/' + firebaseKey).update({ stage: newStage });
                     } catch (e) {
                         this.offlineQueue.push(this.containers[idx]);
                         await this._persistQueueLocal();
                     }
-                } else if (keyToUse) {
+                } else {
                     this.offlineQueue.push(this.containers[idx]);
                     await this._persistQueueLocal();
                 }

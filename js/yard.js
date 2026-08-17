@@ -42,6 +42,7 @@
         const texte = locStr.trim().toUpperCase();
 
         // 1. Format Complet : [Bloc]-[Travée/Bay]-[Rangée/Row]-[Hauteur/Tier]
+        // Exemples : A-T01-R04-H2, A-B01-R04-T2, B-01-04-02
         const matchComplet = texte.match(/^([ABCR])-?(?:T|B)?(\d{1,2})-?R?(\d{1,2})-?(?:H|T)?(\d{1,2})$/);
         if (matchComplet) {
             return {
@@ -54,6 +55,7 @@
         }
 
         // 2. Format 3 éléments : T[Travée]-R[Rangée]-H[Hauteur] ou B[Bay]-R[Row]-T[Tier]
+        // Exemples : T01-R04-H2, B01-R04-T2, 01-04-02
         const matchCourt = texte.match(/^(?:T|B)?(\d{1,2})-?R?(\d{1,2})-?(?:H|T)?(\d{1,2})$/);
         if (matchCourt) {
             const blk = blocActif || 'A';
@@ -90,20 +92,11 @@
         return `${bloc}-T${String(travee).padStart(2, '0')}-R${String(rangee).padStart(2, '0')}-H${hauteur}`;
     }
 
-    // ================= 🏗️ MAPPAGE DU PARC & FILTRAGE STRICT =================
+    // ================= 🏗️ MAPPAGE DU PARC & PERSISTANCE =================
     function construireCarteParc() {
-        const rawContainers = (window.DPW_DB && Array.isArray(window.DPW_DB.containers)) 
+        const conteneurs = (window.DPW_DB && Array.isArray(window.DPW_DB.containers)) 
             ? window.DPW_DB.containers 
-            : JSON.parse(localStorage.getItem('dpw_local_containers') || '[]');
-
-        // Filtre strict anti-undefined et normalisation
-        const conteneurs = (rawContainers || [])
-            .map(c => {
-                if (!c) return null;
-                const num = String(c.containerNumber || c.id || '').trim();
-                return { ...c, containerNumber: num, id: num };
-            })
-            .filter(c => c && c.containerNumber && c.containerNumber.trim() !== '' && c.containerNumber !== 'undefined' && c.containerNumber !== 'null');
+            : JSON.parse(localStorage.getItem('dpw_containers_local') || '[]');
 
         const carteSlots = new Map();
         const indexConteneurs = [];
@@ -171,7 +164,7 @@
         }
 
         const nbDisponibles = totalSlots - nbOccupes;
-        const tauxOccupation = totalSlots > 0 ? Math.round((nbOccupes / totalSlots) * 100) : 0;
+        const tauxOccupation = Math.round((nbOccupes / totalSlots) * 100);
 
         // Mise à jour de l'indicateur d'occupation & badges
         const occRateEl = document.getElementById('yardOccupancyRate');
@@ -185,13 +178,13 @@
         if (document.getElementById('countFilterDamaged')) document.getElementById('countFilterDamaged').innerText = nbAvaries;
         if (document.getElementById('countFilterReefer')) document.getElementById('countFilterReefer').innerText = nbFrigorifiques;
 
-        // Construction du tableau matriciel
+        // Construction du tableau matriciel (Hauteurs du haut vers le bas, Rangées de gauche à droite)
         let html = `
             <div class="w-full overflow-x-auto pb-2">
                 <table class="yard-matrix-table mx-auto">
                     <thead>
                         <tr>
-                            <th class="p-1 w-10 sm:w-12 text-center text-[10px] text-gray-400 font-bold">HAUTEUR</th>
+                            <th class="p-1 w-12 text-center text-[10px] text-gray-400 font-bold">HAUTEUR</th>
                             ${Array.from({ length: nbRangees }, (_, i) => `
                                 <th class="p-1 text-center">
                                     <div class="yard-row-badge">
@@ -199,13 +192,13 @@
                                     </div>
                                 </th>
                             `).join('')}
-                            <th class="p-1 w-10 sm:w-12 text-center text-[10px] text-gray-400 font-bold">HAUTEUR</th>
+                            <th class="p-1 w-12 text-center text-[10px] text-gray-400 font-bold">HAUTEUR</th>
                         </tr>
                     </thead>
                     <tbody>
         `;
 
-        // Rendu vertical des hauteurs : de la plus haute vers le sol
+        // Rendu vertical des hauteurs : de la plus haute (ex: H4) vers le sol (H1)
         for (let h = nbHauteurs; h >= 1; h--) {
             html += `
                 <tr>
@@ -230,7 +223,6 @@
                 if (estOccupe) {
                     const estAvarie = conteneur.status === 'Endommagé';
                     const estFrigo = conteneur.type && conteneur.type.includes('RF');
-                    const idAffiche = conteneur.containerNumber || conteneur.id || '';
                     
                     let classeSlot = 'yard-slot-good';
                     if (estAvarie) classeSlot = 'yard-slot-damaged';
@@ -241,11 +233,11 @@
                             <div onclick="DPW_YARD.onSlotClicked('${blocActif}', ${traveeActive}, ${r}, ${h})" 
                                  id="slot_${cleSlot}"
                                  class="yard-slot yard-slot-occupied ${classeSlot} ${estEnSurbrillance ? 'yard-slot-active-target' : ''} ${estAttenue ? 'yard-slot-dimmed' : ''}"
-                                 title="Conteneur : ${idAffiche} (${conteneur.type}) - ${conteneur.status}">
+                                 title="Conteneur : ${conteneur.id} (${conteneur.type}) - ${conteneur.status}">
                                 
                                 <div class="flex items-center justify-between pointer-events-none">
                                     <span class="text-[9.5px] font-black font-container-id text-white truncate max-w-[85px] tracking-wide" dir="ltr">
-                                        ${idAffiche}
+                                        ${conteneur.id}
                                     </span>
                                     <span class="text-[8px] font-extrabold px-1 rounded bg-black/40 text-[#00ffaa]">
                                         ${conteneur.type ? conteneur.type.split(' ')[0] : "40'"}
@@ -273,7 +265,7 @@
                                 
                                 <div class="flex items-center justify-between text-[8px] text-gray-500 font-mono font-bold pointer-events-none">
                                     <span>R${r}H${h}</span>
-                                    <span class="text-[7.5px] text-emerald-400/80 font-bold">DISPONIBLE</span>
+                                    <span class="text-[7.5px] text-emerald-400/80 font-bold">LIBRE</span>
                                 </div>
 
                                 <div class="w-full flex items-center justify-center py-0.5 yard-empty-plus pointer-events-none text-emerald-400">
@@ -331,7 +323,6 @@
             // ================= 📦 SLOT OCCUPÉ : DÉTAILS & ACTIONS =================
             const estBonEtat = conteneur.status === 'Bon état';
             const estFrigo = conteneur.type && conteneur.type.includes('RF');
-            const idAffiche = conteneur.containerNumber || conteneur.id || '';
 
             let vignettePhoto = '';
             if (conteneur.damagePhoto) {
@@ -345,7 +336,7 @@
                     ${vignettePhoto}
                     <div>
                         <div class="flex items-center gap-2">
-                            <span class="font-extrabold text-sm sm:text-base text-white font-container-id tracking-wider" dir="ltr">${idAffiche}</span>
+                            <span class="font-extrabold text-sm sm:text-base text-white font-container-id tracking-wider" dir="ltr">${conteneur.id}</span>
                             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${estBonEtat ? 'bg-emerald-600/90 text-white' : 'bg-rose-600/90 text-white'}">
                                 ${conteneur.status}
                             </span>
@@ -361,17 +352,17 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button onclick="DPW_YARD.modifierConteneur('${conteneur.firebaseKey}')" class="btn-dpw-green px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow active:scale-95 transition" title="Modifier les données du conteneur">
+                    <button onclick="DPW_YARD.modifierConteneur('${conteneur.firebaseKey}')" class="btn-dpw-green px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow active:scale-95 transition" title="Modifier les données du conteneur">
                         <i class="fa-solid fa-pen-to-square"></i>
                         <span>Modifier</span>
                     </button>
 
-                    <button onclick="DPW_YARD.deplacerConteneur('${conteneur.firebaseKey}', '${idAffiche}', '${locMaritime}')" class="bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] border border-[#00ffaa]/50 px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition" title="Déplacer vers un autre slot">
+                    <button onclick="DPW_YARD.deplacerConteneur('${conteneur.firebaseKey}', '${conteneur.id}', '${locMaritime}')" class="bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] border border-[#00ffaa]/50 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition" title="Déplacer vers un autre slot">
                         <i class="fa-solid fa-arrows-up-down-left-right"></i>
                         <span>Déplacer</span>
                     </button>
 
-                    <button onclick="DPW_YARD.retirerConteneur('${conteneur.firebaseKey}', '${idAffiche}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/40 px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition" title="Retirer ou libérer ce slot">
+                    <button onclick="DPW_YARD.retirerConteneur('${conteneur.firebaseKey}', '${conteneur.id}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/40 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition" title="Retirer ou libérer ce slot">
                         <i class="fa-solid fa-truck-ramp-box"></i>
                         <span>Retirer</span>
                     </button>
@@ -477,14 +468,21 @@
         const occupant = carteSlots.get(cleDest);
 
         if (occupant && occupant.firebaseKey !== fbKey) {
-            const occupantId = occupant.containerNumber || occupant.id || 'autre conteneur';
-            const confirmerEcrasement = confirm(`Attention: Le slot ${nouvelEmplacement} est déjà occupé par ${occupantId}. Voulez-vous continuer et déplacer quand même ?`);
+            const confirmerEcrasement = confirm(`Attention: Le slot ${nouvelEmplacement} est déjà occupé par ${occupant.id}. Voulez-vous continuer et déplacer quand même ?`);
             if (!confirmerEcrasement) return;
         }
 
         try {
             if (window.DPW_DB && typeof window.DPW_DB.updateContainer === 'function') {
                 await window.DPW_DB.updateContainer(fbKey, { loc: nouvelEmplacement });
+            } else {
+                // Fallback LocalStorage
+                const locaux = JSON.parse(localStorage.getItem('dpw_containers_local') || '[]');
+                const idx = locaux.findIndex(c => c.firebaseKey === fbKey);
+                if (idx !== -1) {
+                    locaux[idx].loc = nouvelEmplacement;
+                    localStorage.setItem('dpw_containers_local', JSON.stringify(locaux));
+                }
             }
 
             if (window.showToast) {
@@ -539,10 +537,9 @@
         }
 
         const { indexConteneurs } = construireCarteParc();
-        const resultat = indexConteneurs.find(item => {
-            const num = item.conteneur.containerNumber || item.conteneur.id || '';
-            return num.toUpperCase().includes(requeteRecherche);
-        });
+        const resultat = indexConteneurs.find(item => 
+            item.conteneur.id && item.conteneur.id.toUpperCase().includes(requeteRecherche)
+        );
 
         if (resultat) {
             const { pos, conteneur } = resultat;
@@ -556,9 +553,8 @@
             afficherGrilleParc(cleCible);
             onSlotClicked(pos.bloc, pos.travee, pos.rangee, pos.hauteur);
 
-            const numAffiche = conteneur.containerNumber || conteneur.id || '';
             if (window.showToast) {
-                window.showToast(`✓ Conteneur localisé : ${numAffiche} (${pos.standard})`);
+                window.showToast(`✓ Conteneur localisé : ${conteneur.id} (${pos.standard})`);
             }
         }
     }
@@ -637,16 +633,12 @@
         peuplerSelecteurTravees();
         afficherGrilleParc();
         modal.classList.remove('hidden');
-        document.body.classList.add('modal-open');
-        document.documentElement.classList.add('modal-open');
     }
 
     function closeYardModal() {
         const modal = document.getElementById('yardModalOverlay');
         if (modal) modal.classList.add('hidden');
         fermerInspecteur();
-        document.body.classList.remove('modal-open');
-        document.documentElement.classList.remove('modal-open');
     }
 
     // Exposition de l'API globale
