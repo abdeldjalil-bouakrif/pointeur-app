@@ -1,0 +1,250 @@
+/**
+ * DP WORLD DJENDJEN - CONTAINER TALLYING PWA
+ * Core Stylesheet & Design System
+ */
+
+:root {
+    --sat: env(safe-area-inset-top, 20px);
+    --sab: env(safe-area-inset-bottom, 20px);
+    --dpw-primary: #151a54;
+    --dpw-dark: #0a0d29;
+    --dpw-accent-green: #00ffaa;
+    --dpw-accent-pink: #ff2a6d;
+    --dpw-accent-orange: #ff5e1e;
+    --dpw-card-border: rgba(48, 57, 155, 0.6);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body { 
+    font-family: 'Inter', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+    background: radial-gradient(circle at 50% 0%, #151a54 0%, #0a0d29 100%); 
+    color: #ffffff; 
+    margin: 0;
+    padding-top: var(--sat);
+    padding-bottom: calc(var(--sab) + 85px);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+}
+
+/* Safe Area Utility */
+.nav-safe { 
+    padding-bottom: max(0.6rem, var(--sab)); 
+}
+
+/* Glassmorphism DPW Cards */
+.dpw-card { 
+    background: linear-gradient(135deg, rgba(25, 31, 89, 0.75) 0%, rgba(16, 20, 60, 0.88) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--dpw-card-border); 
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dpw-card:hover {
+    border-color: rgba(0, 255, 170, 0.35);
+    box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.55);
+}
+
+/* Form Controls */
+.input-dpw { 
+    background-color: rgba(29, 34, 99, 0.85); 
+    border: 1.5px solid #303796; 
+    color: #ffffff; 
+    transition: all 0.2s ease;
+}
+
+.input-dpw:focus { 
+    border-color: var(--dpw-accent-green); 
+    box-shadow: 0 0 12px rgba(0, 255, 170, 0.3);
+    outline: none; 
+}
+
+.input-dpw::placeholder {
+    color: #94a3b8;
+    opacity: 0.7;
+}
+
+/* Buttons */
+.btn-dpw-gradient { 
+    background: linear-gradient(135deg, #ff2a6d 0%, #ff5e1e 100%); 
+    color: white; 
+    box-shadow: 0 4px 16px rgba(255, 42, 109, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-dpw-gradient:active { 
+    transform: scale(0.96); 
+}
+
+.btn-dpw-green { 
+    background: linear-gradient(135deg, #00ffaa 0%, #00d288 100%); 
+    color: #080b21; 
+    box-shadow: 0 4px 16px rgba(0, 255, 170, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-dpw-green:active { 
+    transform: scale(0.96); 
+}
+
+/* Status Badges */
+.badge-green { 
+    background-color: rgba(6, 78, 59, 0.85); 
+    color: #34d399; 
+    border: 1px solid #059669; 
+}
+
+.badge-red { 
+    background-color: rgba(76, 5, 25, 0.85); 
+    color: #fb7185; 
+    border: 1px solid #e11d48; 
+}
+
+/* Stage Badges */
+.stage-navire { 
+    background-color: rgba(30, 58, 138, 0.85); 
+    color: #93c5fd; 
+    border: 1px solid #3b82f6; 
+}
+
+.stage-stock { 
+    background-color: rgba(54, 32, 13, 0.85); 
+    color: #fb923c; 
+    border: 1px solid #f97316; 
+}
+
+.stage-douane { 
+    background-color: rgba(46, 16, 101, 0.85); 
+    color: #c084fc; 
+    border: 1px solid #a855f7; 
+}
+
+.stage-embarque { 
+    background-color: rgba(6, 78, 59, 0.85); 
+    color: #34d399; 
+    border: 1px solid #10b981; 
+}
+
+/* Navigation Dock Pills */
+.nav-pill-active {
+    color: #00ffaa !important;
+    background: rgba(0, 255, 170, 0.12);
+    border: 1px solid rgba(0, 255, 170, 0.35);
+    box-shadow: 0 0 12px rgba(0, 255, 170, 0.2);
+    border-radius: 14px;
+}
+
+.nav-item-inactive { 
+    color: #818cf8; 
+}
+
+.nav-item-inactive:hover {
+    color: #c7d2fe;
+}
+
+/* Tracking Pipeline Nodes */
+.glow-node-current {
+    background-color: #00ffaa !important;
+    color: #0d1033 !important;
+    box-shadow: 0 0 16px #00ffaa, 0 0 30px rgba(0,255,170,0.6);
+    border: 2.5px solid #ffffff !important;
+    transform: scale(1.18);
+}
+
+.glow-node-passed {
+    background-color: #1d2263;
+    color: #00ffaa;
+    border: 2px solid #00ffaa;
+}
+
+.glow-node-future {
+    background-color: #141747;
+    color: #64748b;
+    border: 2px solid #303796;
+}
+
+.glow-line-active {
+    background: linear-gradient(90deg, #00ffaa, #ff2a6d);
+    box-shadow: 0 0 8px #00ffaa;
+}
+
+/* Damaged Container Card Alert Style */
+.card-damaged {
+    border: 1px solid rgba(244, 63, 94, 0.5) !important;
+    background: linear-gradient(180deg, rgba(25, 31, 89, 0.8) 0%, rgba(76, 5, 25, 0.45) 100%) !important;
+}
+
+/* Toast Container */
+#toastContainer {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+/* Container ID Mono Font */
+.font-container-id {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.06em;
+}
+
+/* Modal Bottom-sheet Transition */
+.modal-sheet-enter {
+    animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+    from { 
+        transform: translateY(100%); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateY(0); 
+        opacity: 1; 
+    }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #303796;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00ffaa;
+}
+
+/* RTL Layout Adaptations */
+[dir="rtl"] {
+    font-family: 'Cairo', 'Inter', sans-serif;
+    text-align: right;
+}
+
+[dir="rtl"] .font-container-id {
+    direction: ltr;
+    display: inline-block;
+}
+
+[dir="rtl"] #liveSearchInput {
+    padding-left: 0.75rem;
+    padding-right: 2.25rem;
+}
+
+[dir="rtl"] .search-icon-pos {
+    left: auto;
+    right: 0.875rem;
+}
