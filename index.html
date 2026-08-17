@@ -129,11 +129,17 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <button onclick="openExportModal()" class="btn-dpw-green px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition" title="Options d'exportation">
-                    <i class="fa-solid fa-file-excel text-sm"></i>
-                    <span>Excel</span>
+                <!-- Visual Yard Matrix Button -->
+                <button onclick="openYardModal()" class="btn-dpw-yard px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition" title="Matrice Visuelle Parc (Yard Matrix)" id="btnYardMatrix">
+                    <i class="fa-solid fa-cubes-stacked text-sm text-[#00ffaa]"></i>
+                    <span class="hidden xs:inline sm:inline" id="btnYardText">Parc 2D</span>
                 </button>
-                <button onclick="openModal()" class="btn-dpw-gradient px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 active:scale-95 transition">
+
+                <button onclick="openExportModal()" class="btn-dpw-green px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 active:scale-95 transition" title="Options d'exportation">
+                    <i class="fa-solid fa-file-excel text-sm"></i>
+                    <span class="hidden xs:inline sm:inline">Excel</span>
+                </button>
+                <button onclick="openModal()" class="btn-dpw-gradient px-3.5 sm:px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 active:scale-95 transition">
                     <i class="fa-solid fa-plus text-xs"></i>
                     <span id="btnPointerText">Pointer</span>
                 </button>
@@ -403,7 +409,12 @@
 
                 <div class="grid grid-cols-2 gap-3.5">
                     <div>
-                        <label class="block text-gray-300 font-semibold mb-1" id="lblLocation">Emplacement</label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-gray-300 font-semibold" id="lblLocation">Emplacement</label>
+                            <button type="button" onclick="openYardModalWithSelectMode()" class="text-[10px] text-[#00ffaa] hover:underline font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-map-pin"></i> <span id="lblPickYard">Choisir sur Parc</span>
+                            </button>
+                        </div>
                         <input type="text" id="inpLoc" required placeholder="B01-R04-T2" class="w-full input-dpw p-3 rounded-xl uppercase font-bold">
                     </div>
                     <div>
@@ -424,6 +435,107 @@
                     <button type="submit" id="btnSaveSubmit" class="w-1/2 btn-dpw-gradient font-bold py-3.5 rounded-xl text-xs" id="btnSave">Enregistrer</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ================= 🏗️ VISUAL YARD MATRIX MODAL ================= -->
+    <div id="yardModalOverlay" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
+        <div class="w-full max-w-5xl bg-[#11153b] rounded-[28px] border border-[#303796] shadow-2xl flex flex-col max-h-[95vh] overflow-hidden modal-sheet-enter relative">
+            
+            <!-- Yard Top Bar -->
+            <div class="p-4 sm:p-5 border-b border-[#252b75] flex flex-wrap items-center justify-between gap-3 bg-[#151a54]/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00ffaa] to-[#121642] flex items-center justify-center text-[#0d1033] shadow-lg font-black text-lg">
+                        <i class="fa-solid fa-cubes-stacked"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-base sm:text-lg text-white flex items-center gap-2">
+                            <span id="txtYardModalTitle">Matrice Visuelle du Parc (Yard 2D)</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#00ffaa]/20 text-[#00ffaa] border border-[#00ffaa]/40 font-mono" id="yardOccupancyRate">0% OCC</span>
+                        </h3>
+                        <p class="text-[11px] text-gray-400" id="txtYardModalSub">Vue en coupe de la travée (Bay) • Lignes (Rows) & Étages (Tiers)</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="refreshYardMatrix()" class="p-2.5 rounded-xl bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] border border-[#303796] transition active:scale-95" title="Actualiser le parc">
+                        <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                    </button>
+                    <button onclick="closeYardModal()" class="w-9 h-9 rounded-xl bg-[#1d2263] hover:bg-rose-950/60 hover:text-rose-400 text-gray-300 flex items-center justify-center text-base border border-[#303796] transition" aria-label="Fermer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Yard Navigation Controls (Block / Bay / Filters) -->
+            <div class="px-4 py-3 bg-[#131845] border-b border-[#252b75] space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2.5">
+                    
+                    <!-- Block Selector Tabs -->
+                    <div class="flex items-center gap-1.5 p-1 bg-[#0d1033] rounded-xl border border-[#252b75]" id="yardBlockTabsContainer">
+                        <button onclick="selectYardBlock('A')" data-yard-block="A" class="px-3 py-1.5 rounded-lg text-xs font-black transition yard-block-pill-active">BLOC A (Dry)</button>
+                        <button onclick="selectYardBlock('B')" data-yard-block="B" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition">BLOC B (Dry)</button>
+                        <button onclick="selectYardBlock('C')" data-yard-block="C" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition">BLOC C (Empty)</button>
+                        <button onclick="selectYardBlock('R')" data-yard-block="R" class="px-3 py-1.5 rounded-lg text-xs font-bold text-cyan-400 hover:text-cyan-300 transition">BLOC R (Reefer)</button>
+                    </div>
+
+                    <!-- Bay Selector Pagination / Stepper -->
+                    <div class="flex items-center gap-2 bg-[#0d1033] px-2.5 py-1.5 rounded-xl border border-[#252b75]">
+                        <button onclick="stepYardBay(-1)" class="w-7 h-7 rounded-lg bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] flex items-center justify-center text-xs active:scale-95 transition">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">BAY</span>
+                            <select id="yardBaySelect" onchange="changeYardBay(this.value)" class="bg-[#151a54] text-white font-mono font-extrabold text-xs px-2 py-1 rounded-md border border-[#303796] outline-none cursor-pointer">
+                                <!-- Populated dynamically (01 to 24) -->
+                            </select>
+                        </div>
+                        <button onclick="stepYardBay(1)" class="w-7 h-7 rounded-lg bg-[#1d2263] hover:bg-[#252b75] text-[#00ffaa] flex items-center justify-center text-xs active:scale-95 transition">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Yard Search Container Quick Jump -->
+                    <div class="relative flex-1 min-w-[200px] max-w-xs">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                        <input type="text" id="yardSearchInput" oninput="searchYardContainer(this.value)" placeholder="Localiser un conteneur..." class="w-full input-dpw pl-8 pr-3 py-1.5 rounded-xl text-xs font-mono">
+                    </div>
+                </div>
+
+                <!-- Quick Filters Bar & Legend -->
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-1 border-t border-[#252b75]/50">
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+                        <button onclick="setYardFilter('all')" data-yard-filter="all" class="yard-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#00ffaa] text-[#0d1033] shadow">Tous (<span id="countFilterAll">0</span>)</button>
+                        <button onclick="setYardFilter('occupied')" data-yard-filter="occupied" class="yard-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#1d2263] text-gray-300 hover:text-white border border-[#252b75]">Occupés (<span id="countFilterOccupied">0</span>)</button>
+                        <button onclick="setYardFilter('empty')" data-yard-filter="empty" class="yard-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#1d2263] text-gray-300 hover:text-white border border-[#252b75]">Vides (<span id="countFilterEmpty">0</span>)</button>
+                        <button onclick="setYardFilter('damaged')" data-yard-filter="damaged" class="yard-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#1d2263] text-rose-400 hover:text-rose-300 border border-rose-500/30">Avariés (<span id="countFilterDamaged">0</span>)</button>
+                        <button onclick="setYardFilter('reefer')" data-yard-filter="reefer" class="yard-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#1d2263] text-cyan-400 hover:text-cyan-300 border border-cyan-500/30">Reefer (<span id="countFilterReefer">0</span>)</button>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="flex items-center gap-3 text-[10px] text-gray-400 font-semibold">
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-emerald-500 inline-block"></span> Bon état</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-rose-500 inline-block"></span> Avarié</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-cyan-400 inline-block"></span> Reefer</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded border border-dashed border-gray-500 inline-block"></span> Disponible</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Yard Matrix Viewport & Grid Canvas -->
+            <div class="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-auto min-h-[340px] flex flex-col justify-center items-center relative bg-radial-gradient">
+                <div id="yardGridContainer" class="w-full max-w-4xl mx-auto flex flex-col items-center">
+                    <!-- Dynamic Bay Row/Tier Grid Rendered by yard.js -->
+                </div>
+            </div>
+
+            <!-- Dynamic Slot Inspector Floating Drawer / Bottom Summary -->
+            <div id="yardSlotInspector" class="hidden border-t border-[#303796] bg-[#15194a]/95 backdrop-blur-xl p-4 transition-all duration-300">
+                <div class="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs" id="yardInspectorContent">
+                    <!-- Populated dynamically when clicking a slot -->
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -510,6 +622,7 @@
     <script src="js/db.js"></script>
     <script src="js/ocr.js"></script>
     <script src="js/excel.js"></script>
+    <script src="js/yard.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
