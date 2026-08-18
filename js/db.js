@@ -1,13 +1,17 @@
+// ==========================================
+// FILE: js/db.js
+// ==========================================
 /**
  * DP WORLD DJENDJEN - CONTAINER TALLYING PWA
  * Database & Offline Sync Layer (Firebase RTDB + IndexedDB / LocalStorage)
+ * Enhanced with Persistent Column Mappings & Dynamic Models/Tags
  */
 
 (function(window) {
     'use strict';
 
     const DB_NAME = 'DPW_Container_DB';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
 
     // Default operation models & custom fields
     const DEFAULT_MODEL_CONFIGS = {
@@ -15,6 +19,20 @@
         'Visite Douane': ['Nom Douanier', 'N° Déclaration', 'Résultat Visite'],
         'Embarquement': ['Destination', 'Poids (Tonnes)']
     };
+
+    // Standard container tallying fields
+    const STANDARD_FIELDS = [
+        { key: 'id', label: 'N° Conteneur (ID)', defaultCol: 'A' },
+        { key: 'type', label: 'Type & Taille', defaultCol: 'B' },
+        { key: 'loc', label: 'Emplacement Parc', defaultCol: 'C' },
+        { key: 'seal', label: 'N° Plomb (Seal)', defaultCol: 'D' },
+        { key: 'status', label: 'État (Statut)', defaultCol: 'E' },
+        { key: 'stage', label: 'Étape Flux', defaultCol: 'F' },
+        { key: 'date', label: 'Date Pointage', defaultCol: 'G' },
+        { key: 'time', label: 'Heure Pointage', defaultCol: 'H' },
+        { key: 'agent', label: 'Agent Pointeur', defaultCol: 'I' },
+        { key: 'notes', label: 'Remarques', defaultCol: 'J' }
+    ];
 
     class DatabaseManager {
         constructor() {
@@ -41,6 +59,44 @@
 
             this.isOnline = navigator.onLine;
             this.isSyncing = false;
+        }
+
+        /**
+         * Strict validation to verify if a container record is valid
+         */
+        _isValidContainer(c) {
+            if (!c || typeof c !== 'object') return false;
+            const num = (c.containerNumber !== undefined && c.containerNumber !== null) 
+                ? String(c.containerNumber) 
+                : ((c.id !== undefined && c.id !== null) ? String(c.id) : '');
+            
+            const trimmed = num.trim();
+            if (!trimmed || trimmed === '' || trimmed === 'undefined' || trimmed === 'null' || trimmed === '[object Object]') {
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * Normalize a container object
+         */
+        _normalizeContainer(c) {
+            if (!c) return null;
+            const num = String(c.containerNumber || c.id || '').trim();
+            const key = c.firebaseKey || ('cnt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
+            return {
+                ...c,
+                containerNumber: num,
+                id: num,
+                firebaseKey: key,
+                stage: c.stage || 'Stock',
+                status: c.status || 'Bon état',
+                type: c.type || "40' HC",
+                loc: (c.loc || '').toUpperCase().trim(),
+                seal: (c.seal || 'SL-00000').toUpperCase().trim(),
+                notes: c.notes || '',
+                timestamp: c.timestamp || Date.now()
+            };
         }
 
         /**
@@ -104,6 +160,15 @@
                     if (!db.objectStoreNames.contains('user_settings')) {
                         db.createObjectStore('user_settings', { keyPath: 'key' });
                     }
+                    if (!db.objectStoreNames.contains('column_mappings')) {
+                        db.createObjectStore('column_mappings', { keyPath: 'modelName' });
+                    }
+                    if (!db.objectStoreNames.contains('model_configs')) {
+                        db.createObjectStore('model_configs', { keyPath: 'modelName' });
+                    }
+                    if (!db.objectStoreNames.contains('model_templates')) {
+                        db.createObjectStore('model_templates', { keyPath: 'modelName' });
+                    }
                 };
 
                 request.onsuccess = (event) => {
@@ -119,7 +184,7 @@
         }
 
         async _idbPut(storeName, item) {
-            if (!this.idb) return false;
+            if (!this.idb || !this.idb.objectStoreNames.contains(storeName)) return false;
             return new Promise((resolve) => {
                 try {
                     const tx = this.idb.transaction(storeName, 'readwrite');
@@ -133,8 +198,23 @@
             });
         }
 
+        async _idbGet(storeName, key) {
+            if (!this.idb || !this.idb.objectStoreNames.contains(storeName)) return null;
+            return new Promise((resolve) => {
+                try {
+                    const tx = this.idb.transaction(storeName, 'readonly');
+                    const store = tx.objectStore(storeName);
+                    const req = store.get(key);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        }
+
         async _idbGetAll(storeName) {
-            if (!this.idb) return [];
+            if (!this.idb || !this.idb.objectStoreNames.contains(storeName)) return [];
             return new Promise((resolve) => {
                 try {
                     const tx = this.idb.transaction(storeName, 'readonly');
@@ -149,7 +229,7 @@
         }
 
         async _idbDelete(storeName, key) {
-            if (!this.idb) return false;
+            if (!this.idb || !this.idb.objectStoreNames.contains(storeName)) return false;
             return new Promise((resolve) => {
                 try {
                     const tx = this.idb.transaction(storeName, 'readwrite');
@@ -164,7 +244,7 @@
         }
 
         async _idbClear(storeName) {
-            if (!this.idb) return false;
+            if (!this.idb || !this.idb.objectStoreNames.contains(storeName)) return false;
             return new Promise((resolve) => {
                 try {
                     const tx = this.idb.transaction(storeName, 'readwrite');
@@ -181,36 +261,88 @@
         // ================= LOCAL CACHE MANAGEMENT =================
 
         async _loadLocalCache() {
-            // Load containers
             let loadedContainers = [];
+
+            // 1. Fetch from IndexedDB
             if (this.idb) {
-                loadedContainers = await this._idbGetAll('containers');
+                const idbRecords = await this._idbGetAll('containers');
+                if (Array.isArray(idbRecords) && idbRecords.length > 0) {
+                    idbRecords.forEach(c => {
+                        if (this._isValidContainer(c)) {
+                            loadedContainers.push(this._normalizeContainer(c));
+                        }
+                    });
+                }
             }
+
+            // 2. Fetch from LocalStorage fallback
             if (!loadedContainers || loadedContainers.length === 0) {
                 try {
-                    loadedContainers = JSON.parse(localStorage.getItem('dpw_local_containers')) || [];
+                    const rawLocal = JSON.parse(localStorage.getItem('dpw_local_containers')) || [];
+                    if (Array.isArray(rawLocal)) {
+                        rawLocal.forEach(c => {
+                            if (this._isValidContainer(c)) {
+                                loadedContainers.push(this._normalizeContainer(c));
+                            }
+                        });
+                    }
                 } catch (e) {
                     loadedContainers = [];
                 }
             }
-            this.containers = loadedContainers.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-            // Load offline queue
+            // 3. Strict filter and sort
+            this.containers = loadedContainers
+                .filter(c => this._isValidContainer(c))
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            // 4. Load offline queue
             try {
-                this.offlineQueue = JSON.parse(localStorage.getItem('dpw_local_queue')) || [];
+                const rawQueue = JSON.parse(localStorage.getItem('dpw_local_queue')) || [];
+                this.offlineQueue = (Array.isArray(rawQueue) ? rawQueue : [])
+                    .filter(q => this._isValidContainer(q))
+                    .map(q => this._normalizeContainer(q));
             } catch (e) {
                 this.offlineQueue = [];
             }
 
-            // Load last user scoped data
-            const lastUid = localStorage.getItem('dpw_last_uid');
-            if (lastUid) {
-                this.loadUserData(lastUid);
+            // 5. Load Column Mappings from IndexedDB
+            const savedMappings = {};
+            if (this.idb && this.idb.objectStoreNames.contains('column_mappings')) {
+                const idbMappings = await this._idbGetAll('column_mappings');
+                if (idbMappings && idbMappings.length > 0) {
+                    idbMappings.forEach(item => {
+                        if (item && item.modelName) {
+                            savedMappings[item.modelName] = {
+                                startRow: item.startRow || 2,
+                                columns: item.columns || {},
+                                updatedAt: item.updatedAt || Date.now()
+                            };
+                        }
+                    });
+                }
             }
+
+            // 6. Load user scoped data
+            const lastUid = localStorage.getItem('dpw_last_uid') || 'guest';
+            this.loadUserData(lastUid);
+
+            // Merge IndexedDB mappings if present
+            if (Object.keys(savedMappings).length > 0) {
+                this.templateMappings = { ...this.templateMappings, ...savedMappings };
+                this._emit('mappings', this.templateMappings);
+            }
+
+            this._emit('containers', this.containers);
         }
 
         async _persistContainersLocal() {
+            this.containers = this.containers
+                .filter(c => this._isValidContainer(c))
+                .map(c => this._normalizeContainer(c));
+
             localStorage.setItem('dpw_local_containers', JSON.stringify(this.containers));
+
             if (this.idb) {
                 await this._idbClear('containers');
                 for (const item of this.containers) {
@@ -221,30 +353,43 @@
         }
 
         async _persistQueueLocal() {
+            this.offlineQueue = this.offlineQueue.filter(q => this._isValidContainer(q));
             localStorage.setItem('dpw_local_queue', JSON.stringify(this.offlineQueue));
         }
 
         // ================= USER-SCOPED DATA (ISOLATED BY UID) =================
 
         loadUserData(uid) {
-            if (!uid) return;
+            if (!uid) uid = 'guest';
+
+            // 1. Model Configurations
             try {
-                this.modelConfigs = JSON.parse(localStorage.getItem('dpw_models_' + uid)) || { ...DEFAULT_MODEL_CONFIGS };
+                const saved = localStorage.getItem('dpw_models_' + uid);
+                this.modelConfigs = saved ? JSON.parse(saved) : { ...DEFAULT_MODEL_CONFIGS };
             } catch (e) {
                 this.modelConfigs = { ...DEFAULT_MODEL_CONFIGS };
             }
 
+            // 2. Model Templates
             try {
                 this.modelTemplates = JSON.parse(localStorage.getItem('dpw_templates_' + uid)) || {};
             } catch (e) {
                 this.modelTemplates = {};
             }
 
+            // 3. Column Mappings
             try {
                 this.templateMappings = JSON.parse(localStorage.getItem('dpw_mappings_' + uid)) || {};
             } catch (e) {
                 this.templateMappings = {};
             }
+
+            // Ensure all current models have an active column mapping
+            Object.keys(this.modelConfigs).forEach(mName => {
+                if (!this.templateMappings[mName]) {
+                    this.templateMappings[mName] = this.getDefaultMapping(mName);
+                }
+            });
 
             this._emit('models', this.modelConfigs);
             this._emit('templates', this.modelTemplates);
@@ -278,12 +423,19 @@
             this.db.ref('containers').on('value', (snap) => {
                 const val = snap.val();
                 if (val) {
-                    const cloudList = Object.values(val);
+                    const rawCloudList = Object.values(val);
+                    const cloudList = rawCloudList
+                        .filter(c => this._isValidContainer(c))
+                        .map(c => this._normalizeContainer(c));
+
                     const map = new Map();
-                    this.containers.forEach(c => map.set(c.firebaseKey, c));
+                    this.containers.filter(c => this._isValidContainer(c)).forEach(c => map.set(c.firebaseKey, c));
                     cloudList.forEach(c => map.set(c.firebaseKey, c));
 
-                    this.containers = Array.from(map.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    this.containers = Array.from(map.values())
+                        .filter(c => this._isValidContainer(c))
+                        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    
                     this._persistContainersLocal();
                 } else {
                     this._emit('containers', this.containers);
@@ -316,8 +468,14 @@
             this.db.ref(`users/${uid}/templateMappings`).on('value', (snap) => {
                 const val = snap.val();
                 if (val) {
-                    this.templateMappings = val;
+                    this.templateMappings = { ...this.templateMappings, ...val };
                     localStorage.setItem('dpw_mappings_' + uid, JSON.stringify(this.templateMappings));
+                    
+                    // Persist to IndexedDB
+                    Object.entries(this.templateMappings).forEach(([mName, mapping]) => {
+                        this._idbPut('column_mappings', { modelName: mName, ...mapping, updatedAt: Date.now() });
+                    });
+
                     this._emit('mappings', this.templateMappings);
                 }
             });
@@ -334,6 +492,12 @@
             const pending = [...this.offlineQueue];
 
             for (const item of pending) {
+                if (!this._isValidContainer(item)) {
+                    this.offlineQueue = this.offlineQueue.filter(q => q.firebaseKey !== item.firebaseKey);
+                    await this._persistQueueLocal();
+                    continue;
+                }
+
                 try {
                     await this.db.ref('containers/' + item.firebaseKey).set(item);
                     this.offlineQueue = this.offlineQueue.filter(q => q.firebaseKey !== item.firebaseKey);
@@ -349,12 +513,24 @@
 
         // ================= CRUD OPERATIONS: CONTAINERS =================
 
-        async saveContainer(item) {
+        async saveContainer(rawItem) {
+            if (!this._isValidContainer(rawItem)) {
+                console.warn('Tentative d’enregistrement d’un conteneur invalide/undefined ignorée:', rawItem);
+                return null;
+            }
+
+            const item = this._normalizeContainer(rawItem);
             const uniqueKey = item.firebaseKey || ('cnt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
             item.firebaseKey = uniqueKey;
-            item.timestamp = item.timestamp || Date.now();
 
-            this.containers.unshift(item);
+            // Prevent duplicate entries
+            const existingIdx = this.containers.findIndex(c => c.firebaseKey === uniqueKey || (c.containerNumber && c.containerNumber === item.containerNumber));
+            if (existingIdx !== -1) {
+                this.containers[existingIdx] = { ...this.containers[existingIdx], ...item };
+            } else {
+                this.containers.unshift(item);
+            }
+
             await this._persistContainersLocal();
 
             if (this.db && navigator.onLine) {
@@ -373,35 +549,70 @@
         }
 
         async updateContainer(firebaseKey, updatedData) {
-            const idx = this.containers.findIndex(c => c.firebaseKey === firebaseKey);
+            const idx = this.containers.findIndex(c => c.firebaseKey === firebaseKey || c.id === firebaseKey || c.containerNumber === firebaseKey);
             if (idx !== -1) {
-                this.containers[idx] = { ...this.containers[idx], ...updatedData };
-                await this._persistContainersLocal();
+                const merged = { ...this.containers[idx], ...updatedData };
+                if (this._isValidContainer(merged)) {
+                    this.containers[idx] = this._normalizeContainer(merged);
+                    await this._persistContainersLocal();
 
-                if (this.db && navigator.onLine) {
-                    try {
-                        await this.db.ref('containers/' + firebaseKey).update(this.containers[idx]);
-                    } catch (e) {
+                    const keyToUse = this.containers[idx].firebaseKey;
+                    if (this.db && navigator.onLine && keyToUse) {
+                        try {
+                            await this.db.ref('containers/' + keyToUse).update(this.containers[idx]);
+                        } catch (e) {
+                            this.offlineQueue.push(this.containers[idx]);
+                            await this._persistQueueLocal();
+                        }
+                    } else if (keyToUse) {
                         this.offlineQueue.push(this.containers[idx]);
                         await this._persistQueueLocal();
                     }
-                } else {
-                    this.offlineQueue.push(this.containers[idx]);
-                    await this._persistQueueLocal();
+                    return this.containers[idx];
                 }
             }
-            return this.containers[idx];
+            return null;
         }
 
         async deleteContainer(firebaseKey) {
-            this.containers = this.containers.filter(c => c.firebaseKey !== firebaseKey);
-            this.offlineQueue = this.offlineQueue.filter(q => q.firebaseKey !== firebaseKey);
+            const targetKey = String(firebaseKey || '').trim();
+
+            this.containers = this.containers.filter(c => {
+                if (!this._isValidContainer(c)) return false;
+                if (c.firebaseKey === targetKey || c.id === targetKey || c.containerNumber === targetKey) {
+                    return false;
+                }
+                return true;
+            });
+
+            this.offlineQueue = this.offlineQueue.filter(q => {
+                if (!this._isValidContainer(q)) return false;
+                if (q.firebaseKey === targetKey || q.id === targetKey || q.containerNumber === targetKey) {
+                    return false;
+                }
+                return true;
+            });
+
             await this._persistContainersLocal();
             await this._persistQueueLocal();
 
-            if (this.db && navigator.onLine) {
+            if (this.idb) {
+                if (targetKey) {
+                    await this._idbDelete('containers', targetKey);
+                }
+                const all = await this._idbGetAll('containers');
+                for (const item of all) {
+                    if (!this._isValidContainer(item) || item.firebaseKey === targetKey || item.id === targetKey || item.containerNumber === targetKey) {
+                        if (item.firebaseKey) {
+                            await this._idbDelete('containers', item.firebaseKey);
+                        }
+                    }
+                }
+            }
+
+            if (this.db && navigator.onLine && targetKey && targetKey !== 'undefined' && targetKey !== 'null') {
                 try {
-                    await this.db.ref('containers/' + firebaseKey).remove();
+                    await this.db.ref('containers/' + targetKey).remove();
                 } catch (e) {
                     console.warn('Delete cloud sync warning:', e);
                 }
@@ -409,19 +620,20 @@
         }
 
         async updateContainerStage(firebaseKey, newStage) {
-            const idx = this.containers.findIndex(c => c.firebaseKey === firebaseKey);
+            const idx = this.containers.findIndex(c => c.firebaseKey === firebaseKey || c.id === firebaseKey || c.containerNumber === firebaseKey);
             if (idx !== -1) {
                 this.containers[idx].stage = newStage;
                 await this._persistContainersLocal();
 
-                if (this.db && navigator.onLine) {
+                const keyToUse = this.containers[idx].firebaseKey;
+                if (this.db && navigator.onLine && keyToUse) {
                     try {
-                        await this.db.ref('containers/' + firebaseKey).update({ stage: newStage });
+                        await this.db.ref('containers/' + keyToUse).update({ stage: newStage });
                     } catch (e) {
                         this.offlineQueue.push(this.containers[idx]);
                         await this._persistQueueLocal();
                     }
-                } else {
+                } else if (keyToUse) {
                     this.offlineQueue.push(this.containers[idx]);
                     await this._persistQueueLocal();
                 }
@@ -442,12 +654,23 @@
             await this._persistQueueLocal();
         }
 
-        // ================= USER-SCOPED MODELS & TEMPLATES CRUD =================
+        // ================= DYNAMIC MODELS & CUSTOM FIELD TAGS CRUD =================
 
+        /**
+         * Save or update model configuration (fields list)
+         */
         async saveModelConfigs(modelName, fields = []) {
-            const uid = this.currentUser ? this.currentUser.uid : 'guest';
-            this.modelConfigs[modelName] = fields;
+            const uid = this.currentUser ? this.currentUser.uid : (localStorage.getItem('dpw_last_uid') || 'guest');
+            this.modelConfigs[modelName] = Array.isArray(fields) ? fields : [];
+            
+            // Persist to LocalStorage & IndexedDB
             localStorage.setItem('dpw_models_' + uid, JSON.stringify(this.modelConfigs));
+            await this._idbPut('model_configs', { modelName, fields: this.modelConfigs[modelName] });
+
+            // Ensure baseline column mapping exists
+            if (!this.templateMappings[modelName]) {
+                await this.saveTemplateMapping(modelName, this.getDefaultMapping(modelName));
+            }
 
             if (this.db && this.currentUser && this.currentUser.uid) {
                 try {
@@ -456,11 +679,15 @@
                     console.warn('Model config sync error:', e);
                 }
             }
+
             this._emit('models', this.modelConfigs);
         }
 
+        /**
+         * Delete a model and its associated template & column mappings
+         */
         async deleteModel(modelName) {
-            const uid = this.currentUser ? this.currentUser.uid : 'guest';
+            const uid = this.currentUser ? this.currentUser.uid : (localStorage.getItem('dpw_last_uid') || 'guest');
             delete this.modelConfigs[modelName];
             delete this.modelTemplates[modelName];
             delete this.templateMappings[modelName];
@@ -468,6 +695,10 @@
             localStorage.setItem('dpw_models_' + uid, JSON.stringify(this.modelConfigs));
             localStorage.setItem('dpw_templates_' + uid, JSON.stringify(this.modelTemplates));
             localStorage.setItem('dpw_mappings_' + uid, JSON.stringify(this.templateMappings));
+
+            await this._idbDelete('model_configs', modelName);
+            await this._idbDelete('model_templates', modelName);
+            await this._idbDelete('column_mappings', modelName);
 
             if (this.db && this.currentUser && this.currentUser.uid) {
                 try {
@@ -478,15 +709,91 @@
                     console.warn('Delete model sync error:', e);
                 }
             }
+
             this._emit('models', this.modelConfigs);
             this._emit('templates', this.modelTemplates);
             this._emit('mappings', this.templateMappings);
         }
 
+        /**
+         * Add a new custom field tag to a specific model
+         */
+        async addModelTag(modelName, tagName) {
+            if (!modelName || !tagName) return;
+            const cleanTag = tagName.trim();
+            if (!cleanTag) return;
+
+            const fields = this.modelConfigs[modelName] || [];
+            if (!fields.includes(cleanTag)) {
+                fields.push(cleanTag);
+                await this.saveModelConfigs(modelName, fields);
+
+                // Automatically assign next column in mapping if not present
+                const currentMapping = this.getTemplateMapping(modelName);
+                const colKey = `custom_${cleanTag}`;
+                if (!currentMapping.columns || !currentMapping.columns[colKey]) {
+                    const letters = this.getColumnLetterList().filter(l => l !== 'None');
+                    const usedCols = Object.values(currentMapping.columns || {});
+                    const nextCol = letters.find(l => !usedCols.includes(l)) || 'Z';
+                    currentMapping.columns = currentMapping.columns || {};
+                    currentMapping.columns[colKey] = nextCol;
+                    await this.saveTemplateMapping(modelName, currentMapping);
+                }
+            }
+        }
+
+        /**
+         * Delete a custom field tag from a specific model
+         */
+        async deleteModelTag(modelName, tagName) {
+            if (!modelName || !tagName) return;
+            const fields = (this.modelConfigs[modelName] || []).filter(f => f !== tagName);
+            await this.saveModelConfigs(modelName, fields);
+
+            // Clean up from mapping
+            const currentMapping = this.getTemplateMapping(modelName);
+            const colKey = `custom_${tagName}`;
+            if (currentMapping.columns && currentMapping.columns[colKey]) {
+                delete currentMapping.columns[colKey];
+                await this.saveTemplateMapping(modelName, currentMapping);
+            }
+        }
+
+        /**
+         * Prompt helper to create a new model dynamically
+         */
+        async promptAddNewModel() {
+            const modelName = prompt("Entrez le nom du nouveau modèle de pointage (ex: Visite Scanner, Transfert Quai...) :");
+            if (modelName && modelName.trim()) {
+                const clean = modelName.trim();
+                if (this.modelConfigs[clean]) {
+                    if (window.showToast) window.showToast(`Le modèle "${clean}" existe déjà !`, true);
+                    return;
+                }
+                await this.saveModelConfigs(clean, []);
+                if (window.showToast) window.showToast(`✓ Modèle "${clean}" créé avec succès !`);
+            }
+        }
+
+        /**
+         * Prompt helper to add a custom field tag to a model
+         */
+        async promptAddModelTag(modelName) {
+            if (!modelName) return;
+            const tagName = prompt(`Nom du nouveau champ / tag pour "${modelName}" (ex: Température, Poids, Transporteur...) :`);
+            if (tagName && tagName.trim()) {
+                await this.addModelTag(modelName, tagName.trim());
+                if (window.showToast) window.showToast(`✓ Champ "${tagName.trim()}" ajouté à "${modelName}" !`);
+            }
+        }
+
+        // ================= TEMPLATES & PERSISTENT COLUMN MAPPINGS =================
+
         async saveModelTemplate(modelName, base64Data) {
-            const uid = this.currentUser ? this.currentUser.uid : 'guest';
+            const uid = this.currentUser ? this.currentUser.uid : (localStorage.getItem('dpw_last_uid') || 'guest');
             this.modelTemplates[modelName] = base64Data;
             localStorage.setItem('dpw_templates_' + uid, JSON.stringify(this.modelTemplates));
+            await this._idbPut('model_templates', { modelName, base64: base64Data });
 
             if (this.db && this.currentUser && this.currentUser.uid) {
                 try {
@@ -499,38 +806,135 @@
         }
 
         async deleteModelTemplate(modelName) {
-            const uid = this.currentUser ? this.currentUser.uid : 'guest';
+            const uid = this.currentUser ? this.currentUser.uid : (localStorage.getItem('dpw_last_uid') || 'guest');
             delete this.modelTemplates[modelName];
-            delete this.templateMappings[modelName];
 
             localStorage.setItem('dpw_templates_' + uid, JSON.stringify(this.modelTemplates));
-            localStorage.setItem('dpw_mappings_' + uid, JSON.stringify(this.templateMappings));
+            await this._idbDelete('model_templates', modelName);
 
             if (this.db && this.currentUser && this.currentUser.uid) {
                 try {
                     await this.db.ref(`users/${uid}/modelTemplates/${modelName}`).remove();
-                    await this.db.ref(`users/${uid}/templateMappings/${modelName}`).remove();
                 } catch (e) {
                     console.warn('Delete template sync error:', e);
                 }
             }
             this._emit('templates', this.modelTemplates);
-            this._emit('mappings', this.templateMappings);
         }
 
+        /**
+         * Save column configuration per model in IndexedDB, LocalStorage, and Cloud
+         * Always overwrites with the latest modified configuration
+         */
         async saveTemplateMapping(modelName, mappingData) {
-            const uid = this.currentUser ? this.currentUser.uid : 'guest';
-            this.templateMappings[modelName] = mappingData;
-            localStorage.setItem('dpw_mappings_' + uid, JSON.stringify(this.templateMappings));
+            const uid = this.currentUser ? this.currentUser.uid : (localStorage.getItem('dpw_last_uid') || 'guest');
+            const sanitized = {
+                startRow: parseInt(mappingData.startRow, 10) || 2,
+                columns: { ...(mappingData.columns || {}) },
+                updatedAt: Date.now()
+            };
 
+            // In-memory update
+            this.templateMappings[modelName] = sanitized;
+
+            // 1. Persistent IndexedDB Save
+            await this._idbPut('column_mappings', {
+                modelName: modelName,
+                startRow: sanitized.startRow,
+                columns: sanitized.columns,
+                updatedAt: sanitized.updatedAt
+            });
+            await this._idbPut('user_settings', {
+                key: `mapping_${modelName}`,
+                data: sanitized,
+                updatedAt: sanitized.updatedAt
+            });
+
+            // 2. Persistent LocalStorage Save
+            localStorage.setItem('dpw_mappings_' + uid, JSON.stringify(this.templateMappings));
+            localStorage.setItem(`dpw_mapping_${modelName}`, JSON.stringify(sanitized));
+
+            // 3. Firebase Cloud Save
             if (this.db && this.currentUser && this.currentUser.uid) {
                 try {
-                    await this.db.ref(`users/${uid}/templateMappings/${modelName}`).set(mappingData);
+                    await this.db.ref(`users/${uid}/templateMappings/${modelName}`).set(sanitized);
                 } catch (e) {
-                    console.warn('Mapping save sync error:', e);
+                    console.warn('Mapping save cloud sync error:', e);
                 }
             }
+
             this._emit('mappings', this.templateMappings);
+            return sanitized;
+        }
+
+        /**
+         * Load the latest saved configuration for a model, or build intelligent defaults
+         */
+        getTemplateMapping(modelName) {
+            if (this.templateMappings && this.templateMappings[modelName]) {
+                return this.templateMappings[modelName];
+            }
+
+            // Fallback to local storage
+            try {
+                const saved = localStorage.getItem(`dpw_mapping_${modelName}`);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    this.templateMappings[modelName] = parsed;
+                    return parsed;
+                }
+            } catch (e) {}
+
+            return this.getDefaultMapping(modelName);
+        }
+
+        /**
+         * Generates standard default column mapping for standard + custom fields
+         */
+        getDefaultMapping(modelName) {
+            const letters = this.getColumnLetterList().filter(l => l !== 'None');
+            const columns = {
+                id: 'A',
+                type: 'B',
+                loc: 'C',
+                seal: 'D',
+                status: 'E',
+                stage: 'F',
+                date: 'G',
+                time: 'H',
+                agent: 'I',
+                notes: 'J'
+            };
+
+            const customFields = (this.modelConfigs && this.modelConfigs[modelName]) ? this.modelConfigs[modelName] : [];
+            customFields.forEach((cf, idx) => {
+                const colLetter = letters[10 + idx] || letters[letters.length - 1];
+                columns[`custom_${cf}`] = colLetter;
+            });
+
+            return {
+                startRow: 2,
+                columns: columns,
+                updatedAt: Date.now()
+            };
+        }
+
+        /**
+         * List of Excel column letters (None, A to Z, AA to AZ)
+         */
+        getColumnLetterList() {
+            const cols = ['None'];
+            for (let i = 0; i < 26; i++) {
+                cols.push(String.fromCharCode(65 + i));
+            }
+            for (let i = 0; i < 26; i++) {
+                cols.push('A' + String.fromCharCode(65 + i));
+            }
+            return cols;
+        }
+
+        getStandardFields() {
+            return [...STANDARD_FIELDS];
         }
 
         // ================= EVENT BUS SYSTEM =================
