@@ -1,12 +1,12 @@
 /**
  * DP WORLD DJENDJEN - CONTAINER TALLYING PWA
- * Contrôleur Principal de l'Application, Gestion des Modales & Synchronisation
+ * Contrôleur Principal de l'Application, Gestion des Modales, RBAC & Synchronisation
  */
 
 (function(window) {
     'use strict';
 
-    // Configuration Firebase (Couche Temps Réel)
+    // Configuration Firebase (Couche Temps Réel Cloud Optionnelle)
     const firebaseConfig = {
         apiKey: "AIzaSyAJ2eLg1TJ419Hxhi542A104GiGhi3k5Ps",
         authDomain: "pointeur-167d6.firebaseapp.com",
@@ -18,7 +18,7 @@
         measurementId: "G-3GWZV8BWE4"
     };
 
-    // Variables d'état de l'application
+    // Variables d'état de l'application (Strictement isolées en session active)
     let currentUser = null;
     let authMode = 'login';
     let currentLang = localStorage.getItem('dpw_lang') || 'fr';
@@ -35,7 +35,7 @@
             txtYardModalTitle: "Matrice Visuelle du Parc (Yard 2D)",
             txtYardModalSub: "Vue en coupe maritime : Bloc • Travée (Bay) • Rangée (Row) • Hauteur (Tier)",
             searchPlaceholder: "Rechercher par N° ou emplacement...",
-            cloudDirect: "Cloud Direct",
+            cloudDirect: "Stockage IndexedDB + Cloud",
             navAccueil: "Accueil",
             navSuivi: "Suivi Flux",
             navSettings: "Modèles",
@@ -65,9 +65,9 @@
             save: "Enregistrer",
             logout: "Se déconnecter",
             myCounts: "Mes Pointages",
-            cloudServer: "Serveur Cloud",
-            activeState: "Actif",
-            terminalDesc: "Système de pointage et gestion des flux de conteneurs sous environnement sécurisé Firebase & stockage local hors-ligne.",
+            cloudServer: "Sécurité & Stockage",
+            activeState: "Actif (IndexedDB)",
+            terminalDesc: "Système de pointage et gestion des flux sous environnement sécurisé PBKDF2 & IndexedDB GB-Scale offline.",
             damageTitle: "Photo de l'avarie",
             btnTakeDamage: "Prendre photo",
             kpiTotal: "Total",
@@ -80,6 +80,11 @@
             exportModel: "Modèle à exporter",
             btnDownload: "Générer & Télécharger le fichier",
             lblLangSettings: "Langue de l'application",
+            roleAdmin: "Administrateur",
+            rolePointeur: "Agent Pointeur",
+            accessDeniedDelete: "Accès refusé : Seul un Administrateur peut supprimer un conteneur.",
+            accessDeniedArchive: "Accès refusé : L'archivage de la vacation est réservé aux Administrateurs.",
+            accessDeniedModel: "Accès refusé : Seul un Administrateur peut supprimer des modèles ou templates.",
             stageNames: { Navire: 'En Navire', Stock: 'En Stockage', Douane: 'En Douane', Embarqué: 'Embarqué / Sortie' }
         },
         ar: {
@@ -89,7 +94,7 @@
             txtYardModalTitle: "المصفوفة المرئية لساحة الحاويات (Yard 2D)",
             txtYardModalSub: "عرض مقطعي للخانة (Bay) • الصفوف والطوابق (Rows & Tiers)",
             searchPlaceholder: "بحث برقم الحاوية أو الموقع في الساحة...",
-            cloudDirect: "اتصال سحابي مباشر",
+            cloudDirect: "قاعدة بيانات IndexedDB + سحابة",
             navAccueil: "الرئيسية",
             navSuivi: "تتبع المسار",
             navSettings: "النماذج",
@@ -116,12 +121,12 @@
             sealLbl: "رقم القفل والرصاص (Plomb)",
             notesLbl: "ملاحظات إضافية",
             cancel: "إلغاء",
-            save: "حفظ في السحابة",
+            save: "حفظ البيانات",
             logout: "تسجيل الخروج من الحساب",
             myCounts: "تسجيلاتي الميدانية",
-            cloudServer: "الخادم السحابي",
-            activeState: "متصل ونشط",
-            terminalDesc: "نظام رصد ومتابعة تدفق الحاويات في محطة ميناء جن جن تحت بيئة سحابية آمنة.",
+            cloudServer: "الأمان والتخزين",
+            activeState: "نشط (IndexedDB)",
+            terminalDesc: "نظام رصد ومتابعة تدفق الحاويات في محطة ميناء جن جن تحت بيئة مشفرة وتخزين محلي ضخم.",
             damageTitle: "صورة الضرر / العيب",
             btnTakeDamage: "التقاط صورة",
             kpiTotal: "الإجمالي",
@@ -134,6 +139,11 @@
             exportModel: "النموذج المراد تصديره",
             btnDownload: "توليد وتنزيل ملف الإكسل",
             lblLangSettings: "لغة التطبيق",
+            roleAdmin: "مسؤول النظام (Admin)",
+            rolePointeur: "عون تسجيل (Pointeur)",
+            accessDeniedDelete: "تم رفض الوصول: يتطلب حذف السجلات صلاحيات مسؤول النظام (Admin).",
+            accessDeniedArchive: "تم رفض الوصول: أرشفة الوردية مقتصرة على المشرفين والمسؤولين.",
+            accessDeniedModel: "تم رفض الوصول: حذف النماذج والقوالب مخصص لمسؤولي النظام.",
             stageNames: { Navire: 'في السفينة', Stock: 'في الساحة', Douane: 'في الجمارك', Embarqué: 'تسليم وخروج' }
         },
         en: {
@@ -143,7 +153,7 @@
             txtYardModalTitle: "Visual Yard Matrix (Yard 2D)",
             txtYardModalSub: "Cross-section Bay view • Rows & Tiers stacking",
             searchPlaceholder: "Search by container ID or yard slot...",
-            cloudDirect: "Live Cloud",
+            cloudDirect: "IndexedDB + Cloud Storage",
             navAccueil: "Home",
             navSuivi: "Track & Trace",
             navSettings: "Models",
@@ -170,12 +180,12 @@
             sealLbl: "Seal No.",
             notesLbl: "General Remarks",
             cancel: "Cancel",
-            save: "Save to Cloud",
+            save: "Save Record",
             logout: "Sign Out",
             myCounts: "My Tallies",
-            cloudServer: "Cloud Server",
-            activeState: "Active",
-            terminalDesc: "DP World Djendjen Terminal container flow monitoring under secure Firebase cloud.",
+            cloudServer: "Security & Storage",
+            activeState: "Active (IndexedDB)",
+            terminalDesc: "DP World Djendjen Terminal container flow monitoring under secure PBKDF2 encryption & offline IndexedDB.",
             damageTitle: "Damage Photo",
             btnTakeDamage: "Take Photo",
             kpiTotal: "Total",
@@ -188,31 +198,49 @@
             exportModel: "Model to Export",
             btnDownload: "Generate & Download File",
             lblLangSettings: "Application Language",
+            roleAdmin: "Administrator",
+            rolePointeur: "Tallyman Agent",
+            accessDeniedDelete: "Access denied: Only an Administrator can delete container records.",
+            accessDeniedArchive: "Access denied: Archiving shift data is restricted to Administrators.",
+            accessDeniedModel: "Access denied: Only an Administrator can delete templates or models.",
             stageNames: { Navire: 'On Vessel', Stock: 'In Yard', Douane: 'In Customs', Embarqué: 'Delivered / Out' }
         }
     };
 
     /**
-     * Obtenir la liste stricte des conteneurs valides
+     * Obtenir la liste stricte des conteneurs valides pour l'utilisateur connecté
      */
     function getCleanContainersList() {
         const raw = (window.DPW_DB && Array.isArray(window.DPW_DB.containers)) ? window.DPW_DB.containers : [];
+        const currentUid = (window.DPW_DB && typeof window.DPW_DB.getCurrentUserId === 'function') 
+            ? window.DPW_DB.getCurrentUserId() 
+            : null;
+
         return raw
             .map(c => {
                 if (!c) return null;
-                const num = String(c.containerNumber || c.id || '').trim();
+                const num = String(c.containerNumber || c.id || '').trim().toUpperCase();
                 return { ...c, containerNumber: num, id: num };
             })
-            .filter(c => c && c.containerNumber && c.containerNumber.trim() !== '' && c.containerNumber !== 'undefined' && c.containerNumber !== 'null');
+            .filter(c => {
+                if (!c || !c.containerNumber || c.containerNumber === 'undefined' || c.containerNumber === 'null') {
+                    return false;
+                }
+                // Multi-User Data Isolation filter: ensure record belongs to active user
+                if (currentUid && c.userId && c.userId !== currentUid) {
+                    return false;
+                }
+                return true;
+            });
     }
 
     // ================= 🚀 INITIALISATION DE L'APPLICATION =================
     window.addEventListener('DOMContentLoaded', async () => {
-        // 1. Initialisation de la base de données
+        // 1. Initialisation de la couche IndexedDB & Sécurité
         if (window.DPW_DB && typeof window.DPW_DB.init === 'function') {
             await window.DPW_DB.init(firebaseConfig);
 
-            // Souscriptions aux événements de synchronisation
+            // Souscriptions aux événements IndexedDB & Synchronisation
             window.DPW_DB.on('containers', () => {
                 filterContainers();
                 renderTrackingList();
@@ -238,9 +266,33 @@
             window.DPW_DB.on('mappings', () => {
                 renderModelsList();
             });
+
+            window.DPW_DB.on('user', (user) => {
+                currentUser = user;
+                updateUserUI(user);
+            });
+
+            window.DPW_DB.on('auth', ({ authenticated, user }) => {
+                const authModal = document.getElementById('authModalOverlay');
+                if (authenticated && user) {
+                    currentUser = user;
+                    if (authModal) authModal.classList.add('hidden');
+                    updateUserUI(user);
+                    populateModelSelect();
+                    filterContainers();
+                    renderTrackingList();
+                    updateAccountStats();
+                } else {
+                    currentUser = null;
+                    if (authModal) authModal.classList.remove('hidden');
+                    renderList([]);
+                    renderTrackingList();
+                    updateAccountStats();
+                }
+            });
         }
 
-        // 2. Configuration de l'authentification
+        // 2. Configuration de l'authentification et session active
         setupAuthObserver();
 
         // 3. Configuration du "Pull to Refresh"
@@ -254,39 +306,60 @@
         updateAccountStats();
     });
 
-    // ================= 👤 AUTHENTIFICATION =================
+    // ================= 👤 AUTHENTIFICATION & CONTRÔLE RBAC =================
     function setupAuthObserver() {
-        const auth = window.DPW_DB ? window.DPW_DB.auth : null;
-        if (!auth) return;
-
-        auth.onAuthStateChanged((user) => {
-            const authModal = document.getElementById('authModalOverlay');
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('dpw_last_agent', user.email);
-                localStorage.setItem('dpw_last_uid', user.uid);
-                if (authModal) authModal.classList.add('hidden');
-                const displayEl = document.getElementById('accountEmailDisplay');
-                if (displayEl) displayEl.innerText = user.email;
-                if (window.DPW_DB.attachUserSync) window.DPW_DB.attachUserSync(user);
-            } else {
-                const savedAgent = localStorage.getItem('dpw_last_agent');
-                const savedUid = localStorage.getItem('dpw_last_uid');
-                if (savedAgent && savedUid) {
-                    currentUser = { email: savedAgent, uid: savedUid };
-                    if (authModal) authModal.classList.add('hidden');
-                    const displayEl = document.getElementById('accountEmailDisplay');
-                    if (displayEl) displayEl.innerText = savedAgent;
-                    if (window.DPW_DB.attachUserSync) window.DPW_DB.attachUserSync(currentUser);
-                    filterContainers();
-                    renderTrackingList();
-                    updateAccountStats();
-                } else {
-                    currentUser = null;
-                    if (authModal) authModal.classList.remove('hidden');
-                }
+        const authModal = document.getElementById('authModalOverlay');
+        if (window.DPW_DB && window.DPW_DB.currentUser) {
+            currentUser = window.DPW_DB.currentUser;
+            if (authModal) authModal.classList.add('hidden');
+            updateUserUI(currentUser);
+        } else {
+            // Check Firebase Auth as supplementary layer
+            const auth = window.DPW_DB ? window.DPW_DB.auth : null;
+            if (auth) {
+                auth.onAuthStateChanged(async (fbUser) => {
+                    if (fbUser) {
+                        const email = fbUser.email;
+                        const role = (email && email.toLowerCase().includes('admin')) ? 'Admin' : 'Pointeur';
+                        currentUser = {
+                            uid: fbUser.uid,
+                            email: fbUser.email,
+                            displayName: fbUser.email.split('@')[0],
+                            role: role
+                        };
+                        window.DPW_DB.currentUser = currentUser;
+                        window.DPW_DB.currentRole = role;
+                        await window.DPW_DB.loadUserData(fbUser.uid);
+                        if (authModal) authModal.classList.add('hidden');
+                        updateUserUI(currentUser);
+                        filterContainers();
+                        renderTrackingList();
+                        updateAccountStats();
+                    } else if (!window.DPW_DB.currentUser) {
+                        currentUser = null;
+                        if (authModal) authModal.classList.remove('hidden');
+                    }
+                });
+            } else if (!window.DPW_DB || !window.DPW_DB.currentUser) {
+                if (authModal) authModal.classList.remove('hidden');
             }
-        });
+        }
+    }
+
+    function updateUserUI(user) {
+        const displayEl = document.getElementById('accountEmailDisplay');
+        const t = translations[currentLang] || translations.fr;
+
+        if (displayEl) {
+            if (user && user.email) {
+                const roleBadge = user.role === 'Admin' 
+                    ? `<span class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/40 tracking-wider uppercase"><i class="fa-solid fa-shield-halved"></i> ${t.roleAdmin}</span>`
+                    : `<span class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-black bg-[#00ffaa]/20 text-[#00ffaa] border border-[#00ffaa]/40 tracking-wider uppercase"><i class="fa-solid fa-user-tag"></i> ${t.rolePointeur}</span>`;
+                displayEl.innerHTML = `${user.email} ${roleBadge}`;
+            } else {
+                displayEl.innerText = t.rolePointeur;
+            }
+        }
     }
 
     function switchAuthTab(mode) {
@@ -295,14 +368,39 @@
         const tabReg = document.getElementById('authTabReg');
         const submitBtn = document.getElementById('authSubmitBtn');
 
+        // Dynamic Role Selector Container
+        let roleContainer = document.getElementById('authRoleSelectorContainer');
+        if (!roleContainer) {
+            const form = document.querySelector('#authModalOverlay form');
+            if (form) {
+                roleContainer = document.createElement('div');
+                roleContainer.id = 'authRoleSelectorContainer';
+                roleContainer.className = 'space-y-1';
+                const submitButton = document.getElementById('authSubmitBtn');
+                if (submitButton && submitButton.parentNode) {
+                    submitButton.parentNode.insertBefore(roleContainer, submitButton);
+                }
+            }
+        }
+
         if (mode === 'login') {
             if (tabLogin) tabLogin.className = "flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]";
             if (tabReg) tabReg.className = "flex-1 py-2 text-gray-400";
             if (submitBtn) submitBtn.innerText = currentLang === 'ar' ? "تسجيل الدخول" : "Se connecter";
+            if (roleContainer) roleContainer.innerHTML = '';
         } else {
             if (tabReg) tabReg.className = "flex-1 py-2 text-[#00ffaa] border-b-2 border-[#00ffaa]";
             if (tabLogin) tabLogin.className = "flex-1 py-2 text-gray-400";
-            if (submitBtn) submitBtn.innerText = currentLang === 'ar' ? "إنشاء حساب" : "Créer compte";
+            if (submitBtn) submitBtn.innerText = currentLang === 'ar' ? "إنشاء حساب آمن" : "Créer un compte sécurisé";
+            if (roleContainer) {
+                roleContainer.innerHTML = `
+                    <label class="block text-gray-300 font-semibold mb-1 text-xs">Rôle / Profil d'accès (RBAC)</label>
+                    <select id="authRoleSelect" class="w-full input-dpw p-3 rounded-xl font-bold text-[#00ffaa] bg-[#1d2263] cursor-pointer">
+                        <option value="Pointeur" selected>Agent Pointeur (Tally & Pointage terrain)</option>
+                        <option value="Admin">Administrateur / Superviseur (Accès Total & Gestion)</option>
+                    </select>
+                `;
+            }
         }
     }
 
@@ -310,35 +408,75 @@
         e.preventDefault();
         const email = document.getElementById('authEmail').value.trim();
         const pass = document.getElementById('authPassword').value;
+        const roleSelect = document.getElementById('authRoleSelect');
+        const chosenRole = roleSelect ? roleSelect.value : 'Pointeur';
         const errEl = document.getElementById('authErrorMsg');
-        if (errEl) errEl.innerText = "";
+        const submitBtn = document.getElementById('authSubmitBtn');
 
-        const auth = window.DPW_DB ? window.DPW_DB.auth : null;
-        if (!auth) {
-            if (errEl) errEl.innerText = "Service d'authentification indisponible";
-            return;
+        if (errEl) errEl.innerText = "";
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerText = currentLang === 'ar' ? "جاري التحقق..." : "Vérification...";
         }
 
         try {
-            if (authMode === 'login') {
-                await auth.signInWithEmailAndPassword(email, pass);
-            } else {
-                await auth.createUserWithEmailAndPassword(email, pass);
+            if (!window.DPW_DB) {
+                throw new Error("Base de données non disponible");
             }
+
+            let profile;
+            if (authMode === 'login') {
+                profile = await window.DPW_DB.loginUser(email, pass);
+            } else {
+                profile = await window.DPW_DB.registerUser(email, pass, chosenRole, email.split('@')[0]);
+            }
+
+            currentUser = profile;
+            updateUserUI(profile);
+
+            // Hide auth modal
+            const authModal = document.getElementById('authModalOverlay');
+            if (authModal) authModal.classList.add('hidden');
+
+            showToast(currentLang === 'ar' ? `✓ مرحباً ${profile.email}` : `✓ Bienvenue ${profile.displayName} (${profile.role})`);
+            
+            populateModelSelect();
+            filterContainers();
+            renderTrackingList();
+            updateAccountStats();
         } catch (err) {
-            if (errEl) errEl.innerText = err.message;
+            console.error("Auth action error:", err);
+            if (errEl) errEl.innerText = err.message || "Erreur d'authentification";
+            showToast(err.message || "Erreur d'authentification", true);
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = authMode === 'login' 
+                    ? (currentLang === 'ar' ? "تسجيل الدخول" : "Se connecter")
+                    : (currentLang === 'ar' ? "إنشاء حساب" : "Créer compte");
+            }
         }
     }
 
-    function logoutFirebase() {
-        const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً تسجيل الخروج؟" : "Voulez-vous vraiment vous déconnecter ?";
+    async function logoutFirebase() {
+        const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً تسجيل الخروج ومسح الجلسة؟" : "Voulez-vous vraiment vous déconnecter ?";
         if (confirm(confirmMsg)) {
-            localStorage.removeItem('dpw_last_agent');
-            localStorage.removeItem('dpw_last_uid');
-            if (window.DPW_DB && window.DPW_DB.auth) {
-                window.DPW_DB.auth.signOut();
+            if (window.DPW_DB && typeof window.DPW_DB.logoutUser === 'function') {
+                await window.DPW_DB.logoutUser();
             }
-            showToast(currentLang === 'ar' ? "تم تسجيل الخروج" : "Déconnexion réussie");
+
+            currentUser = null;
+
+            // Reset UI memory state
+            renderList([]);
+            renderTrackingList();
+            updateAccountStats();
+
+            // Show Login Modal immediately
+            const authModal = document.getElementById('authModalOverlay');
+            if (authModal) authModal.classList.remove('hidden');
+
+            showToast(currentLang === 'ar' ? "تم تسجيل الخروج بنجاح" : "Déconnexion réussie");
         }
     }
 
@@ -428,6 +566,7 @@
         if (document.getElementById('lblExportModel')) document.getElementById('lblExportModel').innerText = t.exportModel;
         if (document.getElementById('btnDownloadReport')) document.getElementById('btnDownloadReport').innerText = t.btnDownload;
 
+        if (currentUser) updateUserUI(currentUser);
         filterContainers();
         renderTrackingList();
     }
@@ -599,20 +738,20 @@
         } else {
             if (badge) badge.className = "text-[10px] text-amber-400 flex items-center gap-1.5 font-semibold bg-[#15194a]/90 px-3 py-1 rounded-full border border-amber-500/40 transition-all duration-300";
             if (dot) dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400";
-            if (label) label.innerText = currentLang === 'ar' ? "وضع عدم الاتصال" : "Mode Hors-ligne";
+            if (label) label.innerText = currentLang === 'ar' ? "وضع IndexedDB المحلي" : "Mode IndexedDB Hors-ligne";
 
             if (accountState) {
                 accountState.className = "inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 mt-1";
                 if (accountDot) accountDot.className = "w-2 h-2 rounded-full bg-amber-400";
-                if (accountLabel) accountLabel.innerText = currentLang === 'ar' ? "غير متصل" : "Hors-ligne";
+                if (accountLabel) accountLabel.innerText = currentLang === 'ar' ? "IndexedDB محلي" : "IndexedDB Local";
             }
         }
     }
 
     function updateAccountStats() {
         const containers = getCleanContainersList();
-        const agentPrefix = currentUser && currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur';
-        const myCount = containers.filter(c => c.agent === agentPrefix).length;
+        const agentName = currentUser ? (currentUser.displayName || currentUser.email.split('@')[0]) : 'Pointeur';
+        const myCount = containers.length;
 
         if (document.getElementById('agentCountStat')) document.getElementById('agentCountStat').innerText = myCount;
         if (document.getElementById('kpiTotalVal')) document.getElementById('kpiTotalVal').innerText = containers.length;
@@ -909,6 +1048,7 @@
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const selectedModel = document.getElementById('inpModel').value;
             const inputIdVal = document.getElementById('inpId').value.toUpperCase().trim();
+            const agentName = currentUser ? (currentUser.displayName || currentUser.email.split('@')[0]) : 'Pointeur';
 
             const customData = {};
             const customInputs = document.querySelectorAll('[data-custom-field]');
@@ -952,14 +1092,14 @@
                     customData: customData,
                     time: timeStr,
                     date: now.toLocaleDateString('fr-FR'),
-                    agent: currentUser && currentUser.email ? currentUser.email.split('@')[0] : 'Pointeur',
+                    agent: agentName,
                     timestamp: Date.now()
                 };
 
                 if (window.DPW_DB && typeof window.DPW_DB.saveContainer === 'function') {
                     await window.DPW_DB.saveContainer(newItem);
                 }
-                showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية!" : "✓ Conteneur enregistré!");
+                showToast(currentLang === 'ar' ? "✓ تم حفظ الحاوية في IndexedDB!" : "✓ Conteneur enregistré!");
             }
 
             triggerHapticFeedback();
@@ -974,7 +1114,7 @@
             closeModal();
         } catch (err) {
             console.error("Erreur enregistrement:", err);
-            showToast("Erreur lors de l'enregistrement", true);
+            showToast(err.message || "Erreur lors de l'enregistrement", true);
         } finally {
             if (saveBtn) {
                 saveBtn.innerText = originalBtnText;
@@ -985,47 +1125,79 @@
     }
 
     async function deleteContainer(fbKey) {
-        const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً حذف الحاوية؟" : "Voulez-vous vraiment supprimer ce conteneur ?";
+        const t = translations[currentLang] || translations.fr;
+
+        // RBAC Check: Only Admin can delete records
+        if (window.DPW_DB && typeof window.DPW_DB.hasPermission === 'function') {
+            if (!window.DPW_DB.hasPermission('container:delete')) {
+                showToast(t.accessDeniedDelete, true);
+                return;
+            }
+        }
+
+        const confirmMsg = currentLang === 'ar' ? "هل تريد حقاً حذف الحاوية نهائياً؟" : "Voulez-vous vraiment supprimer définitivement ce conteneur ?";
         if (confirm(confirmMsg)) {
-            if (window.DPW_DB && typeof window.DPW_DB.deleteContainer === 'function') {
-                await window.DPW_DB.deleteContainer(fbKey);
+            try {
+                if (window.DPW_DB && typeof window.DPW_DB.deleteContainer === 'function') {
+                    await window.DPW_DB.deleteContainer(fbKey);
+                }
+                filterContainers();
+                renderTrackingList();
+                updateAccountStats();
+                if (window.DPW_YARD && typeof window.DPW_YARD.updateContainers === 'function') {
+                    window.DPW_YARD.updateContainers();
+                }
+                showToast(currentLang === 'ar' ? "تم حذف الحاوية بنجاح" : "Conteneur supprimé avec succès");
+            } catch (err) {
+                showToast(err.message || "Erreur suppression", true);
             }
-            filterContainers();
-            renderTrackingList();
-            updateAccountStats();
-            if (window.DPW_YARD && typeof window.DPW_YARD.updateContainers === 'function') {
-                window.DPW_YARD.updateContainers();
-            }
-            showToast(currentLang === 'ar' ? "تم حذف الحاوية بنجاح" : "Conteneur supprimé");
         }
     }
 
     async function updateContainerStage(fbKey, newStage) {
-        if (window.DPW_DB && typeof window.DPW_DB.updateContainerStage === 'function') {
-            await window.DPW_DB.updateContainerStage(fbKey, newStage);
+        try {
+            if (window.DPW_DB && typeof window.DPW_DB.updateContainerStage === 'function') {
+                await window.DPW_DB.updateContainerStage(fbKey, newStage);
+            }
+            renderTrackingList();
+            filterContainers();
+            triggerHapticFeedback();
+            showToast(currentLang === 'ar' ? `تم تحديث المرحلة: ${newStage}` : `Position mise à jour: ${newStage}`);
+        } catch (err) {
+            showToast(err.message || "Erreur mise à jour position", true);
         }
-        renderTrackingList();
-        filterContainers();
-        triggerHapticFeedback();
-        showToast(currentLang === 'ar' ? `تم تحديث المرحلة: ${newStage}` : `Position mise à jour: ${newStage}`);
     }
 
     async function archiveShiftData() {
+        const t = translations[currentLang] || translations.fr;
+
+        // RBAC Check: Only Admin can archive shift
+        if (window.DPW_DB && typeof window.DPW_DB.hasPermission === 'function') {
+            if (!window.DPW_DB.hasPermission('shift:archive')) {
+                showToast(t.accessDeniedArchive, true);
+                return;
+            }
+        }
+
         const confirmMsg = currentLang === 'ar' 
             ? "هل تريد أرشفة الوردية ومسح الحاويات من الواجهة لبدء وردية جديدة؟ (تأكد من تصدير الإكسل أولاً)" 
             : "Voulez-vous archiver cette vacation et réinitialiser la liste active ? (Assurez-vous d'avoir exporté l'Excel d'abord)";
         
         if (confirm(confirmMsg)) {
-            if (window.DPW_DB && typeof window.DPW_DB.archiveShiftData === 'function') {
-                await window.DPW_DB.archiveShiftData();
+            try {
+                if (window.DPW_DB && typeof window.DPW_DB.archiveShiftData === 'function') {
+                    await window.DPW_DB.archiveShiftData();
+                }
+                filterContainers();
+                renderTrackingList();
+                updateAccountStats();
+                if (window.DPW_YARD && typeof window.DPW_YARD.updateContainers === 'function') {
+                    window.DPW_YARD.updateContainers();
+                }
+                showToast(currentLang === 'ar' ? "تمت أرشفة الوردية بنجاح!" : "Vacation archivée avec succès!");
+            } catch (err) {
+                showToast(err.message || "Erreur archivage", true);
             }
-            filterContainers();
-            renderTrackingList();
-            updateAccountStats();
-            if (window.DPW_YARD && typeof window.DPW_YARD.updateContainers === 'function') {
-                window.DPW_YARD.updateContainers();
-            }
-            showToast(currentLang === 'ar' ? "تمت أرشفة الوردية بنجاح!" : "Vacation archivée avec succès!");
         }
     }
 
@@ -1034,25 +1206,32 @@
         const listEl = document.getElementById('containersList');
         if (!listEl) return;
 
-        // Normalisation et validation stricte
-        const sourceData = (data || []).map(c => {
-            if (c && !c.containerNumber && c.id) {
-                return { ...c, containerNumber: c.id };
-            }
-            return c;
-        });
+        const currentUid = (window.DPW_DB && typeof window.DPW_DB.getCurrentUserId === 'function') ? window.DPW_DB.getCurrentUserId() : null;
+        const isAdminUser = (window.DPW_DB && typeof window.DPW_DB.isAdmin === 'function') ? window.DPW_DB.isAdmin() : false;
 
-        const cleanData = sourceData.filter(c => c && c.containerNumber && c.containerNumber !== 'undefined');
+        // Normalisation et validation stricte
+        const sourceData = (data || [])
+            .map(c => {
+                if (c && !c.containerNumber && c.id) {
+                    return { ...c, containerNumber: c.id };
+                }
+                return c;
+            })
+            .filter(c => {
+                if (!c || !c.containerNumber || c.containerNumber === 'undefined') return false;
+                if (currentUid && c.userId && c.userId !== currentUid) return false;
+                return true;
+            });
 
         const countEl = document.getElementById('containerCount');
-        if (countEl) countEl.innerText = `${cleanData.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
+        if (countEl) countEl.innerText = `${sourceData.length} ${currentLang === 'ar' ? 'حاوية' : 'conteneur(s)'}`;
         listEl.innerHTML = '';
 
-        if (cleanData.length === 0) {
+        if (sourceData.length === 0) {
             listEl.innerHTML = `
                 <div class="col-span-full text-center py-12 text-gray-500 font-medium text-xs">
                     <i class="fa-solid fa-box-open text-3xl mb-2 block text-gray-600"></i>
-                    ${currentLang === 'ar' ? 'لا توجد حاويات مطابقة.' : 'Aucun conteneur trouvé.'}
+                    ${currentLang === 'ar' ? 'لا توجد حاويات مسجلة لهذا الحساب.' : 'Aucun conteneur trouvé pour cette session.'}
                 </div>
             `;
             return;
@@ -1061,11 +1240,6 @@
         const t = translations[currentLang] || translations.fr;
 
         sourceData.forEach((c) => {
-            // Validation stricte : ignorer et ne pas afficher de conteneur invalide/fantôme
-            if (!c || !c.containerNumber || c.containerNumber === 'undefined') {
-                return;
-            }
-
             const item = c;
             const isGood = item.status === 'Bon état';
             const badgeClass = isGood ? 'badge-green' : 'badge-red';
@@ -1100,6 +1274,11 @@
                 `;
             }
 
+            // RBAC Delete Action Button
+            const deleteButtonHTML = isAdminUser
+                ? `<button onclick="deleteContainer('${item.firebaseKey}')" class="text-gray-400 hover:text-red-400 p-1.5 transition" title="Supprimer"><i class="fa-solid fa-trash-can text-sm"></i></button>`
+                : `<button onclick="showToast('${t.accessDeniedDelete}', true)" class="text-gray-600 cursor-not-allowed p-1.5 opacity-40" title="Suppression réservée aux Administrateurs"><i class="fa-solid fa-lock text-xs"></i></button>`;
+
             const card = document.createElement('div');
             card.className = `dpw-card p-4 rounded-2xl space-y-2 text-xs shadow-sm relative ${isDamaged ? 'card-damaged' : ''}`;
             card.innerHTML = `
@@ -1111,7 +1290,7 @@
                     <div class="flex items-center gap-1.5">
                         <span class="px-2.5 py-1 rounded-full font-bold text-[11px] ${badgeClass}">${statusDisplayName}</span>
                         <button onclick="openEditModal('${item.firebaseKey}')" class="text-gray-400 hover:text-[#00ffaa] p-1.5 transition" title="Modifier"><i class="fa-solid fa-pen-to-square text-sm"></i></button>
-                        <button onclick="deleteContainer('${item.firebaseKey}')" class="text-gray-500 hover:text-red-400 p-1.5 transition" title="Supprimer"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                        ${deleteButtonHTML}
                     </div>
                 </div>
                 <p class="text-gray-400 font-medium text-xs flex items-center gap-1.5">
@@ -1171,10 +1350,7 @@
         const t = translations[currentLang] || translations.fr;
 
         containers.forEach((c) => {
-            // Validation stricte : ignorer et ne pas afficher de conteneur invalide/fantôme
-            if (!c || !c.containerNumber || c.containerNumber === 'undefined') {
-                return;
-            }
+            if (!c || !c.containerNumber || c.containerNumber === 'undefined') return;
 
             const item = c;
             const currentStage = item.stage || 'Navire';
@@ -1251,6 +1427,8 @@
         const modelConfigs = (window.DPW_DB && window.DPW_DB.modelConfigs) ? window.DPW_DB.modelConfigs : {};
         const modelTemplates = (window.DPW_DB && window.DPW_DB.modelTemplates) ? window.DPW_DB.modelTemplates : {};
         const templateMappings = (window.DPW_DB && window.DPW_DB.templateMappings) ? window.DPW_DB.templateMappings : {};
+        const isAdminUser = (window.DPW_DB && typeof window.DPW_DB.isAdmin === 'function') ? window.DPW_DB.isAdmin() : false;
+        const t = translations[currentLang] || translations.fr;
 
         Object.keys(modelConfigs).forEach(mName => {
             const fields = modelConfigs[mName] || [];
@@ -1260,6 +1438,14 @@
             const card = document.createElement('div');
             card.className = "bg-[#1d2263] p-3.5 rounded-2xl text-xs space-y-2.5 border border-[#303796]";
             
+            const deleteModelBtn = isAdminUser
+                ? `<button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1" title="Supprimer le modèle"><i class="fa-solid fa-trash-can"></i></button>`
+                : `<button onclick="showToast('${t.accessDeniedModel}', true)" class="text-gray-600 cursor-not-allowed p-1 opacity-40" title="Réservé aux Administrateurs"><i class="fa-solid fa-lock text-xs"></i></button>`;
+
+            const deleteTemplateBtn = isAdminUser
+                ? `<button onclick="deleteTemplate('${mName}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 transition" title="Supprimer le template Excel"><i class="fa-solid fa-xmark"></i></button>`
+                : `<button onclick="showToast('${t.accessDeniedModel}', true)" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed opacity-40" title="Réservé aux Administrateurs"><i class="fa-solid fa-lock"></i></button>`;
+
             card.innerHTML = `
                 <div class="flex items-center justify-between">
                     <span class="font-bold text-white text-sm">${mName}</span>
@@ -1273,11 +1459,9 @@
                                 <i class="fa-solid fa-table-cells"></i>
                                 <span>${hasMapping ? 'Colonnes ✓' : 'Mapping'}</span>
                             </button>
-                            <button onclick="deleteTemplate('${mName}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/30 transition" title="Supprimer le template Excel">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
+                            ${deleteTemplateBtn}
                         ` : ''}
-                        <button onclick="deleteModel('${mName}')" class="text-gray-400 hover:text-red-400 p-1" title="Supprimer le modèle"><i class="fa-solid fa-trash-can"></i></button>
+                        ${deleteModelBtn}
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-1.5 pt-1">
@@ -1294,25 +1478,41 @@
         const modelConfigs = (window.DPW_DB && window.DPW_DB.modelConfigs) ? window.DPW_DB.modelConfigs : {};
 
         if (val && !modelConfigs[val]) {
-            if (window.DPW_DB && typeof window.DPW_DB.saveModelConfigs === 'function') {
-                await window.DPW_DB.saveModelConfigs(val, []);
+            try {
+                if (window.DPW_DB && typeof window.DPW_DB.saveModelConfigs === 'function') {
+                    await window.DPW_DB.saveModelConfigs(val, []);
+                }
+                if (inp) inp.value = '';
+                renderModelsList();
+                populateModelSelect();
+                showToast(currentLang === 'ar' ? `تم إنشاء النموذج "${val}"!` : `Modèle "${val}" créé avec succès!`);
+            } catch (err) {
+                showToast(err.message || "Erreur création modèle", true);
             }
-            if (inp) inp.value = '';
-            renderModelsList();
-            populateModelSelect();
-            showToast(currentLang === 'ar' ? `تم إنشاء النموذج "${val}"!` : `Modèle "${val}" créé avec succès!`);
         }
     }
 
     async function deleteModel(modelName) {
+        const t = translations[currentLang] || translations.fr;
+        if (window.DPW_DB && typeof window.DPW_DB.hasPermission === 'function') {
+            if (!window.DPW_DB.hasPermission('model:delete')) {
+                showToast(t.accessDeniedModel, true);
+                return;
+            }
+        }
+
         const confirmMsg = currentLang === 'ar' ? `هل تريد بالتأكيد حذف النموذج "${modelName}" ؟` : `Voulez-vous vraiment supprimer le modèle "${modelName}" ?`;
         if (confirm(confirmMsg)) {
-            if (window.DPW_DB && typeof window.DPW_DB.deleteModel === 'function') {
-                await window.DPW_DB.deleteModel(modelName);
+            try {
+                if (window.DPW_DB && typeof window.DPW_DB.deleteModel === 'function') {
+                    await window.DPW_DB.deleteModel(modelName);
+                }
+                renderModelsList();
+                populateModelSelect();
+                showToast(currentLang === 'ar' ? `تم حذف النموذج "${modelName}"` : `Modèle "${modelName}" supprimé`);
+            } catch (err) {
+                showToast(err.message || "Erreur suppression modèle", true);
             }
-            renderModelsList();
-            populateModelSelect();
-            showToast(currentLang === 'ar' ? `تم حذف النموذج "${modelName}"` : `Modèle "${modelName}" supprimé`);
         }
     }
 
@@ -1346,7 +1546,7 @@
                     if (progressPercent) progressPercent.innerText = `${percent}%`;
                 });
 
-                if (progressTitle) progressTitle.innerText = currentLang === 'ar' ? "حفظ القالب ومزامنة السحابة..." : "Enregistrement du template...";
+                if (progressTitle) progressTitle.innerText = currentLang === 'ar' ? "حفظ القالب في IndexedDB..." : "Enregistrement dans IndexedDB...";
                 if (window.DPW_DB && typeof window.DPW_DB.saveModelTemplate === 'function') {
                     await window.DPW_DB.saveModelTemplate(currentUploadTemplateTarget, base64);
                 }
@@ -1371,16 +1571,28 @@
     }
 
     async function deleteTemplate(modelName) {
+        const t = translations[currentLang] || translations.fr;
+        if (window.DPW_DB && typeof window.DPW_DB.hasPermission === 'function') {
+            if (!window.DPW_DB.hasPermission('template:delete')) {
+                showToast(t.accessDeniedModel, true);
+                return;
+            }
+        }
+
         const confirmMsg = currentLang === 'ar' 
             ? `هل تريد بالتأكيد حذف ملف قالب الإكسل للنموذج "${modelName}"؟` 
             : `Voulez-vous vraiment supprimer le fichier template Excel de "${modelName}" ?`;
         
         if (confirm(confirmMsg)) {
-            if (window.DPW_DB && typeof window.DPW_DB.deleteModelTemplate === 'function') {
-                await window.DPW_DB.deleteModelTemplate(modelName);
+            try {
+                if (window.DPW_DB && typeof window.DPW_DB.deleteModelTemplate === 'function') {
+                    await window.DPW_DB.deleteModelTemplate(modelName);
+                }
+                renderModelsList();
+                showToast(currentLang === 'ar' ? `✓ تم حذف قالب "${modelName}"` : `✓ Template "${modelName}" supprimé`);
+            } catch (err) {
+                showToast(err.message || "Erreur suppression template", true);
             }
-            renderModelsList();
-            showToast(currentLang === 'ar' ? `✓ تم حذف قالب "${modelName}"` : `✓ Template "${modelName}" supprimé`);
         }
     }
 
@@ -1477,12 +1689,16 @@
             }
         });
 
-        if (window.DPW_DB && typeof window.DPW_DB.saveTemplateMapping === 'function') {
-            await window.DPW_DB.saveTemplateMapping(modelName, { startRow, columns });
+        try {
+            if (window.DPW_DB && typeof window.DPW_DB.saveTemplateMapping === 'function') {
+                await window.DPW_DB.saveTemplateMapping(modelName, { startRow, columns });
+            }
+            closeMappingModal();
+            renderModelsList();
+            showToast(`✓ Configuration enregistrée pour "${modelName}"`);
+        } catch (err) {
+            showToast(err.message || "Erreur enregistrement mapping", true);
         }
-        closeMappingModal();
-        renderModelsList();
-        showToast(`✓ Configuration enregistrée pour "${modelName}"`);
     }
 
     // ================= 📥 EXPORTATION EXCEL =================
